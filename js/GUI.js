@@ -175,6 +175,76 @@ class AppGUI{
                             this.app.msg = JSON.parse(JSON.stringify(msg));
                             this.app.ECAcontroller.processMsg(JSON.stringify(msg));
                         });
+
+                        p.addButton(null, "Edit on Animics", () => {
+
+                            const sendData = () => {
+                                if(!this.animics.app.global) 
+                                {
+                                    setTimeout(sendData, 1000)
+                                }
+                                else {
+                                    if(!this.animics.app.global.app) {
+
+                                        this.animics.app.global.createApp({mode:"bml"});
+                                        this.animics.app.global.app.editor.realizer = window;
+                                        this.animics.app.global.app.editor.performsApp = this.app;
+                                    }
+
+                                    let msg = {
+                                        type: "behaviours",
+                                        data: []
+                                    };
+                                    // JSON
+                                    try {
+                                        let text = this.bmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
+                                        msg.data = JSON.parse( "[" + text + "]" ); 
+                                    } catch (error) {
+                                        alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
+                                        return;
+                                    }
+                    
+                                    // for mouthing, find those words that need to be translated into phonemes (ARPA)
+                                    for( let i = 0; i < msg.data.length; ++i ){
+                                        if ( msg.data[i].type == "speech" && typeof( msg.data[i].text ) == "string" ){
+                                            let strSplit = msg.data[i].text.split( "%" ); // words in NGT are between "%"
+                                            let result = "";
+                                            for( let j = 0; j < strSplit.length; ){
+                                                result += strSplit[j]; // everything before are phonemes
+                                                j++;
+                                                if ( j < ( strSplit.length - 1 ) ){ // word to translate
+                                                    result += this.app.wordsToArpa( strSplit[j], "NGT" );
+                                                }
+                                                j++;
+                                            }
+                                            msg.data[i].text = result + ".";
+                                        }
+                                    }
+        
+                                    msg = JSON.parse(JSON.stringify(msg));
+                                    
+                                    //Send to ANIMICS
+                                    if(this.animics.app.global.app.editor.activeTimeline)
+                                        this.animics.app.global.app.editor.clearAllTracks(false);
+                                    this.animics.app.global.app.editor.gui.loadBMLClip({behaviours: msg.data});
+                                   
+                                }
+                            }
+                            if(!this.animics || this.animics.closed) {
+                                this.animics = window.open("https://webglstudio.org/projects/signon/animics");
+                               
+                                this.animics.onload = (e, d) => {
+                                    this.animics.app = e.currentTarget;
+                                    sendData();
+                                }
+                                this.animics.addEventListener("beforeunload", () => {
+                                    this.animics = null;
+                                });
+                            }
+                            else {
+                                sendData();
+                            }
+                        })
             
                     }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});
                 
