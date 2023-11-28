@@ -19,9 +19,9 @@ class AppGUI{
         let main_area = LX.init();
         main_area.attach( this.app.renderer.domElement );
 
-        this.bmlInputData = { dialog: null, codeObj: null, prevInstanceText: "" };
-        this.sigmlInputData = { dialog: null, codeObj: null, prevInstanceText:"" };
-        this.glossInputData = { dialog: null, textArea: null,  glosses: "" };
+        this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
+        this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
+        this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
         
@@ -105,12 +105,9 @@ class AppGUI{
                     this.app.ECAcontroller.reset();
                 });
                 
-                p.addButton( null, "BML Input", (value, event) =>{
+                this.bmlInputData.openButton = p.addButton( null, "BML Input", (value, event) =>{
 
-                    if ( this.bmlInputData.dialog ){ 
-                        this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
-                        this.bmlInputData.dialog.close(); 
-                    }
+                    if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
 
                     this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
                         this.bmlInputData.dialog = p;
@@ -144,43 +141,68 @@ class AppGUI{
                         p.addButton(null, "Send", () => {
                             let msg = {
                                 type: "behaviours",
-                                data: []
+                                data: this._stringToBML( this.bmlInputData.codeObj.getText() )
                             };
-                            // JSON
-                            try {
-                                let text = this.bmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
-                                msg.data = JSON.parse( "[" + text + "]" ); 
-                            } catch (error) {
-                                alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
-                                return;
-                            }
-            
-                            // for mouthing, find those words that need to be translated into phonemes (ARPA)
-                            for( let i = 0; i < msg.data.length; ++i ){
-                                if ( msg.data[i].type == "speech" && typeof( msg.data[i].text ) == "string" ){
-                                    let strSplit = msg.data[i].text.split( "%" ); // words in NGT are between "%"
-                                    let result = "";
-                                    for( let j = 0; j < strSplit.length; ){
-                                        result += strSplit[j]; // everything before are phonemes
-                                        j++;
-                                        if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                                            result += this.app.wordsToArpa( strSplit[j], "NGT" );
-                                        }
-                                        j++;
+                            
+                            if ( !msg.data.length ){ return; }
+
+                            this.app.msg = JSON.parse(JSON.stringify(msg)); // copy object
+                            this.app.ECAcontroller.processMsg( msg );
+                        });
+
+                        p.addButton(null, "Edit on Animics", () => {
+
+                            const sendData = () => {
+                                if(!this.animics.app.global) 
+                                {
+                                    setTimeout(sendData, 1000)
+                                }
+                                else {
+                                    if(!this.animics.app.global.app) {
+
+                                        this.animics.app.global.createApp({mode:"bml"});
+                                        this.animics.app.global.app.editor.realizer = window;
+                                        this.animics.app.global.app.editor.performsApp = this.app;
                                     }
-                                    msg.data[i].text = result + ".";
+
+                                    let msg = {
+                                        type: "behaviours",
+                                        data: this._stringToBML( this.bmlInputData.codeObj.getText() )
+                                    };
+                                  
+                                    //Send to ANIMICS
+                                    if(this.animics.app.global.app.editor.activeTimeline)
+                                        this.animics.app.global.app.editor.clearAllTracks(false);
+                                    this.animics.app.global.app.editor.gui.loadBMLClip({behaviours: msg.data});
+                                   
                                 }
                             }
-
-                            this.app.msg = JSON.parse(JSON.stringify(msg));
-                            this.app.ECAcontroller.processMsg(JSON.stringify(msg));
-                        });
+                            if(!this.animics || this.animics.closed) {
+                                this.animics = window.open("https://webglstudio.org/projects/signon/animics");
+                               
+                                this.animics.onload = (e, d) => {
+                                    this.animics.app = e.currentTarget;
+                                    sendData();
+                                }
+                                this.animics.addEventListener("beforeunload", () => {
+                                    this.animics = null;
+                                });
+                            }
+                            else {
+                                sendData();
+                            }
+                        })
             
-                    }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});
+                    }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true, onclose: (root)=>{
+                        this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
+                        this.bmlInputData.dialog = null;
+                        this.bmlInputData.codeObj = null;
+                        root.remove();
+                    }});
                 
                 });
 
-                p.addButton( null, "SiGML Input", (value, event) =>{
+                this.sigmlInputData.openButton = p.addButton( null, "SiGML Input", (value, event) =>{
 
                     if ( this.sigmlInputData.dialog ){ 
                         this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
@@ -224,7 +246,7 @@ class AppGUI{
                         glossesDictionary[lang].push(glossa.replaceAll(".sigml", ""));
                     }
                 }
-                p.addButton( null, "Glosses Input", (value, event) =>{
+                this.glossInputData.openButton = p.addButton( null, "Glosses Input", (value, event) =>{
 
                     if ( this.glossInputData.dialog ){ this.glossInputData.dialog.close(); }
 
@@ -320,6 +342,65 @@ class AppGUI{
             pocketDialog.title.click();
         }
 
+    }
+
+    setBMLInputText( text ){
+        let existsDialog = !!this.bmlInputData.dialog; 
+        if ( existsDialog ){ this.bmlInputData.dialog.close(); }
+        this.bmlInputData.dialog = null;
+        this.bmlInputData.prevInstanceText = text;
+        if ( existsDialog ) { this.bmlInputData.openButton.children[0].click(); }
+        
+        // codeeditor settext not working properly yet
+        // this.bmlInputData.prevInstanceText = JSON.stringify( text );
+        // if ( this.bmlInputData.codeObj ){
+        //     this.bmlInputData.codeObj.setText( JSON.stringify( text ) )
+        // }
+    }
+
+    _stringToBML( str ){
+        // let text = this.bmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
+        let result = [];
+        let text = str.replaceAll("\n", "").replaceAll("\r", "");
+        let parseSuccess = false;
+        // JSON
+        try {
+            result = JSON.parse( text );
+            parseSuccess = true;
+        } catch (error ) { parseSuccess = false; }
+        if ( !parseSuccess ){
+            try{ 
+                result = JSON.parse( "[" + text + "]" );
+            }
+            catch( error ){
+                alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
+                return [];
+            }       
+        }
+
+        if ( !Array.isArray( result ) ){
+                if ( Array.isArray( result.behaviours ) ){ result = result.behaviours; }
+                else{ result = [ result ]; }
+        } 
+
+        // for mouthing, find those words that need to be translated into phonemes (ARPA)
+        for( let i = 0; i < result.length; ++i ){
+            if ( result[i].type == "speech" && typeof( result[i].text ) == "string" ){
+                let strSplit = result[i].text.split( "%" ); // words in NGT are between "%"
+                let result = "";
+                for( let j = 0; j < strSplit.length; ){
+                    result += strSplit[j]; // everything before are phonemes
+                    j++;
+                    if ( j < ( strSplit.length - 1 ) ){ // word to translate
+                        result += this.app.wordsToArpa( strSplit[j], "NGT" );
+                    }
+                    j++;
+                }
+                result[i].text = result + ".";
+            }
+        }
+
+        return result;
     }
 }
 
