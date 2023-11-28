@@ -536,10 +536,18 @@ class App {
                 
                 if ( !this.ECAcontroller ){ this.pendingMessageReceived = event.data; return; }
                 this.ECAcontroller.reset();
-                this.processMessageRawBlocks( data );          
+                this.processMessageRawBlocks( data ).then(()=>{ 
+                    if ( !this.msg || !this.msg.data || !this.gui ){ return; }
+
+                    this.gui.setBMLInputText( JSON.stringify( this.msg.data ) );
+                } );          
+          
+
             },
             false,
-          );
+        );
+
+
     }
 
     animate() {
