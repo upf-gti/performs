@@ -6,7 +6,7 @@ let path = require('path');
  * - ./js/bml/BehaviourPlanner.js
  * - ./js/bml/BehaviourRealizer.js 
  *      - ./js/sigml/Extfidir.js
- *      - ./js/sigml/HandShapeRealizer.js
+ *      - ./js/sigml/HandShape.js
  *      - ./js/sigml/LocationArmIK.js
  *      - ./js/sigml/Motion.js
  *      - ./js/sigml/Palmor.js
@@ -31,7 +31,7 @@ function build() {
             "../js/bml/BehaviourManager.js",
             "../js/bml/BehaviourPlanner.js", 
             "../js/bml/BehaviourRealizer.js", 
-            "../js/sigml/HandShapeRealizer.js",
+            "../js/sigml/HandShape.js",
             "../js/sigml/ExtfidirPalmor.js",
             "../js/sigml/LocationBodyArm.js",
             "../js/sigml/HandConstellation.js",

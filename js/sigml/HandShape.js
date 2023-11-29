@@ -45,7 +45,7 @@ let handBendings = {
 }
 
 
-class HandShapeRealizer {
+class HandShape {
     constructor( config, skeleton, isLeftHand = false ){
         this._tempQ_0 = new THREE.Quaternion(0,0,0,1);
 
@@ -101,6 +101,7 @@ class HandShapeRealizer {
         let tempV3_1 = new THREE.Vector3();
 
         let result = { bendAxes: [], splayAxes: [], bindQuats: [] };  // although called bindQuats, thumb does not have its actual bind
+        this.bendRange = 4; // [1,9]
         
         // Z axis of avatar from mesh space to world space
         tempM3_0.setFromMatrix4( bones[ 0 ].matrixWorld.clone().multiply( this.skeleton.boneInverses[0] ) );
@@ -351,7 +352,7 @@ class HandShapeRealizer {
     }
 
     // selectMode: if str is not numbers,  0 does nothing, 1 same shapes as mainbend in basic handshape, 2 same as mainbend in thumbcombinations
-    _stringToFingerBend( str, outFinger, selectMode = 0, bendRange = 9 ){
+    _stringToFingerBend( str, outFinger, selectMode = 0, bendRange = 4 ){
         if ( !str ){ return; }
 
         if ( typeof( str ) == "stirng" ){ str = str.toUpperCase(); }
@@ -532,8 +533,11 @@ class HandShapeRealizer {
         }
 
         // Jasigning uses numbers in a string for bend. Its range is 0-4. This realizer works with 0-9. Remap
-        let bendRange = parseInt( bml._bendRange );
-        bendRange = isNaN( bendRange ) ? 9 : bendRange; 
+        let bendRange = this.bendRange;
+        if ( bml.bendRange ){
+            let newBend = parseInt( bml.bendRange );
+            bendRange = isNaN( bendRange ) ? bendRange : newBend; 
+        }
 
         // specific bendings
         this._stringToFingerBend( bml.bend1, this.trgG[0], 1, bendRange ); // thumb
@@ -580,10 +584,14 @@ class HandShapeRealizer {
 
         return true;
     }
+
+    setBendRange( value ){
+        this.bendRange = isNaN( parseInt(value) ) ? 4 : value; 
+    }
 }
 
 
-export { HandShapeRealizer };
+export { HandShape };
 
 
 

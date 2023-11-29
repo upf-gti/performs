@@ -1,7 +1,7 @@
 import * as THREE from "three";
 
 import { LocationBodyArm } from "./LocationBodyArm.js";
-import { HandShapeRealizer } from "./HandShapeRealizer.js"
+import { HandShape } from "./HandShape.js"
 import { ExtfidirPalmor } from "./ExtfidirPalmor.js";
 import { CircularMotion, DirectedMotion, FingerPlay, WristMotion } from "./Motion.js";
 import { HandConstellation } from "./HandConstellation.js";
@@ -133,7 +133,7 @@ class BodyController{
             locMotions: [],
             extfidirPalmor: new ExtfidirPalmor( this.config, this.skeleton, isLeftHand ),
             wristMotion: new WristMotion( this.config, this.skeleton, isLeftHand ),
-            handshape: new HandShapeRealizer( this.config, this.skeleton, isLeftHand ),
+            handshape: new HandShape( this.config, this.skeleton, isLeftHand ),
             fingerplay: new FingerPlay(),
             elbowRaise: new ElbowRaise( this.config, this.skeleton, isLeftHand ),
             shoulderRaise: new ShoulderRaise( this.config, this.skeleton, isLeftHand ),
@@ -327,11 +327,11 @@ class BodyController{
 
     _newGestureArm( bml, arm, symmetry = 0x00 ){
         if ( bml.locationBodyArm ){ // when location change, cut directed and circular motions
-            this.bodyMovement.forceBindPose();
+            // this.bodyMovement.forceBindPose();
             arm.loc.newGestureBML( bml, symmetry, arm.locUpdatePoint );
             arm.locMotions = [];
             this.handConstellation.cancelArm( arm == this.right ? 'R' : 'L' );
-            this.bodyMovement.forceLastFramePose();
+            // this.bodyMovement.forceLastFramePose();
         }
         if ( bml.motion ){
             let m = null;
@@ -388,6 +388,10 @@ class BodyController{
         if ( bml.config ){
             let c = bml.config;
             if ( c.dominant ){ this.setDominantHand( c.dominant == "RIGHT" ); }
+            if ( c.handshapeBendRange ){ 
+                this.left.handshape.setBendRange( handshapeBendRange );
+                this.right.handshape.setBendRange( handshapeBendRange );
+            }
             //...
         }
 

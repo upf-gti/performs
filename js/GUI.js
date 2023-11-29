@@ -10,8 +10,10 @@ class AppGUI{
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
             "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
-            "Kevin": ['./data/kevin_finished_first_test_7.glb', './data/kevin_finished_first_test_7.json', 0],
-            "Witch": ['./data/EvaHalloween.glb', './data/EvaHalloweenConfig.json', -Math.PI/2],
+            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', -Math.PI/2],
+            "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0],
+            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', -Math.PI/2],
+            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0],
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -345,17 +347,15 @@ class AppGUI{
     }
 
     setBMLInputText( text ){
-        let existsDialog = !!this.bmlInputData.dialog; 
-        if ( existsDialog ){ this.bmlInputData.dialog.close(); }
-        this.bmlInputData.dialog = null;
-        this.bmlInputData.prevInstanceText = text;
-        if ( existsDialog ) { this.bmlInputData.openButton.children[0].click(); }
+        // let existsDialog = !!this.bmlInputData.dialog; 
+        // if ( existsDialog ){ this.bmlInputData.dialog.close(); }
+        // this.bmlInputData.dialog = null;
+        // this.bmlInputData.prevInstanceText = text;
+        // if ( existsDialog ) { this.bmlInputData.openButton.children[0].click(); }
         
         // codeeditor settext not working properly yet
-        // this.bmlInputData.prevInstanceText = JSON.stringify( text );
-        // if ( this.bmlInputData.codeObj ){
-        //     this.bmlInputData.codeObj.setText( JSON.stringify( text ) )
-        // }
+        this.bmlInputData.prevInstanceText = text;
+        if ( this.bmlInputData.codeObj ){ this.bmlInputData.codeObj.setText( text ); }
     }
 
     _stringToBML( str ){

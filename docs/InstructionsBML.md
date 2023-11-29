@@ -249,6 +249,7 @@ The dominant hand can be set through the following attribute.
     "type": "gesture",
     "config": { 
         "dominant": "RIGHT", // available values: ["RIGHT", "LEFT" ] - which hand is considered dominant. Only needs to be set once. Affects symmetry attributes. Defaults to "right". 
+        "handshapeBendRange": 4, // finger bends can be specified with integer numbers. These are normalized between 0 and 1. This variable defines the maximum value to reach 1. JASigning works with a range of 4 (only integers from 0 to 4 can be inputed, being 0 a straight finger and 4 the maximum bend) 
     },
 }
 ```
@@ -474,7 +475,12 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     
     "mainBend": "HOOKED", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
     "secondMainBend": "HOOKED", // mainbend applied to secondHandshape
-    "bend1": "099", // overrides any other bend applied for this handshape for this finger. bend1=thumb, bend2=index, and so on. The value is one from the bend table
+    "bend1": "044", // overrides any other bend applied by this handshape for the thumb finger
+    "bend2": "044", // overrides any other bend applied by this handshape for the index finger
+    "bend3": "044", // overrides any other bend applied by this handshape for the middle finger 
+    "bend4": "044", // overrides any other bend applied by this handshape for the ring finger
+    "bend5": "044", // overrides any other bend applied by this handshape for the pinky finger
+
     "mainSplay": 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
     "splay1": 0.5, // number [-1,1]. splay1=thumb, splay2=index, and so on. Sepparates laterally the specified finger. Splay diminishes the more the finger is bent. 
 
