@@ -6,7 +6,8 @@ import 'lexgui/components/codeeditor.js';
 class AppGUI{
     constructor( app ){
         this.app = app;
-
+        this.randomSignAmount = 0;
+        
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
             "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
