@@ -367,7 +367,7 @@ Moves the arm (wrist) to a location of the body (face + trunk).
     "srcFinger": "1", // 1,2,3,4,5, see handconstellation for more information
     "srcLocation": "PAD", // see handconstellation hand locations
     "srcSide": "PALMAR", // see handconstellation sides
-    "keepUpdatingContact": false, // once peak is reached, the location will be updated only if this is true. 
+    "keepUpdatingContact": false, // once peak is reached, the location will be updated only if this is true. Defaults to false
                 // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
                 // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
 
@@ -562,7 +562,7 @@ The motion is stopped if an arm location is executed afterwards.
     "distance": 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
     "distanceDirection": "L", // string, combination of 6 directions. If not provided, defaults to horizontal outwards direction
     
-    "keepUpdatingContact": false, // once peak is reached, the location will be updated only if this is true. 
+    "keepUpdatingContact": false, // once peak is reached, the location will be updated only if this is true. Defaults to false
                     // i.e.: set to false; contact tip of index; reach destination. Afterwards, changing index finger state will not modify the location
                     // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
 }

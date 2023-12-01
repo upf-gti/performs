@@ -318,7 +318,6 @@ class AppGUI{
                     }
                 });
 
-                // debug 
                 p.branch( "Random signs" );
                 p.addButton( "Send", "send", (v,e)=>{ 
                     if (!this.randomSignAmount ){ return; }
@@ -331,7 +330,7 @@ class AppGUI{
                     console.log( JSON.parse(JSON.stringify(m)));
                     this.app.processMessageRawBlocks( m );
                 } );
-                p.addNumber("amount", 0, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100 } );
+                p.addNumber("amount", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100 } );
                 p.merge(); // random signs
             }
 

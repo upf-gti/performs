@@ -3,11 +3,8 @@
         <title>Performs</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" type="image/x-icon" href="./data/imgs/favicon.png">
+        <link rel="stylesheet" href="./style.css">
         <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui/build/lexgui.css">
-
-        <style>
-            html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
-        </style>
 
         <script src="./external/jquery-3.6.0.min.js"></script>
         <script async src="./external/es-module-shims.js"></script>
@@ -28,9 +25,14 @@
 
     </head>
     <body>
-        <div id="loading" class="modal" style="background-color:rgba(51, 51, 51, 0.5); position: absolute; width: 100%; height: 100%; 
-                display: flex; justify-content: center; align-items: center; z-index: 100; color: white; font-size: larger;">
-			<p>Loading avatar, please wait</p>
+
+        <div id="loading" class="modal">
+			<div class="load-7">
+				<p>Loading, please wait</p>
+                <div class="square-holder">
+                    <img class="loading-icon" src="data/imgs/monster.png" width="50" height="50"></div>
+                </div>
+            </div>
 		</div>
 
         <script src="./js/App.js" type="module"></script>

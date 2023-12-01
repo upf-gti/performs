@@ -1,0 +1,104 @@
+:root {
+	--header-size: 60px;
+    --global-font-family: Verdana, sans-serif;
+    --global-font-size: 0.8rem;
+    --global-text-color: #495057;
+	--global-text-color-secondary: #ddd;
+    --global-color-primary: #1a2025;
+    --global-color-secondary: #2c303570; /* rgb(54, 61, 61);*/
+	--global-color-selected: #2d4471;
+	--global-color-highlight: #5581d7;
+	--global-color-selected-secondary: #5f88c9;/* #ff9a00; /* rgb(95 136 201);*/
+	--global-color-disabled: rgb(117, 79, 79);
+	--global-color-disabled-hover: rgb(110, 91, 91);
+	--start-scene-proportion: 80%;
+	--primary: #0676ed;
+	--background: #161c21;
+	--warning: #f2a600;
+	--success: #12c99b;
+	--error: #e41749;
+	--dark: #151a30;
+}
+
+:focus-visible{
+	outline: thin;
+}
+
+html, body {width: 100%;height: 100%;margin: 0;padding: 0;background-color: var(--background);overflow: hidden;font-size: var(--global-font-size);}
+
+video {
+	transform: rotateY(180deg);
+	-webkit-transform:rotateY(180deg); /* Safari and Chrome */
+	-moz-transform:rotateY(180deg); /* Firefox */
+}
+
+canvas {
+	outline: none !important;
+}
+
+/* ---------- Classes ---------- */
+.modal {
+	background-color: rgba(51, 51, 51, 0.85);
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	display: flex;
+	/* flex-direction: column; */
+	justify-content: center;
+	align-items: center;
+	z-index: 100;
+	color: white;
+	font-size: larger;
+}
+
+.expanded {
+	width: 100% !important;
+	height: 100% !important;
+	/* top: 0px !important; */
+	top: 37px !important;
+	left: 0px !important;
+	/* flex-direction: column; */
+	/* padding: 25px; */
+}
+
+.hidden {
+	display: none !important;
+} 
+
+.logo {
+	vertical-align: middle;
+	cursor: pointer;
+}
+
+/* ---------- Main elements ---------- */
+#loading {
+	background-color: #111;
+	opacity: 1;
+	z-index: 1000;
+	font-size: 1.6em;
+}
+
+
+/* ----------- Animations ----------- */
+.load-7 .square-holder{
+    text-align: center;
+}
+.load-7 .loading-icon {
+
+	position: relative;
+	top: 0;
+	left: 0;
+	/* animation: combined 2s linear infinite alternate; */
+    /* -webkit-animation: combined 2s linear infinite alternate; */
+    animation: animLoadingWheel 1.5s cubic-bezier(0.17, 0.37, 0.43, 1) infinite alternate;
+    -webkit-animation: animLoadingWheel 1.5s cubic-bezier(0.17, 0.37, 0.43, 1) infinite alternate;
+}
+
+@keyframes animLoadingWheel {
+    0% {
+        transform: translate(-70px, 0) rotate(0deg);
+    }
+    100% {
+        transform: translate(70px, 0) rotate(360deg);
+    }
+}
