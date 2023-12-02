@@ -304,20 +304,22 @@ class AppGUI{
                 p.addDropdown("Avatar", Object.keys( this.avatarOptions ), this.app.model.name, (value, event) => {
                     this.gui.setValue( "Mood", "Neutral" );  
                     
-                    // use controller if it has been already loaded in the past
-                    if (this.app.controllers[value]) {
-                        this.app.changeAvatar(value);
-                        this.gui.refresh();
-                    } // else load desired model
-                    else {
+                    // load desired model
+                    if ( !this.app.controllers[value] ) {
                         $('#loading').fadeIn(); //hide();
                         let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                         this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                            this.gui.refresh();             
+                            this.app.changeAvatar(value);
                             $('#loading').fadeOut();
                         } );
-                    }
+                        return;
+                    } 
+
+                    // use controller if it has been already loaded in the past
+                    this.app.changeAvatar(value);
                 });
+
+                p.addButton( null, this.app.cameraMode ? "Free View": "Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
 
                 p.branch( "Random signs" );
                 p.addButton( "Send", "send", (v,e)=>{ 
@@ -340,20 +342,13 @@ class AppGUI{
 
         }, { size: ["20%", null], float:"left", draggable:false });
         
-        if ( window.innerWidth < window.innerHeight){
+        if ( window.innerWidth < window.innerHeight || pocketDialog.title.offsetWidth > (0.21*window.innerWidth) ){
             pocketDialog.title.click();
         }
 
     }
 
     setBMLInputText( text ){
-        // let existsDialog = !!this.bmlInputData.dialog; 
-        // if ( existsDialog ){ this.bmlInputData.dialog.close(); }
-        // this.bmlInputData.dialog = null;
-        // this.bmlInputData.prevInstanceText = text;
-        // if ( existsDialog ) { this.bmlInputData.openButton.children[0].click(); }
-        
-        // codeeditor settext not working properly yet
         this.bmlInputData.prevInstanceText = text;
         if ( this.bmlInputData.codeObj ){ this.bmlInputData.codeObj.setText( text ); }
     }

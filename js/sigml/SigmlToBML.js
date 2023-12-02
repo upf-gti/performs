@@ -479,8 +479,8 @@ function handconfigParser( xml, start, attackPeak, hand, symmetry, signGeneralIn
     if ( attributes.palmor ){
         let obj = { type: "gesture", start: start, attackPeak: attackPeak, hand: hand };
 
-        if ( !attributes.palmor.match( /[l,r,u,d]/g ) ){ // attributes.palmor.match( /[l,r,u,d]/g).length < 1 ){
-            if ( attributes.second_palmor && !attributes.second_palmor.match( /[l,r,u,d]/g) ){ //attributes.second_palmor.match( /[l,r,u,d]/g).length < 1 ){
+        if ( !attributes.palmor.match( /[l,r,u,d]/g ) ){ 
+            if ( attributes.second_palmor && attributes.second_palmor.match( /[l,r,u,d]/g) ){ 
                 obj.palmor = attributes.second_palmor;
             }else{
                 obj.palmor = "dlll";

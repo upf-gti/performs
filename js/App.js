@@ -12,10 +12,6 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
-// global var and func for development
-window.debugMode = false;
-window.changeMode = function() { window.debugMode = window.debugMode == true ? false: true; global.app.onModeChange(window.debugMode); };
-
 class App {
 
     constructor() {
@@ -29,10 +25,11 @@ class App {
         this.renderer = null;
         this.camera = null;
         this.controls = null;
+        this.cameraMode = 0;
         
-        this.model = null;
         this.controllers = {}; // store avatar controllers
-        this.ECAcontroller = null;
+        this.model = null; // current selected
+        this.ECAcontroller = null; // current selected
         this.eyesTarget = null;
         this.headTarget = null;
         this.neckTarget = null;
@@ -302,17 +299,17 @@ class App {
     }
 
     changeAvatar( avatarName ) {
-        if (this.model) this.scene.remove(this.model); // delete from scene current model
-        this.scene.add(this.controllers[avatarName].character); // add model to scene
+        if ( this.model ) this.scene.remove( this.model ); // delete from scene current model
+        this.scene.add( this.controllers[avatarName].character ); // add model to scene
         this.model = this.controllers[avatarName].character;
         this.ECAcontroller = this.controllers[avatarName];
+        if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
+        if ( this.gui ){ this.gui.refresh(); }
     }
 
     loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null ) {
         this.loaderGLB.load( modelFilePath, (glb) => {
-            if (this.model) this.scene.remove(this.model); // delete from scene current model
-
-            let model = this.model = glb.scene;
+            let model = glb.scene;
             model.quaternion.premultiply( modelRotation );
             model.castShadow = true;
             
@@ -370,9 +367,7 @@ class App {
             // correct hand's size
             let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
             b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
-            
-            this.scene.add(model);
-            
+                        
             // this.scene.add( new THREE.SkeletonHelper( model ) );
 
             model.eyesTarget = this.eyesTarget;
@@ -383,13 +378,13 @@ class App {
 
             fetch( configFilePath ).then(response => response.text()).then( (text) =>{
                 let config = JSON.parse( text );
-                let ECAcontroller = this.ECAcontroller = new CharacterController( {character: this.model, characterConfig: config} );
+                let ECAcontroller = new CharacterController( {character: model, characterConfig: config} );
                 ECAcontroller.start();
                 ECAcontroller.reset();
-                ECAcontroller.processMsg( JSON.stringify( { control: 2 } )); // speaking mode
+                ECAcontroller.processMsg( { control: 2 } ); // speaking mode
 
                 this.controllers[avatarName] = ECAcontroller;
-                
+
                 if ( callback ){ callback(); }
             })
         });
@@ -417,7 +412,7 @@ class App {
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set( Math.sin(13*Math.PI/180), 1.5, Math.cos(13*Math.PI/180) );
+        this.controls.object.position.set( Math.sin(5*Math.PI/180), 1.5, Math.cos(5*Math.PI/180) );
         this.controls.target.set(0.0, 1.3, 0);
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.1;
@@ -489,7 +484,7 @@ class App {
         this.scene.add( backPlane );
 
         // so the screen is not black while loading
-        this.onModeChange( window.debugMode ); //moved here because it needs the backplane to exist
+        this.changeCameraMode( false ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
@@ -509,6 +504,7 @@ class App {
 
         let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
         this.loadAvatar(modelFilePath, configFilePath, modelRotation, "Eva", ()=>{
+            this.changeAvatar( "Eva" );
             if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
@@ -521,9 +517,7 @@ class App {
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
-        window.addEventListener(
-            "message",
-            (event) => {         
+        window.addEventListener( "message", (event) => {         
                 let data = event.data;
                 
                 if ( typeof( data ) == "string" ){ 
@@ -569,11 +563,11 @@ class App {
 
         this.camera.aspect = window.innerWidth / window.innerHeight;
         this.camera.updateProjectionMatrix();
-
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    onModeChange( mode ) {
+    toggleCameraMode(){ this.changeCameraMode( !this.cameraMode ); }
+    changeCameraMode( mode ) {
 
         if ( mode ) {
             this.controls.enablePan = true;
@@ -583,7 +577,7 @@ class App {
             this.controls.maxAzimuthAngle = THREE.Infinity;
             this.controls.minPolarAngle = 0.0;
             this.controls.maxPolarAngle = Math.PI;     
-            this.scene.getObjectByName('Chroma').material.color.set( 0x4f4f9c );
+            this.setBackPlaneColour( 0x4f4f9c );
         } else {
             this.controls.enablePan = false;
             this.controls.minDistance = 0.7;
@@ -592,10 +586,11 @@ class App {
             this.controls.maxAzimuthAngle = 2;
             this.controls.minPolarAngle = 0.6;
             this.controls.maxPolarAngle = 2.1;
-            this.scene.getObjectByName('Chroma').material.color.set( 0x175e36 );
+            this.setBackPlaneColour( 0x175e36 );
+            if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
         }
         this.controls.update();
-        console.log("[INFO] debugMode set to:" , window.debugMode);
+        this.cameraMode = mode; 
     }
 
 }
