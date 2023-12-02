@@ -119,7 +119,7 @@ class AppGUI{
                         p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
             
                         p.addButton(null, "Click here to see BML instructions and attributes", () => {
-                            window.open("https://github.com/upf-gti/SignON-realizer/blob/SiGMLExperiments/docs/InstructionsBML.md");
+                            window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
                         });
             
                         htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
