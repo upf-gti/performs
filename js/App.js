@@ -307,7 +307,7 @@ class App {
         if ( this.gui ){ this.gui.refresh(); }
     }
 
-    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null ) {
+    loadAvatar( modelFilePath, configFile, modelRotation, avatarName, callback = null ) {
         this.loaderGLB.load( modelFilePath, (glb) => {
             let model = glb.scene;
             model.quaternion.premultiply( modelRotation );
@@ -375,18 +375,25 @@ class App {
             model.neckTarget = this.neckTarget;
             
             model.name = avatarName;
-
-            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
-                let config = JSON.parse( text );
-                let ECAcontroller = new CharacterController( {character: model, characterConfig: config} );
+            
+            const createController = () => {
+                let ECAcontroller = new CharacterController( {character: model, characterConfig: configFile} );
                 ECAcontroller.start();
                 ECAcontroller.reset();
                 ECAcontroller.processMsg( { control: 2 } ); // speaking mode
-
+    
                 this.controllers[avatarName] = ECAcontroller;
-
+    
                 if ( callback ){ callback(); }
-            })
+            }
+
+            if (typeof (configFile) == "object") { createController(); }
+            else {
+                fetch( configFile ).then(response => response.text()).then( (text) =>{
+                    configFile = JSON.parse( text );
+                    createController();
+                })
+            }
         });
     }
 
