@@ -165,7 +165,7 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
         if (!msg.composition)
             msg.composition = "MERGE";
 
-        if ( msg.speech ) {
+        if ( msg.speech && ( msg.speech.constructor == Object || msg.speech.length ) ) {
             msg.control = this.SPEAKING;
         }
 
@@ -186,7 +186,7 @@ CharacterController.prototype.processMsg = function (data, fromWS) {
         else if (data.type == "info")
             return;
 
-        if ( msg.speech ) {
+        if ( msg.speech && ( msg.speech.constructor == Object || msg.speech.length ) ) {
             msg.control = this.SPEAKING;
         }
         // Process block

@@ -67,8 +67,7 @@ class HandShape {
         this.thumbshapes = config.thumbshapes ? config.thumbshapes : thumbshapes;
         this.handBendings = config.handBendings ? config.handBendings : handBendings;
 
-        // this.fingerAxes = isLeftHand ? config.fingerAxes.L : config.fingerAxes.R;
-        this.fingerAxes = isLeftHand ? this._computeFingerAxesOfHand( true ) : this._computeFingerAxesOfHand( false );
+        this.fingerAxes = this._computeFingerAxesOfHand( isLeftHand );
         this.thumbAfterBindTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.fingerIdxs[0] + 1 ].position).applyQuaternion( this.fingerAxes.bindQuats[0] ).normalize();
 
         this.defG = [ [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0], [0,0,0,0] ];
