@@ -408,7 +408,7 @@ class AppGUI{
                     if (callback) callback(name);
                 }
                 else {
-                    LX.popup("Complete all the fields!", null, { position: ["45%", "20%"]});
+                    LX.popup("Complete all fields!", null, { position: ["45%", "20%"]});
                 }
             });
 
