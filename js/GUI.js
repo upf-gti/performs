@@ -382,16 +382,16 @@ class AppGUI{
         for( let i = 0; i < result.length; ++i ){
             if ( result[i].type == "speech" && typeof( result[i].text ) == "string" ){
                 let strSplit = result[i].text.split( "%" ); // words in NGT are between "%"
-                let result = "";
+                let resultSpeechtext = "";
                 for( let j = 0; j < strSplit.length; ){
-                    result += strSplit[j]; // everything before are phonemes
+                    resultSpeechtext += strSplit[j]; // everything before are phonemes
                     j++;
                     if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                        result += this.app.wordsToArpa( strSplit[j], "NGT" );
+                        resultSpeechtext += this.app.wordsToArpa( strSplit[j], "NGT" );
                     }
                     j++;
                 }
-                result[i].text = result + ".";
+                result[i].text = resultSpeechtext + ".";
             }
         }
 
