@@ -118,6 +118,32 @@ let simpleMotionAvailable = [ "directedmotion", "circularmotion", "wristmotion",
 let motionsAvailable = simpleMotionAvailable.concat( [ "nonman_motion", "par_motion", "seq_motion", "split_motion", "rpt_motion", "tgt_motion" ] ); // missing tgt, rpt and timing issues
 let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", "split_location", "location_hand", "handconstellation" , "use_locname"]; // missing location_hand, handconstellation, use_locname(????) 
 
+// used in rpt_motion
+function stringToDirection( str, outV = null, symmetry = 0x00 ){
+    if ( typeof( str ) != "string" ){ return false; }
+    if ( !outV ){ outV = [0,0,0]; }
+    outV.fill(0);
+
+    str = str.toUpperCase();
+    
+    // right hand system. If accumulate, count repetitions
+    outV[0] = str.split("L").length - str.split("R").length; 
+    outV[1] = str.split("U").length - str.split("D").length;
+    outV[2] = str.split("O").length - str.split("I").length;
+ 
+    if ( symmetry & 0x01 ){ outV[0] *= -1; }
+    if ( symmetry & 0x02 ){ outV[1] *= -1; }
+    if ( symmetry & 0x04 ){ outV[2] *= -1; }
+
+    let length = Math.sqrt( outV[0] * outV[0] + outV[1] * outV[1] + outV[2] * outV[2] );
+    
+    if ( length < 0.0001 ){ outV.fill(0); }
+    outV[0] /= length;
+    outV[1] /= length;
+    outV[2] /= length;
+    return outV;
+}
+
 function checkHandsUsage( orders ){
     
     let hand = "RIGHT";
@@ -327,12 +353,12 @@ function signManual( xml, start, signSpeed ){
             if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
             if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.RELAXEND; } //TIMESLOT.RELAXEND / signSpeed; }
         }
-        if ( result[i].motion == "directed" || result[i].motion == "circular" ){ // circular mainly when it is not a 2*PI rotation  
+        if ( result[i].motion == "DIRECTED" || result[i].motion == "CIRCULAR" ){ // circular mainly when it is not a 2*PI rotation  
             // result[i].attackPeak = result[i].start + TIMESLOT.MOTIONDIR;
             if ( isNaN( result[i].relax ) ){ result[i].relax = time; }
             if ( isNaN( result[i].end ) ){ result[i].end = time + TIMESLOT.RELAXEND; } //TIMESLOT.RELAXEND / signSpeed; }
         }
-        if ( result[i].motion == "wrist" || result[i].motion == "fingerplay" ){ 
+        if ( result[i].motion == "WRIST" || result[i].motion == "FINGERPLAY" ){ 
             let dt = 0.15 * ( result[i].end - result[i].start );
             result[i].attackPeak = result[i].start + ( ( dt < 0.15 ) ? dt : 0.15 ); // entry not higher than 150 ms
             result[i].relax = result[i].end - ( ( dt < 0.15 ) ? dt : 0.15 ) ;
@@ -1045,7 +1071,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
             let lastDirectedMotionIdx = -1;
             let lastDirectedMotionStart = -1;
             for ( let l = 0; l < motionInstructions.length; ++l ){
-                if ( motionInstructions[l].motion == "directed" && lastDirectedMotionStart < motionInstructions[l].start ){ 
+                if ( motionInstructions[l].motion == "DIRECTED" && lastDirectedMotionStart < motionInstructions[l].start ){ 
                     lastDirectedMotionStart = motionInstructions[l].start; 
                     lastDirectedMotionIdx = l;
                 }
@@ -1063,14 +1089,42 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
         if ( xml.children.length > 0 && motionsAvailable.includes( xml.children[0].tagName ) ){
             let r = motionParser( xml.children[0], time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
             let blockDuration = r.end - time;
+            let startTime = time;
             let isBackwardNecessary = false;
+
+            // if all instructions of rpt_motion are motions: check if wrist is displaced with respect to the starting pose. If so, force backward
             for ( let i = 0; i < r.data.length; ++i ){
-                if ( r.data[i].handConstellation || r.data[i].locationBodyArm || r.data[i].handshape || r.data[i].extfidir || r.data[i].palmor || r.data[i].motion == "directed" ){
-                    isBackwardNecessary = true; 
-                    break;
-                }
+                if ( !r.data[i].motion ){ isBackwardNecessary = true; break; } // something different than a motion found. Force backward
             }
-            
+            if ( !isBackwardNecessary ){
+                let motionFinalOffsetDominant = [0,0,0]; // fake Vector3
+                let motionFinalOffsetNonDominant = [0,0,0];
+                for ( let i = 0; i < r.data.length; ++i ){
+                    if ( !r.data[i].motion ){ isBackwardNecessary = true; continue; } // something different than a motion found. Force backward
+                    let instr = r.data[i];
+                    if ( instr.motion == "DIRECTED" ){
+                        if ( instr.hand != signGeneralInfo.nonDomHand ){ // dominant or both
+                            let sum = stringToDirection( instr.direction, null, 0x00 );
+                            motionFinalOffsetDominant[0] += sum[0] * instr.distance;
+                            motionFinalOffsetDominant[1] += sum[1] * instr.distance;
+                            motionFinalOffsetDominant[2] += sum[2] * instr.distance;
+                        }
+                        if ( instr.hand != signGeneralInfo.domHand ){ // non dominat or both
+                            let tempSym = !!instr.lrSym | ((!!instr.udSym) < 1 ) | ((!!instr.oiSym) < 2);
+                            let sum = stringToDirection( instr.direction, null, tempSym );
+                            motionFinalOffsetNonDominant[0] += sum[0] * instr.distance;
+                            motionFinalOffsetNonDominant[1] += sum[1] * instr.distance;
+                            motionFinalOffsetNonDominant[2] += sum[2] * instr.distance;
+                        }
+                    }
+                }
+                let sqDist = motionFinalOffsetDominant[0]*motionFinalOffsetDominant[0] + motionFinalOffsetDominant[1]*motionFinalOffsetDominant[1] + motionFinalOffsetDominant[2]*motionFinalOffsetDominant[2];
+                sqDist += motionFinalOffsetNonDominant[0]*motionFinalOffsetNonDominant[0] + motionFinalOffsetNonDominant[1]*motionFinalOffsetNonDominant[1] + motionFinalOffsetNonDominant[2]*motionFinalOffsetNonDominant[2];
+                if ( sqDist > 0.0000001 ){ isBackwardNecessary = true;}
+            }
+
+
+            // now instructions can be added
             switch ( attributes.repetition ){
                 case "fromstart":  /* forward. Then go directly to the original pose. Forward. Repeat completed */ 
                 case "fromstart_several":
@@ -1082,25 +1136,28 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                         // forward
                         let forward = JSON.parse( JSON.stringify( r.data ) ); 
                         for( let i = 0; i < forward.length; ++i ){
-                            if( typeof( forward[i].start ) == "number" ){ forward[i].start += loop * loopDuration; } 
-                            if( typeof( forward[i].attackPeak ) == "number" ){ forward[i].attackPeak += loop * loopDuration; } 
-                            if( typeof( forward[i].ready ) == "number" ){ forward[i].ready += loop * loopDuration; } 
+                            let fwdInstr = forward[i];
+                            if( typeof( fwdInstr.start ) == "number" ){ fwdInstr.start += loop * loopDuration; } 
+                            if( typeof( fwdInstr.attackPeak ) == "number" ){ fwdInstr.attackPeak += loop * loopDuration; } 
+                            if( typeof( fwdInstr.ready ) == "number" ){ fwdInstr.ready += loop * loopDuration; } 
 
+                            // TODO: combinte extfidir-palmor instructions into one single instruction (with 2 attributes). Remove this if
+                            if ( fwdInstr.locationBodyArm || fwdInstr.handshape || fwdInstr.extfidir || fwdInstr.palmor ){ continue; }
 
-                            if ( r.data[i].locationBodyArm || r.data[i].handshape || r.data[i].extfidir || r.data[i].palmor ){
-                                continue;
-                            }
+                            // let needsNewRelax = fwdInstr.handConstellation || fwdInstr.locationBodyArm || fwdInstr.handshape || fwdInstr.extfidir || fwdInstr.palmor || fwdInstr.motion == "DIRECTED" || fwdInstr.motion == "CIRCULAR";
+                            // let needsNewEnd = fwdInstr.handConstellation || fwdInstr.locationBodyArm || fwdInstr.handshape || fwdInstr.extfidir || fwdInstr.palmor || fwdInstr.motion == "DIRECTED" || fwdInstr.motion == "CIRCULAR";
                             
-                            // start relax-end at the end of the block until loop duration
-                            if( typeof( forward[i].relax ) == "number" ){ forward[i].relax += loop * loopDuration; } 
-                            else{ forward[i].relax = forward[i].start + blockDuration; }
-                            if( typeof( forward[i].end ) == "number" ){ forward[i].end += loop * loopDuration; }
-                            else{ forward[i].end = forward[i].start + blockDuration + TIMESLOT.POSTURE / signSpeed; } 
+                            let ignoreNewRelax = fwdInstr.motion == "FINGERPLAY" || fwdInstr.motion == "WRIST";
+
+                            // unspecified "relax" and "end" should be all synchronized to the end of their loop iteration
+                            if( typeof( fwdInstr.relax ) == "number" ){ fwdInstr.relax += loop * loopDuration; } 
+                            else if( !ignoreNewRelax ){ fwdInstr.relax = startTime + loop * loopDuration + blockDuration; }
+                            if( typeof( fwdInstr.end ) == "number" ){ fwdInstr.end += loop * loopDuration; }
+                            else{ fwdInstr.end = startTime + ( loop + 1 ) * loopDuration; } 
                         }
                         result = result.concat( forward );
 
                         time += blockDuration; // add forward time
-
 
                         // backward
                         if ( isBackwardNecessary ){
@@ -1211,7 +1268,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
 
     if ( xml.tagName == "directedmotion" ){
         let result = {};
-        result.motion = "directed";
+        result.motion = "DIRECTED";
 
         result.direction = attributes.direction;
         if ( attributes.size == "big" ){ result.distance = 0.2; }
@@ -1243,7 +1300,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
     }
     else if ( xml.tagName == "circularmotion" ){
         let result = {};
-        result.motion = "circular";
+        result.motion = "CIRCULAR";
         
         result.direction = attributes.axis;
         if ( attributes.size == "big" ){ result.distance = 0.1; }
@@ -1297,7 +1354,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
     }
     else if ( xml.tagName == "wristmotion" ){
         let result = {};
-        result.motion = "wrist";
+        result.motion = "WRIST";
         if ( attributes.size == "big" ){ result.intensity = 0.3; } 
         else { result.intensity = 0.1; }
         result.mode = attributes.motion.toUpperCase().replace("STIR", "STIR_");
@@ -1309,7 +1366,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
     }
     else if ( xml.tagName == "fingerplay" ){
         let result = {};
-        result.motion = "fingerplay";
+        result.motion = "FINGERPLAY";
         result.intensity = 0.5;
         if ( attributes.digits ){ result.fingers; }
 
