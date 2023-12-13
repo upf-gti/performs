@@ -120,9 +120,9 @@ let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", 
 
 // used in rpt_motion
 function stringToDirection( str, outV = null, symmetry = 0x00 ){
-    if ( typeof( str ) != "string" ){ return false; }
     if ( !outV ){ outV = [0,0,0]; }
     outV.fill(0);
+    if ( typeof( str ) != "string" ){ return outV; }
 
     str = str.toUpperCase();
     
@@ -1100,8 +1100,12 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                 let motionFinalOffsetDominant = [0,0,0]; // fake Vector3
                 let motionFinalOffsetNonDominant = [0,0,0];
                 for ( let i = 0; i < r.data.length; ++i ){
-                    if ( !r.data[i].motion ){ isBackwardNecessary = true; continue; } // something different than a motion found. Force backward
+                    if ( !r.data[i].motion ){ isBackwardNecessary = true; break; } // something different than a motion found. Force backward
                     let instr = r.data[i];
+                    if ( instr.motion == "CIRCULAR" ){ // if not a complete circle, assume backward is necessary
+                        let rest = ( instr.startAngle - instr.endAngle ) % 360;
+                        if( rest > 0.5 && rest < 359.5 ){  isBackwardNecessary = true; break; }
+                    }
                     if ( instr.motion == "DIRECTED" ){
                         if ( instr.hand != signGeneralInfo.nonDomHand ){ // dominant or both
                             let sum = stringToDirection( instr.direction, null, 0x00 );
@@ -1120,7 +1124,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                 }
                 let sqDist = motionFinalOffsetDominant[0]*motionFinalOffsetDominant[0] + motionFinalOffsetDominant[1]*motionFinalOffsetDominant[1] + motionFinalOffsetDominant[2]*motionFinalOffsetDominant[2];
                 sqDist += motionFinalOffsetNonDominant[0]*motionFinalOffsetNonDominant[0] + motionFinalOffsetNonDominant[1]*motionFinalOffsetNonDominant[1] + motionFinalOffsetNonDominant[2]*motionFinalOffsetNonDominant[2];
-                if ( sqDist > 0.0000001 ){ isBackwardNecessary = true;}
+                if ( sqDist > 0.0000001 ){ isBackwardNecessary = true; }
             }
 
 
@@ -1311,10 +1315,19 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
             result.seconDirection = attributes.second_axis;
         }
 
-        let anglesTable = { "l":0, "ul":45, "u":90, "ur":135, "r":180, "dr":225, "d":270, "dl":315  } 
-        result.startAngle = anglesTable[ attributes.start ]; 
-        if ( isNaN( result.startAngle ) ) { result.startAngle = 0; }
-        if ( isNaN( result.endAngle ) ) { result.endAngle = result.startAngle + 360; }
+        let startDirection = stringToDirection( attributes.start, null, symmetry );
+        let endDirection = stringToDirection( attributes.end, null, symmetry );
+
+        if ( startDirection[0]*startDirection[0] + startDirection[1]*startDirection[1] + startDirection[2]*startDirection[2] < 0.0000001 ) { result.startAngle = 0; }
+        else{ 
+            result.startAngle = Math.atan2( startDirection[1], startDirection[0] ) * 180 / Math.PI;
+            result.startAngle = result.startAngle < 0 ? ( 360 + result.startAngle ) : result.startAngle;     
+        }
+        if ( endDirection[0]*endDirection[0] + endDirection[1]*endDirection[1] + endDirection[2]*endDirection[2] < 0.0000001 ) { result.endAngle = result.startAngle + 360; }
+        else{ 
+            result.endAngle = Math.atan2( endDirection[1], endDirection[0] ) * 180 / Math.PI; 
+            result.endAngle = result.endAngle < 0 ? ( 360 + result.endAngle ) : result.endAngle;
+        }
         if ( attributes.clockplus || attributes.second_clockplus ){ result.endAngle = result.startAngle + 2 * ( result.endAngle - result.startAngle );} 
         if ( typeof( result.direction ) == "string" && result.direction.includes( "i" ) ){
                 result.endAngle = (result.endAngle - result.startAngle) + ( result.startAngle * (-1) ); // new_start + old_deltaAngle
