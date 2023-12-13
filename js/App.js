@@ -533,7 +533,11 @@ class App {
                 this.processMessageRawBlocks( data ).then(()=>{ 
                     if ( !this.msg || !this.msg.data || !this.gui ){ return; }
 
-                    this.gui.setBMLInputText( JSON.stringify( this.msg.data ) );
+                    this.gui.setBMLInputText( 
+                        JSON.stringify(this.msg.data, function(key, val) {
+                            return val.toFixed ? Number(val.toFixed(3)) : val;
+                        }) 
+                    );
                 } );          
           
 
