@@ -301,11 +301,11 @@ class AppGUI{
                     this.app.ECAcontroller.processMsg(JSON.stringify(msg));
                 });
 
-                p.addDropdown("Avatar", ["Upload Your Own Avatar", ...Object.keys( this.avatarOptions )], this.app.model.name, (value, event) => {
+                p.addDropdown("Avatar", ["Upload Avatar", ...Object.keys( this.avatarOptions )], this.app.model.name, (value, event) => {
                     this.gui.setValue( "Mood", "Neutral" );  
                     
                     // upload model
-                    if (value == "Upload Your Own Avatar") {
+                    if (value == "Upload Avatar") {
                         this.uploadAvatar((value) => {
                             
                             if ( !this.app.controllers[value] ) {
@@ -370,30 +370,31 @@ class AppGUI{
     }
 
     uploadAvatar(callback = null) {
-        let name, model, rotation, config;
-        
-        this.avatarDialog = new LX.Dialog("Upload your avatar", panel => {
+        let name, model, config;
+        let rotation = 0;
 
-            panel.addText("Name Your Avatar:", undefined, (v, e) => {
+        this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
+
+            panel.addText("Name Your Avatar", undefined, (v, e) => {
                 if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
                 name = v;
             });
 
-            panel.addFile("Avatar", (v, e) => {
-                let extension = panel.widgets["Avatar"].domEl.children[1].files[0].name.split(".")[1];
+            panel.addFile("Avatar File", (v, e) => {
+                let extension = panel.widgets["Avatar File"].domEl.children[1].files[0].name.split(".")[1];
                 if (extension == "glb" || extension == "gltf") { model = v; }
                 else { LX.popup("Only accepts GLB and GLTF formats!"); }
             }, {type: "url"});
-            
-            panel.addCheckbox("Apply Rotation", false, (v) => {
-                rotation = ( v ? -Math.PI/2 : 0 );
-            });
             
             panel.addFile("Config File", (v) => {
                 let extension = panel.widgets["Config File"].domEl.children[1].files[0].name.split(".")[1];
                 if (extension == "json") { config = JSON.parse(v); }
                 else { LX.popup("Config file must be a JSON!"); }
             }, {type: "text"});
+            
+            panel.addNumber("Apply Rotation", 0, (v) => {
+                rotation = v * Math.PI / 180;
+            }, { min: -180, max: 180, step: 1 } );
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
@@ -412,7 +413,7 @@ class AppGUI{
                 }
             });
 
-        }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar", this.app.model.name)} });
+        }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar File", this.app.model.name)} });
 
         return name;
     }
@@ -469,4 +470,3 @@ class AppGUI{
 }
 
 export { AppGUI };
-

@@ -304,6 +304,7 @@ class App {
         this.model = this.controllers[avatarName].character;
         this.ECAcontroller = this.controllers[avatarName];
         if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
+        this.controls.update();
         if ( this.gui ){ this.gui.refresh(); }
     }
 
@@ -567,7 +568,6 @@ class App {
         if ( this.ECAcontroller ) { this.ECAcontroller.update(delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
-        this.controls.update();
     }
     
     onWindowResize() {
