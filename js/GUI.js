@@ -301,22 +301,43 @@ class AppGUI{
                     this.app.ECAcontroller.processMsg(JSON.stringify(msg));
                 });
 
-                p.addDropdown("Avatar", Object.keys( this.avatarOptions ), this.app.model.name, (value, event) => {
+                p.addDropdown("Avatar", ["Upload Avatar", ...Object.keys( this.avatarOptions )], this.app.model.name, (value, event) => {
                     this.gui.setValue( "Mood", "Neutral" );  
                     
-                    // load desired model
-                    if ( !this.app.controllers[value] ) {
-                        $('#loading').fadeIn(); //hide();
-                        let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                        this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                            this.app.changeAvatar(value);
-                            $('#loading').fadeOut();
-                        } );
-                        return;
-                    } 
+                    // upload model
+                    if (value == "Upload Avatar") {
+                        this.uploadAvatar((value) => {
+                            
+                            if ( !this.app.controllers[value] ) {
+                                $('#loading').fadeIn(); //hide();
+                                let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                                this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                                    this.app.changeAvatar(value);
+                                    $('#loading').fadeOut();
+                                } );
+                                return;
+                            } 
 
-                    // use controller if it has been already loaded in the past
-                    this.app.changeAvatar(value);
+                            // use controller if it has been already loaded in the past
+                            this.app.changeAvatar(value);
+
+                        });
+                    }
+                    else {
+                        // load desired model
+                        if ( !this.app.controllers[value] ) {
+                            $('#loading').fadeIn(); //hide();
+                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                                this.app.changeAvatar(value);
+                                $('#loading').fadeOut();
+                            } );
+                            return;
+                        } 
+
+                        // use controller if it has been already loaded in the past
+                        this.app.changeAvatar(value);
+                    }
                 });
 
                 p.addButton( null, this.app.cameraMode ? "Free View": "Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
@@ -346,6 +367,55 @@ class AppGUI{
             pocketDialog.title.click();
         }
 
+    }
+
+    uploadAvatar(callback = null) {
+        let name, model, config;
+        let rotation = 0;
+
+        this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
+
+            panel.addText("Name Your Avatar", undefined, (v, e) => {
+                if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
+                name = v;
+            });
+
+            panel.addFile("Avatar File", (v, e) => {
+                let extension = panel.widgets["Avatar File"].domEl.children[1].files[0].name.split(".")[1];
+                if (extension == "glb" || extension == "gltf") { model = v; }
+                else { LX.popup("Only accepts GLB and GLTF formats!"); }
+            }, {type: "url"});
+            
+            panel.addFile("Config File", (v) => {
+                let extension = panel.widgets["Config File"].domEl.children[1].files[0].name.split(".")[1];
+                if (extension == "json") { config = JSON.parse(v); }
+                else { LX.popup("Config file must be a JSON!"); }
+            }, {type: "text"});
+            
+            panel.addNumber("Apply Rotation", 0, (v) => {
+                rotation = v * Math.PI / 180;
+            }, { min: -180, max: 180, step: 1 } );
+            
+            panel.sameLine(2);
+            panel.addButton(null, "Create Config File", () => {
+                window.open("https://webglstudio.org/users/cdelcorral/signONConfig/", '_blank').focus();
+            })
+            panel.addButton(null, "Upload", () => {
+                if (name && model && config) {
+                    if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
+                    this.avatarOptions[name] = [model, config, rotation];
+                    panel.clear();
+                    this.avatarDialog.root.remove();
+                    if (callback) callback(name);
+                }
+                else {
+                    LX.popup("Complete all fields!", null, { position: ["45%", "20%"]});
+                }
+            });
+
+        }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar File", this.app.model.name)} });
+
+        return name;
     }
 
     setBMLInputText( text ){
@@ -400,4 +470,3 @@ class AppGUI{
 }
 
 export { AppGUI };
-

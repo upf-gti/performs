@@ -304,10 +304,11 @@ class App {
         this.model = this.controllers[avatarName].character;
         this.ECAcontroller = this.controllers[avatarName];
         if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
+        this.controls.update();
         if ( this.gui ){ this.gui.refresh(); }
     }
 
-    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null ) {
+    loadAvatar( modelFilePath, configFile, modelRotation, avatarName, callback = null ) {
         this.loaderGLB.load( modelFilePath, (glb) => {
             let model = glb.scene;
             model.quaternion.premultiply( modelRotation );
@@ -375,18 +376,25 @@ class App {
             model.neckTarget = this.neckTarget;
             
             model.name = avatarName;
-
-            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
-                let config = JSON.parse( text );
-                let ECAcontroller = new CharacterController( {character: model, characterConfig: config} );
+            
+            const createController = () => {
+                let ECAcontroller = new CharacterController( {character: model, characterConfig: configFile} );
                 ECAcontroller.start();
                 ECAcontroller.reset();
                 ECAcontroller.processMsg( { control: 2 } ); // speaking mode
-
+    
                 this.controllers[avatarName] = ECAcontroller;
-
+    
                 if ( callback ){ callback(); }
-            })
+            }
+
+            if (typeof (configFile) == "object") { createController(); }
+            else {
+                fetch( configFile ).then(response => response.text()).then( (text) =>{
+                    configFile = JSON.parse( text );
+                    createController();
+                })
+            }
         });
     }
 
@@ -533,7 +541,11 @@ class App {
                 this.processMessageRawBlocks( data ).then(()=>{ 
                     if ( !this.msg || !this.msg.data || !this.gui ){ return; }
 
-                    this.gui.setBMLInputText( JSON.stringify( this.msg.data ) );
+                    this.gui.setBMLInputText( 
+                        JSON.stringify(this.msg.data, function(key, val) {
+                            return val.toFixed ? Number(val.toFixed(3)) : val;
+                        }) 
+                    );
                 } );          
           
 
@@ -556,7 +568,6 @@ class App {
         if ( this.ECAcontroller ) { this.ECAcontroller.update(delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
-        this.controls.update();
     }
     
     onWindowResize() {
