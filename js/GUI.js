@@ -12,9 +12,7 @@ class AppGUI{
         this.avatarOptions = {
             "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
             "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', -Math.PI/2],
-            "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0],
-            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', -Math.PI/2],
-            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0],
+            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json', 0],
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -319,9 +317,9 @@ class AppGUI{
                     this.app.changeAvatar(value);
                 });
 
-                p.addButton( null, this.app.cameraMode ? "Free View": "Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
+                p.addButton( null, this.app.cameraMode ? "Restricted View" : "Free View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
 
-                p.branch( "Random signs" );
+                p.branch( "Random signs", {closed: true} );
                 p.addButton( "Send", "send", (v,e)=>{ 
                     if (!this.randomSignAmount ){ return; }
                     let k = Object.keys( this.app.languageDictionaries[this.app.selectedLanguage]["glosses"] );
@@ -335,6 +333,30 @@ class AppGUI{
                 } );
                 p.addNumber("amount", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100 } );
                 p.merge(); // random signs
+
+                p.branch( "SL demo" );
+                p.addDropdown("Language", [ "SLE", "LSC", "ISL", "BSL", "NGT", "VGT" ], "SLE", (value, event) => {
+                });
+                p.addNumber("sheen", 0, (v,e)=>{
+                    this.app.model.traverse( (ob) => {
+                        if(ob.material)
+                            ob.material.sheen = v;
+                    });
+                }, { min:0, step:0.01, max:1 } );
+                p.addNumber("exposure", this.app.renderer.toneMappingExposure, (v, e) => {
+                    this.app.renderer.toneMappingExposure = v;
+                }, { min:0, step:0.01, max:3 } );
+                p.addDropdown("tonemap", [ "Linear", "Filmic" ], "Linear", (v, e) => {
+                    switch(v){
+                        case "Linear":
+                            this.app.renderer.toneMapping = THREE.LinearToneMapping;
+                            break;
+                        case "Filmic":
+                            this.app.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+                            break;
+                    }
+                });
+                p.merge(); // SL demo
             }
 
             this.gui.refresh();

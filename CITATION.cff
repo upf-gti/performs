@@ -7,7 +7,7 @@ authors:
   given-names: "Víctor"
 - family-names: "Valls"
   given-names: "Eva"
-title: "SignON Realizer BML Instructions"
+title: "Performs BML Instructions"
 version: 1.0.0
 date-released: 2023
-url: "https://github.com/upf-gti/SignON-realizer/blob/main/docs/InstructionsBML.md"
+url: "https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md"

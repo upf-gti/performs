@@ -2,6 +2,8 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
 import { sigmlStringToBML } from './sigml/SigmlToBML.js';
@@ -348,14 +350,14 @@ class App {
             }else{
                 model.traverse( (object) => {
                     if ( object.isMesh || object.isSkinnedMesh ) {
-                        object.material.side = THREE.FrontSide;
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        if (object.name == "Eyelashes") // eva
-                        object.castShadow = false;
-                        if(object.material.map) 
-                        object.material.map.anisotropy = 16;
+                        // object.material.side = THREE.FrontSide;
+                        // object.frustumCulled = false;
+                        // object.castShadow = true;
+                        // object.receiveShadow = true;
+                        // if (object.name == "Eyelashes") // eva
+                        // object.castShadow = false;
+                        // if(object.material.map) 
+                        // object.material.map.anisotropy = 16;
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
                     }
@@ -395,20 +397,40 @@ class App {
         this.loadLanguageDictionaries( "NGT" );
         
         this.scene = new THREE.Scene();
-        let sceneColor = 0x303030;
+        let sceneColor = 0x191919; // 0x303030;
         this.scene.background = new THREE.Color( sceneColor );
-        this.scene.fog = new THREE.Fog( sceneColor, 5, 50 );
+        //this.scene.fog = new THREE.Fog( sceneColor, 5, 50 );
 
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
-
+        
         this.renderer.toneMapping = THREE.LinearToneMapping;
-        this.renderer.toneMappingExposure = 1;
+        //this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        this.renderer.toneMappingExposure = 0.8;
         // this.renderer.shadowMap.enabled = false;
         document.body.appendChild( this.renderer.domElement );
         
+
+        //const environment = new RoomEnvironment( this.renderer );
+        //const pmremGenerator = new THREE.PMREMGenerator( this.renderer );
+
+        this.pmremGenerator = new THREE.PMREMGenerator( this.renderer );
+		this.pmremGenerator.compileEquirectangularShader();
+        // this.scene.environment = this.pmremGenerator.fromScene(new RoomEnvironment()).texture;
+
+        new EXRLoader().setPath( 'data/hdrs/' ).load(
+            'courtyard_1k.exr',
+            (texture) => {
+                const envMap = this.pmremGenerator.fromEquirectangular(texture).texture;
+                this.pmremGenerator.dispose();
+
+                this.scene.environment = envMap;
+            }
+        );
+
+
         // camera
         this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
@@ -443,15 +465,15 @@ class App {
         // keySpotlight.shadow.mapSize.width = 1024;
         // keySpotlight.shadow.mapSize.height = 1024;
         // keySpotlight.shadow.bias = 0.00001;
-        this.scene.add( keySpotlight.target );
-        this.scene.add( keySpotlight );
+        //this.scene.add( keySpotlight.target );
+        //this.scene.add( keySpotlight );
 
         let fillSpotlight = new THREE.SpotLight( 0xffffff, 2.0, 0, 45 * (Math.PI/180), 0.5, 2 );
         fillSpotlight.position.set( -0.5, 2, 1.5 );
         fillSpotlight.target.position.set( 0, 1, 0 );
         // fillSpotlight.castShadow = true;
-        this.scene.add( fillSpotlight.target );
-        this.scene.add( fillSpotlight );
+        // this.scene.add( fillSpotlight.target );
+        // this.scene.add( fillSpotlight );
 
         let dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
         dirLight.position.set( 1.5, 5, 2 );
@@ -469,22 +491,22 @@ class App {
         let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x4f4f4f, depthWrite: true, roughness: 1, metalness: 0 } ) );
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
-        this.scene.add( ground );
+        //this.scene.add( ground );
         
         const texture = new THREE.TextureLoader().load( "./data/imgs/performs.png");
         let logo = new THREE.Mesh( new THREE.PlaneGeometry(1, 0.3 ), new THREE.MeshStandardMaterial( {roughness: 1, metalness: 0, map: texture,  transparent: true, side: THREE.DoubleSide, depthWrite: false } ) );
         logo.position.set(2.6,0.3, -0.95);
         logo.receiveShadow = true;
-        this.scene.add( logo );
+        //this.scene.add( logo );
         
         let backPlane = this.backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0} ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
-        this.scene.add( backPlane );
+        //this.scene.add( backPlane );
 
         // so the screen is not black while loading
-        this.changeCameraMode( false ); //moved here because it needs the backplane to exist
+        this.changeCameraMode( true ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.camera );
         
         // Behaviour Planner
