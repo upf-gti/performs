@@ -233,7 +233,7 @@ NECK_TIGHTENER
 U=up, D=down, L=left, R=right, I=in, O=out, 
 ```
 
-All gestures share some optional attributes 
+Most gestures share some optional attributes 
 ``` jsonc
 {
     "hand": "RIGHT", // available values: [ "RIGHT", "LEFT", "BOTH", "DOMINANT", "NON_DOMINANT" ] - hand to apply gesture (it does NOT become the dominant hand). Defaults to "RIGHT". Defaults to dominant hand
@@ -372,6 +372,10 @@ Moves the arm (wrist) to a location of the body (face + trunk).
                 // i.e.: set to true; contact tip of index; reach destination. Afterwards, changing index finger state (handshape) will make the location change depending on where the tip of the index is  
 
     "shift": false, // contact information ( srcFinger, srcLocation, srcSide ) is not kept for shift
+
+    "lrSym":false, // symmetry applied to sides and displace
+    "udSym":false,
+    "ioSym":false
 }
 ```
 <details>
@@ -416,8 +420,8 @@ Moves the arm (wrist) to a location of the body (face + trunk).
 
 ---
 
-## Palm Orientation
-Roll of the wrist joint.
+## Hand Orientation
+Yaw, Pitch and Twist of the wrist joint.
 ``` jsonc
 {
     "type": "gesture",
@@ -425,34 +429,21 @@ Roll of the wrist joint.
     "attackPeak": 0.2, 
     "relax": 0.3,  
     "end": 0.4,
-    
-    "palmor": "U", //string, combinatino of 4 directions ( "I", "O" not valid )
-    
-    // optionals
-    "secondPalmor": "L", // string, combinatino of 4 directions ( "I", "O" not valid ). Will compute midpoint between palmor and secondPalmor.
-    "shift": false 
-}
-```
 
----
-
-## Extfidir
-Yaw and Pitch of the wrist joint.
-``` jsonc
-{
-    "type": "gesture",
-    "start": 0.1,
-    "attackPeak": 0.2, 
-    "relax": 0.3,  
-    "end": 0.4,
-    
-    "extfidir": "L", // string, combination of 6 directions
+    "extfidir": "L", // string, yaw and pitch of hand. Combination of 6 directions    
+    "palmor": "U", //string, twist of hand. Combination of 4 directions ( "I", "O" are ignored )
     
     // optionals
     "secondExtfidir": "L", // string, combination of 6 directions. Will compute midpoint between extifidir and secondExtfidir  
-    "shift": false, // optional
+    "secondPalmor": "L", // string, combinatino of 4 directions ( "I", "O" not valid ). Will compute midpoint between palmor and secondPalmor.
+    "shift": false, 
+
+    "lrSym":false, // symmetry applied palmor and extfidir
+    "udSym":false,
+    "ioSym":false
 }
 ```
+
 ---
 ## Handshape
 Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) to 5 (pinky)
@@ -624,6 +615,10 @@ The motion is stopped if an arm location is executed afterwards.
     "zigzag": "L", // string, combination of 6 directions
     "zigzagSize": 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     "zigzagSpeed": 3, // oscillations per second. Default 2
+
+    "lrSym":false,
+    "udSym":false,
+    "ioSym":false
 }
 ```
 
@@ -651,6 +646,10 @@ The motion is stopped if an arm location is executed afterwards.
     "zigzag": "L", // string, combination of 6 directions
     "zigzagSize": 0.05, // amplitude of zigzag (from highest to lowest point) in metres. Default 0.01 m (1 cm)
     "zigzagSpeed": 3, // oscillations per second. Default 2
+
+    "lrSym":false,
+    "udSym":false,
+    "ioSym":false
 }
 ```
 
