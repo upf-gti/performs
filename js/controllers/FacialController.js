@@ -77,7 +77,7 @@ FacialController.prototype.configure = function (o) {
     }
 }
 
-FacialController.prototype.start = function () {
+FacialController.prototype.start = function ( options ) {
 
     this._morphTargets = {}; // map "name" of part to its scene obj
     for (const part in this._avatarParts) {
@@ -131,7 +131,8 @@ FacialController.prototype.start = function () {
 
     this.headBML = []; //null;
 
-    this.autoBlink = new Blink();
+    this.autoBlink = new Blink( false );
+    this.autoBlink.setAuto( ( options && options.hasOwnProperty( "autoBlink" ) ) ? options.autoBlink : true );
 }
 
 FacialController.prototype.reset = function ( keepEmotion = false ) {
@@ -146,6 +147,8 @@ FacialController.prototype.reset = function ( keepEmotion = false ) {
 
     this.gazeManager.reset();
     this.headBML.length = 0;
+
+    if( this.blink ){ this.blink.reset(); }
 }
 
 FacialController.prototype.resetFace = function () {
@@ -374,7 +377,7 @@ FacialController.prototype.faceUpdate = function (dt) {
     // this._facialAUFinal has all the valid values
 
     // Eye blink
-    if (!this.autoBlink.between) {
+    if ( this.autoBlink.state ) {
         this.autoBlink.update(dt, this._facialAUFinal[this._eyeLidsAU[0]], this._facialAUFinal[this._eyeLidsAU[1]]);
         this._facialAUFinal[this._eyeLidsAU[0]] = this.autoBlink.weights[0];
         this._facialAUFinal[this._eyeLidsAU[1]] = this.autoBlink.weights[1];

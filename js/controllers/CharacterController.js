@@ -54,12 +54,32 @@ function CharacterController(o) {
     if ( typeof(BodyController) !== 'undefined'){ 
         this.bodyController = new BodyController( this.character, this.skeleton, this.characterConfig );
     } 
+
+    this.automaticFlags = {
+        blink: true,
+        browRaise: true, // if false, planner update returned block will be ignored
+    }
 }
 
-CharacterController.prototype.start = function () {
-    this.pendingResources = [];
+// options.blink, options.browRaise. Undefined flags will not change
+CharacterController.prototype.setAutomaticFlags = function ( options ) {
+    if ( !options ){ return; }
+    if ( options.hasOwnProperty( "autoBlink" ) ){ 
+        this.automaticFlags.blink = !!options.autoBlink;
+        if ( this.facialController && this.facialController.autoBlink ){ 
+            this.facialController.autoBlink.setAuto( this.automaticFlags.blink ); 
+        }
+    }
+    if ( options.hasOwnProperty( "autoBrowRaise" ) ){ 
+        this.automaticFlags.browRaise = !!options.autoBrowRaise;
+    }
+}
 
-    if ( this.facialController ){ this.facialController.start(); }
+// options.blink, options.browRaise. Undefined flags will not change
+CharacterController.prototype.start = function ( options ) {
+    this.pendingResources = [];
+    if ( this.facialController ){ this.facialController.start( options ); }
+    this.setAutomaticFlags( options );
 }
 
 CharacterController.prototype.reset = function ( keepEmotion = false ) {
@@ -90,7 +110,7 @@ CharacterController.prototype.update = function (dt, et) {
 
     if (this.BehaviourManager){ this.BehaviourManager.update(this.processBML.bind(this), et); }
 
-    if ( newBlock ){ this.BehaviourManager.newBlock(newBlock, et); }
+    if ( newBlock && this.automaticFlags.browRaise ){ this.BehaviourManager.newBlock(newBlock, et); }
 
     // lipsync stuff????
     if ( this.facialController ){

@@ -6,7 +6,7 @@ let RAD2DEG = 180 / Math.PI;
 // --------------------- BLINK ---------------------
 // BML
 // <blink start attackPeak relax end amount>
-function Blink() {
+function Blink( auto = true ) {
     
     this.start = 0;
     this.end = 0;
@@ -15,19 +15,25 @@ function Blink() {
     this.endWs = [0, 0]; // target pose of eyelids ( constantly changes during update )
     this.weights = [0, 0]; // current status
 
-    this.needsInit = true;
-    this.blinking = false;
-    this.between = false;    
+    this.state = 0x01; // 0 waiting, 0x01 needs init, 0x02 blinking -- flags
+    this.auto = !!auto; // whether to automatically change the state from waiting to init (does not call "update" by itself)
+    this.timeoutID = null; // this would not be necessary if timeout was not used
 }
 
-Blink.prototype.getEnd = function () {
-    
-    return 0.5; //1000; //Math.random()*1000;
+Blink.prototype.setAuto = function ( isAutomatic ){ 
+    this.auto = !!isAutomatic;
+    if ( this.auto && !this.state ){ this.state = 0x01; } // when auto == true, force start if it was stopped
+}
+
+Blink.prototype.reset = function (){ 
+    if( this.auto ){ this.state = 0x01; }
+    else{ this.state = 0x00; }
+    if ( this.timeoutID ){ clearTimeout( this.timeoutID ); this.timeoutID = null; }
 }
 
 Blink.prototype.initBlinking = function (cw0, cw1) {
     
-    if( this.blinking ){ // forced a blink while already executing one
+    if( this.state & 0x02 ){ // forced a blink while already executing one
         this.initWs[0] = this.weights[0]; this.initWs[1] = this.weights[1];
     }else{
         this.initWs[0] = cw0; this.initWs[1] = cw1;
@@ -39,30 +45,21 @@ Blink.prototype.initBlinking = function (cw0, cw1) {
     this.start = 0;
     let lowestWeight = Math.min(cw0, cw1);
     lowestWeight = Math.min(1, Math.max(0, lowestWeight));
-    this.end = this.getEnd() * (1 - lowestWeight);
+    this.end = 0.5 * (1 - lowestWeight);
     this.end = Math.max(this.end, this.start); // just in case
 
-    this.needsInit = false;
-    this.blinking = true;
-    this.between = false;
+    this.state = 0x02;
 }
 
-Blink.prototype.blink = function () {
-    
-    this.start = -1;
-    this.elapsedTime = -1;
-    this.needsInit = true;
-    this.between = false;
-    // this.blinking = true;
-    // this.between = false;
-}
+Blink.prototype.blink = function () { this.state |= 0x01; }
+Blink.prototype._timeoutBlink = function () { if ( this.auto ){ this.state |= 0x01; } this.timeoutID = null; }
 
 Blink.prototype.update = function ( dt, currentWeight0, currentWeight1 ) {
 
-    if ( this.needsInit ) {
+    if ( this.state & 0x01 ) {
         this.initBlinking( currentWeight0, currentWeight1 );
     }
-    if ( this.blinking && dt > 0 ) {
+    if ( this.state && dt > 0 ) {
         this.elapsedTime += dt;
         this.endWs[0] = currentWeight0;
         this.endWs[1] = currentWeight1;
@@ -70,9 +67,8 @@ Blink.prototype.update = function ( dt, currentWeight0, currentWeight1 ) {
         this.computeWeight( this.elapsedTime );
 
         if (this.elapsedTime > this.end ) { // schedule next blink
-            this.blinking = false;
-            this.between = true;
-            setTimeout( this.blink.bind( this ), Math.random() * 3000 + 1500 );
+            this.state = 0;
+            if ( this.auto && !this.timeoutID ){ this.timeoutID = setTimeout( this._timeoutBlink.bind( this ), Math.random() * 3000 + 1500 ); }
             return;
         }
     }
