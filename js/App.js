@@ -389,6 +389,17 @@ class App {
 
                 if ( callback ){ callback(); }
             })
+
+            // this.loaderGLB.load("./data/christmas/chroma.glb", (table) => {
+            //     this.scene.add(table.scene)
+            // })
+            this.loaderGLB.load("./data/christmas/scene.glb", (table) => {
+                this.scene.add(table.scene)
+            })
+            // this.loaderGLB.load("./data/belgium.glb", (word) => {
+            //     word.scene.children[0].material.color.multiply(new THREE.Color("#B9B9B9"))
+            //     this.scene.add(word.scene);
+            // })
         });
     }
 

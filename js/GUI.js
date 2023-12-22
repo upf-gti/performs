@@ -13,6 +13,7 @@ class AppGUI{
             "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
             "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', -Math.PI/2],
             "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json', 0],
+            "Christmas": ['./data/christmas/EvaChristmas.glb', './data/EvaConfig.json', -Math.PI/2]
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
