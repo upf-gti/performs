@@ -552,8 +552,6 @@ class App {
             },
             false,
         );
-
-
     }
 
     animate() {

@@ -220,7 +220,7 @@ class AppGUI{
                         p.attach( area.root );
             
                         let editor = new LX.CodeEditor(area, {
-                            highlight: 'xml',
+                            highlight: 'XML',
                             skip_info: true,
                             allow_add_scripts: false, 
                             name : "XML"
