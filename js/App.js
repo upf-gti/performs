@@ -16,7 +16,6 @@ class App {
 
     constructor() {
         
-        this.fps = 0;
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
         this.loaderGLB = new GLTFLoader();
@@ -422,7 +421,7 @@ class App {
         this.controls = new OrbitControls( this.camera, this.renderer.domElement );
         this.controls.object.position.set( Math.sin(5*Math.PI/180), 1.5, Math.cos(5*Math.PI/180) );
         this.controls.target.set(0.0, 1.3, 0);
-        this.controls.enableDamping = true;
+        this.controls.enableDamping = true; // this requires controls.update() during application update
         this.controls.dampingFactor = 0.1;
         
         // IBL Light
@@ -558,12 +557,12 @@ class App {
 
         requestAnimationFrame( this.animate.bind(this) );
 
-        let delta = this.clock.getDelta() 
-        this.fps = Math.floor( 1.0 / ((delta>0)?delta:1000000) );
-        
+        this.controls.update(); // needed because of this.controls.enableDamping = true
+        let delta = this.clock.getDelta()         
         delta *= this.signingSpeed;
         this.elapsedTime += delta;
-        if ( this.ECAcontroller ) { this.ECAcontroller.update(delta, this.elapsedTime ); }
+
+        if ( this.ECAcontroller ){ this.ECAcontroller.update( delta, this.elapsedTime ); }
 
         this.renderer.render( this.scene, this.camera );
     }
