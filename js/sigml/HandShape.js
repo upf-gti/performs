@@ -130,7 +130,7 @@ class HandShape {
 
     }
 
-    thumbIK( targetWorldPoint, maxIter, shortChain = false, splay = null ){
+    thumbIK( targetWorldPos, maxIter, shortChain = false, splay = null ){
         let tempQ_0 = new THREE.Quaternion();
         let tempQ_1 = new THREE.Quaternion();
         let tempV3_0 = new THREE.Vector3();
@@ -163,12 +163,12 @@ class HandShape {
             
             for ( let i = chain.length - 2 ; i >= lastBone; --i ){
                 let endEffectorWorldPos = endEffector.getWorldPosition( tempV3_0 );
-                if ( tempV3_1.subVectors( endEffectorWorldPos, targetWorldPoint ).lengthSq() < 0.001*0.001 ){ iter = maxIter; break; }
+                if ( tempV3_1.subVectors( endEffectorWorldPos, targetWorldPos ).lengthSq() < 0.001*0.001 ){ iter = maxIter; break; }
     
                 let joint = chain[i];
                 
                 let endEffectorLocalPos = joint.worldToLocal( tempV3_0.copy( endEffectorWorldPos ) ).normalize();
-                let targetLocalPos = joint.worldToLocal( tempV3_1.copy( targetWorldPoint ) ).normalize();
+                let targetLocalPos = joint.worldToLocal( tempV3_1.copy( targetWorldPos ) ).normalize();
     
                 tempQ_0.setFromUnitVectors( endEffectorLocalPos, targetLocalPos );
     
@@ -197,17 +197,17 @@ class HandShape {
         // compute automatic splay
         if ( isNaN( splay ) || splay === null ){
             let m3 = ( new THREE.Matrix3() ).setFromMatrix4( bones[ this.wristIdx ].matrixWorld );
-            let lateral = this.thumbThings.palmLateralVec.clone().applyMatrix3( m3 ).normalize();
-            let outward = this.thumbThings.palmOutVec.clone().applyMatrix3( m3 ).normalize();
-            let up = this.thumbThings.palmUpVec.clone().applyMatrix3( m3 ).normalize();
+            let palmLateralVec = this.thumbThings.palmLateralVec.clone().applyMatrix3( m3 ).normalize();
+            let palmOutVec = this.thumbThings.palmOutVec.clone().applyMatrix3( m3 ).normalize();
+            let palmUpVec = this.thumbThings.palmUpVec.clone().applyMatrix3( m3 ).normalize();
             let thumbSizeFull = this.thumbThings.thumbSizeFull;
             let thumbSizeUpper = this.thumbThings.thumbSizeUpper;
             endEffector.getWorldPosition( tempV3_0 );
             this.handLocations[ "HAND_RADIAL" ].getWorldPosition( tempV3_1 );
             tempV3_0.sub( tempV3_1 );
             
-            tempV3_1.set( lateral.dot( tempV3_0 ), up.dot( tempV3_0 ), outward.dot( tempV3_0 ) ); // base change
-            tempV3_1.x *= -1; // lateral vector is pointing outwards
+            tempV3_1.set( palmLateralVec.dot( tempV3_0 ), palmUpVec.dot( tempV3_0 ), palmOutVec.dot( tempV3_0 ) ); // base change
+            tempV3_1.x *= -1; // palmLateralVec vector is pointing outwards
     
             let lateralSplayRaw = Math.min( 1, Math.max( 0, tempV3_1.x / thumbSizeUpper ) );
             let lateralSplay = 0.25 * Math.min( 1, Math.max( 0, ( tempV3_1.x - thumbSizeUpper*0.5 ) / thumbSizeUpper ) ); // not so important
@@ -790,10 +790,12 @@ class HandShape {
         let bones = this.skeleton.bones;
         let fingerIdxs = this.fingerIdxs;
 
-        // instead of copying values from "current" to "source", just swap pointers
-        let temp = this.srcG;
-        this.srcG = this.curG;
-        this.curG = temp;
+        //copy "current" to "source". Swaping pointers not valid: when 2 instructions arrive at the same time, "source" would have wrong past data
+        for( let i = 0; i < 5; ++i ){
+            for( let j = 0; j < 3; ++j ){
+                this.srcG[i][j].copy( this.curG[i][j] );
+            }
+        }
 
         // compute gestures
         let shape = [ 
@@ -846,7 +848,14 @@ class HandShape {
         // compute finger quaternions and thumb ik (if necessary)
         this._setFingers( shape[1], shape[2], shape[3], shape[4] );
         if( this.handLocations[ bml.thumbTarget ] ){
-            this.thumbIK( this.handLocations[ bml.thumbTarget ].getWorldPosition( new THREE.Vector3() ), 10, bml.thumbSource == "PAD", bml.thumbSplay );
+            let targetPos = this.handLocations[ bml.thumbTarget ].getWorldPosition( new THREE.Vector3() );
+            if( bml.thumbDistance ){ 
+                let distance = isNaN( parseFloat( bml.thumbDistance ) ) ? 0 : bml.thumbDistance;
+                let m3 = ( new THREE.Matrix3() ).setFromMatrix4( bones[ this.wristIdx ].matrixWorld );
+                let palmOutVec = this.thumbThings.palmOutVec.clone().applyMatrix3( m3 ).normalize();
+                targetPos.addScaledVector( palmOutVec, distance * this.thumbThings.thumbSizeFull );
+            }
+            this.thumbIK( targetPos, 10, bml.thumbSource == "PAD", bml.thumbSplay );
             this.trgG[0][0].copy( this.skeleton.bones[ this.fingerIdxs[0] ].quaternion );
             this.trgG[0][1].copy( this.skeleton.bones[ this.fingerIdxs[0] + 1 ].quaternion );
             this.trgG[0][2].copy( this.skeleton.bones[ this.fingerIdxs[0] + 2 ].quaternion );
@@ -879,7 +888,6 @@ class HandShape {
         this.end = bml.end;
         this.transition = true;
     }
-    
 }
 
 export { HandShape };

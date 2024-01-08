@@ -364,7 +364,12 @@ class App {
                 this.avatarShirt = model.getObjectByName( "Tops" );
             }
 
-            // correct hand's size
+            if ( avatarName == "Kevin" ){
+                let hair = model.getObjectByName( "Classic_short" );
+                if( hair && hair.children.length > 1 ){ hair.children[1].renderOrder = 1; }
+            }
+
+            // correct Eva hand's size
             let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
             b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
                         

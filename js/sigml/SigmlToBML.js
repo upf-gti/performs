@@ -632,12 +632,17 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
             break;    
     }
 
+    let locationHand = null;
     if ( xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){
-        let locationHand = locationHandInfoExtract( xml.children[0], false );
+        locationHand = locationHandInfoExtract( xml.children[0], false );
         if ( locationHand.location ){ result.srcLocation = locationHand.location; }
         if ( locationHand.side ){ result.srcSide = locationHand.side; }
         if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
-    }else{
+
+        if ( !( locationHand.finger || locationHand.side || locationHand.location ) ){ locationHand = null; } // go to default settings, as if no location hand was present
+    }
+
+    if ( !locationHand ){
         let handshape = currentPosture[ hand == signGeneralInfo.nonDomHand ? signGeneralInfo.nonDomHand : signGeneralInfo.domHand ][3].handshape;
 
         // when touch or specific hand in face, check if handshape is 
@@ -672,11 +677,13 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
     let result = {};
 
+    let digit = attributes.digits;
+    digit = ( digit != 1 && digit != 2 && digit != 3 && digit != 4 && digit != 5 ) ? null : parseInt( attributes.digits ); // it needs to be exactly those numbers "2asdfasd" is not valid but parseInt will return 2
+
     // some fingerpart specified
-    if ( attributes.digits || locationHand_FingerpartTable.includes( attributes.location ) ){
-        // default values tip of index finger
-        let digit = parseInt( attributes.digits );
-        result.finger = ( isNaN(digit) || digit < 1 || digit > 5 ) ? 2 : digit; 
+    if ( digit ){
+        // default values tip of finger
+        result.finger = digit; 
         result.location = "TIP"; 
 
         let side = "PALMAR";
@@ -723,15 +730,15 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 break;
             case "tip":
                 result.location = "TIP";
-                result.side = null;
+                // result.side = null;
                 break;
             default: break;
         }
     }
-    else if ( locationHand_HandpartTable.includes( attributes.location ) ){
-         // default values tip of index finger
-        result.location = "HAND"; 
-        result.side = "PALMAR";
+    else {
+         // default values
+        // result.location = "HAND"; 
+        // result.side = "PALMAR";
 
         let side = "PALMAR";
         switch( attributes.side ){
@@ -781,29 +788,8 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 result.location = "BASE";
                 result.side = "ULNAR";
                 break;    
-            default: break;
-        }
-    }
 
-    else if ( locationHand_ArmTable.includes( attributes.location ) ){
-        // default values tip of index finger
-        result.location = "HAND"; 
-        result.side = "FRONT";
-
-        let side = "FRONT";
-        switch( attributes.side ){
-            case "dorsal": side = "BACK"; break;
-            case "palmar":
-            case "front": 
-            case "back":
-            case "radial":
-            case "ulnar": 
-                side = attributes.side.toUpperCase(); 
-                break;
-            default: break;
-        }
-
-        switch( attributes.location ){
+            // arm
             case "upperarm": 
                 result.location = "UPPER_ARM";
                 result.side = side == "PALMAR" ? "FRONT" : side;
@@ -820,10 +806,10 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 result.location ="FOREARM";
                 result.side = side == "FRONT" ? "PALMAR" : side;
                 break;
+
             default: break;
         }
     }
-
 
     if ( parseChildren && xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){
         result.child = locationHandInfoExtract( xml.children[0], false );

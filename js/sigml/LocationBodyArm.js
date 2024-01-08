@@ -168,7 +168,7 @@ class LocationBodyArm {
         // TODO: expose distance modes? 
         // distance 
         let distance = isNaN( bml.distance ) ? 0 : bml.distance;
-        distance += 0.05; // hack 
+        // distance += 0.05; // hack 
         
         if ( location.direction ){
             let m3 = ( new THREE.Matrix3() ).setFromMatrix4( location.matrixWorld );

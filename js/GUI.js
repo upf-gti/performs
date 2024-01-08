@@ -398,7 +398,7 @@ class AppGUI{
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
-                window.open("https://webglstudio.org/users/cdelcorral/signONConfig/", '_blank').focus();
+                window.open("https://webglstudio.org/projects/signon/performs-atelier", '_blank').focus();
             })
             panel.addButton(null, "Upload", () => {
                 if (name && model && config) {
