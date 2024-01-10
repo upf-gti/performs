@@ -29,6 +29,8 @@ const TIMESLOT ={
     MOTION: 0.5,
     MOTIONDIR : 0.3,
     MOTIONCIRC : 0.5,
+    MOTIONFINGERPLAY : 0.8,
+    MOTIONWRIST : 0.8,
 
     REST: 0.3, // rest attributes of some motions
     RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
@@ -361,7 +363,7 @@ function signManual( xml, start, signSpeed ){
         if ( result[i].motion == "WRIST" || result[i].motion == "FINGERPLAY" ){ 
             let dt = 0.15 * ( result[i].end - result[i].start );
             result[i].attackPeak = result[i].start + ( ( dt < 0.15 ) ? dt : 0.15 ); // entry not higher than 150 ms
-            result[i].relax = result[i].end - ( ( dt < 0.15 ) ? dt : 0.15 ) ;
+            if ( isNaN( result[i].relax ) ){ result[i].relax = result[i].end - ( ( dt < 0.15 ) ? dt : 0.15 ); }
         }
     }
 
@@ -956,7 +958,7 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
     
 
     if ( simpleMotionAvailable.includes( tagName ) ){
-        let r = simpleMotionParser( xml, time, hand, symmetry, signSpeed, signGeneralInfo );
+        let r = simpleMotionParser( xml, time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
         result = result.concat( r.data );
         time = r.end;
     }
@@ -1137,13 +1139,18 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
                             // let needsNewRelax = fwdInstr.handConstellation || fwdInstr.locationBodyArm || fwdInstr.handshape || fwdInstr.extfidir || fwdInstr.palmor || fwdInstr.motion == "DIRECTED" || fwdInstr.motion == "CIRCULAR";
                             // let needsNewEnd = fwdInstr.handConstellation || fwdInstr.locationBodyArm || fwdInstr.handshape || fwdInstr.extfidir || fwdInstr.palmor || fwdInstr.motion == "DIRECTED" || fwdInstr.motion == "CIRCULAR";
                             
-                            let ignoreNewRelax = fwdInstr.motion == "FINGERPLAY" || fwdInstr.motion == "WRIST";
-
-                            // unspecified "relax" and "end" should be all synchronized to the end of their loop iteration
-                            if( typeof( fwdInstr.relax ) == "number" ){ fwdInstr.relax += loop * loopDuration; } 
-                            else if( !ignoreNewRelax ){ fwdInstr.relax = startTime + loop * loopDuration + blockDuration; }
-                            if( typeof( fwdInstr.end ) == "number" ){ fwdInstr.end += loop * loopDuration; }
-                            else{ fwdInstr.end = startTime + ( loop + 1 ) * loopDuration; } 
+                            let ignoreNewRelax = ( fwdInstr.motion == "FINGERPLAY" || fwdInstr.motion == "WRIST" );
+                            if( !isBackwardNecessary && ignoreNewRelax && i == (forward.length -1) ){ // if no backwardtions are of the same type (fingerplay or wrist),  
+                                fwdInstr.relax = startTime + ( loop + 1 ) * loopDuration; // force fingerplay/wrist until end of loop
+                                fwdInstr.end = startTime + ( loop + 1 ) * loopDuration + TIMESLOT.POSTURE / signSpeed; // to avoid floating problems. It will be overwritten by the following fingerplay/wrist
+                            } // force fingerplay/wrist until end of loop
+                            else{
+                                // unspecified "relax" and "end" should be all synchronized to the end of their loop iteration
+                                if( typeof( fwdInstr.relax ) == "number" ){ fwdInstr.relax += loop * loopDuration; } 
+                                else if( !ignoreNewRelax ) { fwdInstr.relax = startTime + loop * loopDuration + blockDuration; } // fingerplay and wrist compute relax at the end of sign_manual parser
+                                if( typeof( fwdInstr.end ) == "number" ){ fwdInstr.end += loop * loopDuration; }
+                                else{ fwdInstr.end = startTime + ( loop + 1 ) * loopDuration; }
+                            }
                         }
                         result = result.concat( forward );
 
@@ -1248,7 +1255,7 @@ function remapBlockTiming ( srcStart, srcEnd, dstStart, dstEnd, bmlArray ){
     }
 }
 
-function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo ){
+function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, currentPosture ){
     let resultArray = [];
     let duration = 0;
     let attributes = {}
@@ -1351,7 +1358,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
             duration += timeTo180;
         }
     }
-    else if ( xml.tagName == "wristmotion" ){
+    else if ( xml.tagName == "wristmotion" && attributes.motion ){
         let result = {};
         result.motion = "WRIST";
         if ( attributes.size == "big" ){ result.intensity = 0.3; } 
@@ -1359,7 +1366,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         result.mode = attributes.motion.toUpperCase().replace("STIR", "STIR_");
         result.speed = 4;
 
-        duration = TIMESLOT.MOTION / signSpeed;
+        duration = TIMESLOT.MOTIONWRIST / signSpeed;
         result.end = start + duration;
         resultArray.push( result );
     }
@@ -1367,10 +1374,17 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         let result = {};
         result.motion = "FINGERPLAY";
         result.intensity = 0.5;
-        if ( attributes.digits ){ result.fingers; }
-
-        duration = TIMESLOT.MOTION / signSpeed;
+        result.speed = 4;
+        duration = TIMESLOT.MOTIONFINGERPLAY / signSpeed;
         result.end = start + duration;
+        if ( attributes.digits ){ result.fingers = attributes.digits; }
+        else{
+            let h = hand == "BOTH" ? signGeneralInfo.domHand : hand;
+            h = currentPosture[ h ][3].handshape;
+            if( h.includes( "CEE" ) || h.includes( "PINCH" ) ){ result.fingers = "12345"; }
+            else{ result.fingers = "2345"; } // if too bent, fingers don't move
+        }
+
         resultArray.push( result );
     } 
 

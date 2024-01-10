@@ -217,7 +217,7 @@ class BodyController{
 
         // overwrite finger rotations
         arm.fingerplay.update(dt); // motion, prepare offsets
-        arm.handshape.update( dt, arm.fingerplay.curBends );
+        arm.handshape.update( dt, arm.fingerplay.transition ? arm.fingerplay.curBends : null );
       
         // wrist point and twist
         arm.extfidirPalmor.update(dt);

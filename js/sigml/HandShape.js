@@ -1,5 +1,108 @@
 import * as THREE from "three";
-import { forceBindPoseQuats, nlerpQuats } from "./Utils.js";
+import { nlerpQuats } from "./Utils.js";
+
+class HandInfo {
+    constructor(){
+        this.shape = [ 
+            [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()], // thumb base, mid, pad
+            [0,0,0,0], // index splay, base, mid, pad
+            [0,0,0,0], // middle
+            [0,0,0,0], // ring
+            [0,0,0,0]  // pinky
+        ];
+    }
+
+    reset(){
+        this.shape[0][0].set(0,0,0,1);
+        this.shape[0][1].set(0,0,0,1);
+        this.shape[0][2].set(0,0,0,1);
+        for( let i = 1; i < 5; ++i ){
+            for( let j = 0; j < 3; ++j ){
+                this.shape[i][j] = 0;
+            }
+        }
+    }
+
+    copy( srcHandInfo ){
+        // thumb
+        let src = srcHandInfo.shape[0];
+        let dst = this.shape[0];
+        dst[0].copy( src[0] );
+        dst[1].copy( src[1] );
+        dst[2].copy( src[2] );
+
+        // fingers
+        for( let i = 1; i < 5; ++i ){
+            src = srcHandInfo.shape[i];
+            dst = this.shape[i];
+            dst[0] = src[0];
+            dst[1] = src[1];
+            dst[2] = src[2];
+            dst[3] = src[3];
+        }
+    }
+
+    lerpHandInfos( srcHandInfo, trgHandInfo, t ){
+        // src and trg could be this without problems
+        let fsrc = srcHandInfo.shape[0];
+        let ftrg = trgHandInfo.shape[0];
+        let fdst = this.shape[0];
+
+        // thumb quats
+        nlerpQuats( fdst[0], fsrc[0], ftrg[0], t );
+        nlerpQuats( fdst[1], fsrc[1], ftrg[1], t );
+        nlerpQuats( fdst[2], fsrc[2], ftrg[2], t );
+        
+        // finger splay + bends
+        for( let i = 1; i < 5; ++i ){
+            fsrc = srcHandInfo.shape[i];
+            ftrg = trgHandInfo.shape[i];
+            fdst = this.shape[i];
+            fdst[0] = fsrc[0] * (1.0-t) + ftrg[0] * t;
+            fdst[1] = fsrc[1] * (1.0-t) + ftrg[1] * t;
+            fdst[2] = fsrc[2] * (1.0-t) + ftrg[2] * t;
+            fdst[3] = fsrc[3] * (1.0-t) + ftrg[3] * t;
+        }
+    }
+
+    lerp( trgHandInfo, t ){ this.lerpHandInfos( this, trgHandInfo, t ); }
+
+    setDigit( digit, info ){
+        let dst = this.shape[digit];
+
+        if ( digit == 0 ){
+            dst[0].copy( info[0] );
+            dst[1].copy( info[1] );
+            dst[2].copy( info[2] );
+        }
+        else {
+            dst[0] = info[0];
+            dst[1] = info[1];
+            dst[2] = info[2];
+            dst[3] = info[3];
+        }
+    }
+
+    setDigits( thumbInfo = null, indexInfo = null, middleInfo = null, ringInfo = null, pinkyInfo = null ){
+        if ( thumbInfo ){ this.thumb = thumbInfo; } 
+        if ( indexInfo ){ this.index = indexInfo; } 
+        if ( middleInfo ){ this.middle = middleInfo; } 
+        if ( ringInfo ){ this.ring = ringInfo; } 
+        if ( pinkyInfo ){ this.pinky = pinkyInfo; } 
+    }
+    set thumb( digitInfo ){ this.setDigit( 0, digitInfo ); }
+    set index( digitInfo ){ this.setDigit( 1, digitInfo ); }
+    set middle( digitInfo ){ this.setDigit( 2, digitInfo ); }
+    set ring( digitInfo ){ this.setDigit( 3, digitInfo ); }
+    set pinky( digitInfo ){ this.setDigit( 4, digitInfo ); }
+
+    getDigit( digit ){ return this.shape[digit]; }
+    get thumb(){ return this.shape[0]; }
+    get index(){ return this.shape[1]; }
+    get middle(){ return this.shape[2]; }
+    get ring(){ return this.shape[3]; }
+    get pinky(){ return this.shape[4]; }
+}
 
 class HandShape {
     constructor( config, skeleton, isLeftHand = false ){
@@ -7,7 +110,6 @@ class HandShape {
 
         this.skeleton = skeleton;
         this.isLeftHand = !!isLeftHand;
-        
         this.config = config;
         let boneMap = config.boneMap;
         this.handLocations = this.isLeftHand ? config.handLocationsL : config.handLocationsR;
@@ -22,38 +124,12 @@ class HandShape {
         ];
         
         this.fingerAxes = this._computeFingerAxesOfHand( );
-        this.thumbAfterBindTwistAxis = (new THREE.Vector3()).copy(this.skeleton.bones[ this.fingerIdxs[0] + 1 ].position).applyQuaternion( this.fingerAxes.bindQuats[0] ).normalize();
-
         this._computeLookUpTables();
         
-        this.curG = [ 
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ], // thumb
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ]
-        ];
-        this.srcG = [ 
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ], // thumb
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ]
-        ];
-        this.trgG = [ 
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ], // thumb
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ]
-        ];
-        this.defG = [ 
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ], // thumb
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ],
-            [ new THREE.Quaternion, new THREE.Quaternion, new THREE.Quaternion ]
-        ];
+        this.curG = new HandInfo();
+        this.srcG = new HandInfo();
+        this.trgG = new HandInfo();
+        this.defG = new HandInfo();
 
         this.time = 0; // current time of transition
         this.start = 0;
@@ -75,17 +151,22 @@ class HandShape {
         for ( let i = 0; i < 5; ++i ){
             for ( let j = 0; j < 3; ++j ){
                 q = this.fingerAxes.bindQuats[ i*3 + j ];
-                this.defG[i][j].copy( q );
-                this.curG[i][j].copy( q );
                 bones[ this.fingerIdxs[i] + j ].quaternion.copy( q );
             }
         }
-        // this.update( 1 ); // force position reset
+
+        this.curG.reset();
+        this.curG.thumb = this.fingerAxes.bindQuats; // class setter
+        this.defG.reset();
+        this.defG.thumb = this.fingerAxes.bindQuats; // class setter
+        
+        this.transition = true
+        this.update( 1 ); // force position reset
     }
 
     // must always update bones. (this.transition would be useless)
-    update( dt, fingerplayResult ) {       
-        if ( !this.transition ){ return; }
+    update( dt, fingerplayResult = null ) {       
+        if ( !this.transition && !fingerplayResult ){ return; }
 
         this.time +=dt;
         let bones = this.skeleton.bones;
@@ -94,40 +175,33 @@ class HandShape {
         if ( this.time < this.start ){}
         else if ( this.time < this.attackPeak ){
             let t = ( this.time - this.start ) / ( this.attackPeak - this.start );
-            for( let i = 0; i < 5; ++i ){
-                for( let j = 0; j < 3; ++j ){
-                    nlerpQuats( this.curG[ i ][ j ], this.srcG[i][j], this.trgG[i][j], t );
-                    bones[ fingerIdxs[i] + j ].quaternion.copy( this.curG[i][j] );
-                }
-            }
+            this.curG.lerpHandInfos( this.srcG, this.trgG, t );
         }
         else if ( this.time < this.relax ){
-            for( let i = 0; i < 5; ++i ){
-                for( let j = 0; j < 3; ++j ){
-                    bones[ fingerIdxs[i] + j ].quaternion.copy( this.trgG[i][j] );
-                    this.curG[ i ][ j ].copy( this.trgG[i][j] )
-                }
-
-            }
+            this.curG.copy( this.trgG );
         }
         else if ( this.time < this.end ){
             let t = ( this.time - this.relax ) / ( this.end - this.relax );
-            for( let i = 0; i < 5; ++i ){
-                for( let j = 0; j < 3; ++j ){
-                    nlerpQuats( this.curG[ i ][ j ], this.trgG[i][j], this.defG[i][j], t );
-                    bones[ fingerIdxs[i] + j ].quaternion.copy( this.curG[i][j] );
-                }
-            }
-        }else{
-            for( let i = 0; i < 5; ++i ){
-                for( let j = 0; j < 3; ++j ){
-                    bones[ fingerIdxs[i] + j ].quaternion.copy( this.defG[i][j] );
-                    this.curG[ i ][ j ].copy( this.defG[i][j] )
-                }
-            }
+            this.curG.lerpHandInfos( this.trgG, this.defG, t );
+        }
+        else{
+            this.curG.copy( this.defG );
             this.transition = false;
         }
 
+        if ( fingerplayResult ){
+            this.curG.index[1] = Math.max( -0.2, Math.min( 1, this.curG.index[1] + fingerplayResult[1] ) );
+            this.curG.middle[1] = Math.max( -0.2, Math.min( 1, this.curG.middle[1] + fingerplayResult[2] ) );
+            this.curG.ring[1] = Math.max( -0.2, Math.min( 1, this.curG.ring[1] + fingerplayResult[3] ) );
+            this.curG.pinky[1] = Math.max( -0.2, Math.min( 1, this.curG.pinky[1] + fingerplayResult[4] ) );
+        }
+
+        this._setFingers( this.curG.index, this.curG.middle, this.curG.ring, this.curG.pinky );
+        this._setThumb( this.curG.thumb );
+
+        if ( fingerplayResult ){
+            bones[ fingerIdxs[0] ].quaternion.multiply( this._tempQ_0.setFromAxisAngle( this.fingerAxes.bendAxes[0], fingerplayResult[0] * Math.PI * 40 / 180 ) );
+        }
     }
 
     thumbIK( targetWorldPos, maxIter, shortChain = false, splay = null ){
@@ -544,6 +618,19 @@ class HandShape {
 
     }
     
+    // get from bones
+    _getThumb( resultQuats ){
+        resultQuats[0].copy( this.skeleton.bones[ this.fingerIdxs[0] ].quaternion );
+        resultQuats[1].copy( this.skeleton.bones[ this.fingerIdxs[0] + 1 ].quaternion );
+        resultQuats[2].copy( this.skeleton.bones[ this.fingerIdxs[0] + 2 ].quaternion );
+    }
+
+    _setThumb( thumbQuats ){
+        this.skeleton.bones[ this.fingerIdxs[0] ].quaternion.copy( thumbQuats[0] );
+        this.skeleton.bones[ this.fingerIdxs[0] + 1 ].quaternion.copy( thumbQuats[1] );
+        this.skeleton.bones[ this.fingerIdxs[0] + 2 ].quaternion .copy( thumbQuats[2] );
+    }
+
     _setFingers( index, middle, ring, pinky ){
         // order of quaternion multiplication matter
         let bones = this.skeleton.bones;
@@ -552,21 +639,21 @@ class HandShape {
         let fingers = this.fingerIdxs;
         
         // all finger bends
-        bones[ fingers[1]      ].quaternion.setFromAxisAngle( bendAxes[3], this._computeBendAngle( index, 1, 1 ) );
-        bones[ fingers[1] + 1  ].quaternion.setFromAxisAngle( bendAxes[4], this._computeBendAngle( index, 1, 2 ) );
-        bones[ fingers[1] + 2  ].quaternion.setFromAxisAngle( bendAxes[5], this._computeBendAngle( index, 1, 3 ) );
+        bones[ fingers[1]     ].quaternion.setFromAxisAngle( bendAxes[3], this._computeBendAngle( index, 1, 1 ) );
+        bones[ fingers[1] + 1 ].quaternion.setFromAxisAngle( bendAxes[4], this._computeBendAngle( index, 1, 2 ) );
+        bones[ fingers[1] + 2 ].quaternion.setFromAxisAngle( bendAxes[5], this._computeBendAngle( index, 1, 3 ) );
  
         bones[ fingers[2]     ].quaternion.setFromAxisAngle( bendAxes[6],  this._computeBendAngle( middle, 2, 1 ) );
         bones[ fingers[2] + 1 ].quaternion.setFromAxisAngle( bendAxes[7],  this._computeBendAngle( middle, 2, 2 ) );
         bones[ fingers[2] + 2 ].quaternion.setFromAxisAngle( bendAxes[8],  this._computeBendAngle( middle, 2, 3 ) );
 
-        bones[ fingers[3]       ].quaternion.setFromAxisAngle( bendAxes[9],  this._computeBendAngle( ring, 3, 1 ) );
-        bones[ fingers[3] + 1   ].quaternion.setFromAxisAngle( bendAxes[10], this._computeBendAngle( ring, 3, 2 ) );
-        bones[ fingers[3] + 2   ].quaternion.setFromAxisAngle( bendAxes[11], this._computeBendAngle( ring, 3, 3 ) );
+        bones[ fingers[3]     ].quaternion.setFromAxisAngle( bendAxes[9],  this._computeBendAngle( ring, 3, 1 ) );
+        bones[ fingers[3] + 1 ].quaternion.setFromAxisAngle( bendAxes[10], this._computeBendAngle( ring, 3, 2 ) );
+        bones[ fingers[3] + 2 ].quaternion.setFromAxisAngle( bendAxes[11], this._computeBendAngle( ring, 3, 3 ) );
 
-        bones[ fingers[4]      ].quaternion.setFromAxisAngle( bendAxes[12], this._computeBendAngle( pinky, 4, 1 ) );
-        bones[ fingers[4] + 1  ].quaternion.setFromAxisAngle( bendAxes[13], this._computeBendAngle( pinky, 4, 2 ) );
-        bones[ fingers[4] + 2  ].quaternion.setFromAxisAngle( bendAxes[14], this._computeBendAngle( pinky, 4, 3 ) );
+        bones[ fingers[4]     ].quaternion.setFromAxisAngle( bendAxes[12], this._computeBendAngle( pinky, 4, 1 ) );
+        bones[ fingers[4] + 1 ].quaternion.setFromAxisAngle( bendAxes[13], this._computeBendAngle( pinky, 4, 2 ) );
+        bones[ fingers[4] + 2 ].quaternion.setFromAxisAngle( bendAxes[14], this._computeBendAngle( pinky, 4, 3 ) );
 
         // other fingers splay
         bones[ fingers[1] ].quaternion.multiply( this._tempQ_0.setFromAxisAngle(  splayAxes[1], this._computeSplayAngle( index, 1 ) ) );
@@ -599,7 +686,7 @@ class HandShape {
     }
 
     // specialFingers is used only for the thumb in the pinch-cee combinations. In all other cases and for fingers, selectedFingers is used 
-    _stringToMainBend( mainbend, handArray, selectedFingers, specialFingers = null ){        
+    _stringToMainBend( mainbend, handInfo, selectedFingers, specialFingers = null ){        
         if ( mainbend && mainbend.toUpperCase ){ mainbend = mainbend.toUpperCase(); }
         let b = this.handBendings[ mainbend ];
         if ( !b ){ return; }
@@ -614,9 +701,8 @@ class HandShape {
                 else{ for( let i = 1; i < 5; ++i ){ if ( selectedFingers[i] ){ bt = bt[i-1]; break; } } }
             } 
             if ( !bt ){ bt = this.thumbshapes.DEFAULT; }
-            handArray[0][0].copy( bt[0] ); 
-            handArray[0][1].copy( bt[1] ); 
-            handArray[0][2].copy( bt[2] ); 
+
+            handInfo.thumb = bt; // class setter 
         }
 
         // rest of fingers
@@ -625,9 +711,10 @@ class HandShape {
             if ( !s ){ continue; }
             let f = ( s == 1 ) ? b[1] : b[2].f;
             // ignore splay from handbending
-            handArray[i][1] = s == 3 ? ( f[1] * 0.8 ) : f[1]; // CEE opens a bit all fingers with respect to thumb
-            handArray[i][2] = f[2];
-            handArray[i][3] = f[3]; 
+            let digitInfo = handInfo.getDigit( i );
+            digitInfo[1] = s == 3 ? ( f[1] * 0.8 ) : f[1]; // CEE opens a bit all fingers with respect to thumb
+            digitInfo[2] = f[2];
+            digitInfo[3] = f[3]; 
         }
     }
 
@@ -682,12 +769,8 @@ class HandShape {
         let g = this.handshapes[ shapeName ];
         if ( !g ){ return false; }
             
-        // copy selected shape into buffers        
-        for( let j = 0; j < 3; ++j ){ outHand[0][j].copy( g.defaultThumb[j] ); }
-        for( let i = 1; i < 5; ++i ){
-            let src = g.fingers[i-1];
-            for( let j = 0; j < src.length; ++j ){ outHand[i][j] = src[j]; }
-        }
+        // copy selected shape into buffers  
+        outHand.setDigits( g.defaultThumb, g.fingers[0], g.fingers[1], g.fingers[2], g.fingers[3] )
         
         let selectedFingers = g.selected;
         
@@ -708,20 +791,20 @@ class HandShape {
                 switch (shapeName){
                     case "FIST":
                         for (let i = 1; i < selectedFingers.length; i++) {
-                            if (!selectedFingers[i]) outHand[i] = [0,0,0,0]; // non-selected fingers into flat
+                            if (!selectedFingers[i]) outHand.setDigit( i, [0,0,0,0] ); // non-selected fingers into flat
                             selectedFingers[i] = 1 - selectedFingers[i];
                         }
                         break;
                         
                     case "FLAT": case "CEE_ALL": case "PINCH_ALL":
                         for (let i = 1; i < selectedFingers.length; i++) {
-                            if (!selectedFingers[i]) outHand[i] = [0,1,1,1]; // non-selected fingers into fist
+                            if (!selectedFingers[i]) outHand.setDigit( i, [0,1,1,1] ); // non-selected fingers into fist
                         }
                         break;
                         
                     case "PINCH_12": case "PINCH_12_OPEN": case "CEE_12": case "CEE_12_OPEN": 
                         for (let i = 0; i < specFing.length; i++) {
-                            outHand[specFing[i]] = [ ...this.handshapes[ (shapeName.includes("CEE_") ? "CEE_ALL" : "PINCH_ALL") ].fingers[ specFing[i] - 1] ];
+                            outHand.setDigit( specFing[i], this.handshapes[ (shapeName.includes("CEE_") ? "CEE_ALL" : "PINCH_ALL") ].fingers[ specFing[i] - 1 ] );
                         }
                         break;
                         
@@ -738,10 +821,10 @@ class HandShape {
                             // change handshape
                             for (let i = 0; i < specFing.length; i++) {                                
                                 if (!defFing[i]) { 
-                                    outHand[specFing[i]] = [...outHand[defFing[0]]]; // copy array as value not reference
+                                    outHand.setDigit( specFing[i], outHand.getDigit(defFing[0]) ); // copy array as value not reference
                                 }  // if more special fingers than default
                                 else if (specFing[i] == defFing[i]) { continue; } // default and special are the same finger -> skip
-                                else { outHand[specFing[i]] = [...outHand[defFing[i]]]; } // interchange finger config (eg: default=2, special=5)
+                                else { outHand.setDigit( specFing[i],outHand.getDigit(defFing[i]) ); } // interchange finger config (eg: default=2, special=5)
                             }
                         }
                         break;
@@ -750,14 +833,14 @@ class HandShape {
                 // change unselected to open or fist
                 let isOpen = shapeName.includes("_OPEN", 5);
                 for (let i = 1; i < selectedFingers.length; i++) {
-                    if (!selectedFingers[i]) { outHand[i] = (isOpen ? [0,0.2,0.2,0.2] : [0,1,1,1]); }
+                    if (!selectedFingers[i]) { outHand.setDigit( i, (isOpen ? [0,0.2,0.2,0.2] : [0,1,1,1]) ); }
                 }
                 
                 // relocate thumb if pinch or cee. All pinc_ cee_ are transformed into pinch_all cee_all
                 if ( shapeName.includes("PINCH_") || shapeName.includes("CEE_") ){
                     let relocationThumbshape = shapeName.includes("PINCH_") ? this.handshapes.PINCH_ALL.thumbOptions : this.handshapes.CEE_ALL.thumbOptions;
                     relocationThumbshape = relocationThumbshape[ specFing[0] - 1 ]; // relocate to first specialFinger
-                    for( let j = 0; j < 3; ++j ){ outHand[0][j].copy( relocationThumbshape[j] ); }                                    
+                    outHand.thumb = relocationThumbshape;
                 }        
             }    
         } // end of special fingers
@@ -769,19 +852,16 @@ class HandShape {
         let thumbshapeName = isSecond ? bml.secondThumbshape : bml.thumbshape;
         if ( typeof( thumbshapeName ) == "string" ){ thumbshapeName = thumbshapeName.toUpperCase(); }
         let thumbGest = this.thumbshapes[ thumbshapeName ];
-        if ( thumbGest ){
-            for( let i = 0; i < 3; ++i ){ outHand[0][i].copy( thumbGest[i] ); }        
-        }
+        if ( thumbGest ){ outHand.thumb = thumbGest; }
 
         // bml.tco (thumb combination opening). Applicable to cee and pinch (select mode 2 and 3). 1=keep original, 0=open fingers
         let thumbCombinationOpening = parseFloat( isSecond ? bml.secondtco : bml.tco );
         thumbCombinationOpening = isNaN( thumbCombinationOpening ) ? 0 : Math.max(-1, Math.min(1, thumbCombinationOpening ) );
         thumbCombinationOpening = 1- thumbCombinationOpening;
         for( let i = 1; i < 5; ++i ){
-            outHand[i][0] *= thumbCombinationOpening;
-            outHand[i][1] *= thumbCombinationOpening;
-            outHand[i][2] *= thumbCombinationOpening; 
-            outHand[i][3] *= thumbCombinationOpening; 
+            outHand.shape[i][1] *= thumbCombinationOpening;
+            outHand.shape[i][2] *= thumbCombinationOpening; 
+            outHand.shape[i][3] *= thumbCombinationOpening; 
         }
         return true;
     }
@@ -791,37 +871,18 @@ class HandShape {
         let fingerIdxs = this.fingerIdxs;
 
         //copy "current" to "source". Swaping pointers not valid: when 2 instructions arrive at the same time, "source" would have wrong past data
-        for( let i = 0; i < 5; ++i ){
-            for( let j = 0; j < 3; ++j ){
-                this.srcG[i][j].copy( this.curG[i][j] );
-            }
-        }
+        this.srcG.copy( this.curG );
 
         // compute gestures
-        let shape = [ 
-            [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()],
-            [0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]
-        ];
-        let secondShape = [ 
-            [new THREE.Quaternion(), new THREE.Quaternion(), new THREE.Quaternion()],
-            [0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]
-        ];
+        let shape = new HandInfo();
+        let secondShape = new HandInfo();
 
         if ( !this._newGestureHandComposer( bml, shape, false ) ){ 
             console.warn( "Gesture: HandShape incorrect handshape \"" + bml.handshape + "\"" );
             return false; 
         };
         if ( this._newGestureHandComposer( bml, secondShape, true ) ){ 
-            // mix both handshapes
-            for( let i = 0; i < 3; ++i ){
-                nlerpQuats( shape[0][i], shape[0][i], secondShape[0][i], 0.5 );
-            }
-            for( let i = 1; i < 5; ++i ){
-                shape[i][0] = 0.5 * ( shape[i][0] + secondShape[i][0] );
-                shape[i][1] = 0.5 * ( shape[i][1] + secondShape[i][1] );
-                shape[i][2] = 0.5 * ( shape[i][2] + secondShape[i][2] );
-                shape[i][3] = 0.5 * ( shape[i][3] + secondShape[i][3] );
-            }
+            shape.lerp( secondShape, 0.5 );
         };
 
         // Jasigning uses numbers in a string for bend. Its range is 0-4. This realizer works with 0-9. Remap
@@ -833,21 +894,24 @@ class HandShape {
 
         // specific bendings
         // this._stringToFingerBend( bml.bend1, this.trgG[0], 1, bendRange ); // thumb
-        this._stringToFingerBend( bml.bend2, shape[1], 1, bendRange );
-        this._stringToFingerBend( bml.bend3, shape[2], 1, bendRange );
-        this._stringToFingerBend( bml.bend4, shape[3], 1, bendRange );
-        this._stringToFingerBend( bml.bend5, shape[4], 1, bendRange );
+        this._stringToFingerBend( bml.bend2, shape.index, 1, bendRange );
+        this._stringToFingerBend( bml.bend3, shape.middle, 1, bendRange );
+        this._stringToFingerBend( bml.bend4, shape.ring, 1, bendRange );
+        this._stringToFingerBend( bml.bend5, shape.pinky, 1, bendRange );
 
         // check if any splay attributes is present. ( function already checks if passed argument is valid )           
         // this._stringToSplay( bml.splay1, this.trgG[0] ); // thumb
-        this._stringToSplay( bml.splay2 ? bml.splay2 : bml.mainSplay, shape[1] );
-        this._stringToSplay( bml.splay3, shape[2] ); // not affected by mainsplay, otherwise it feels weird
-        this._stringToSplay( bml.splay4 ? bml.splay4 : bml.mainSplay, shape[3] );
-        this._stringToSplay( bml.splay5 ? bml.splay5 : bml.mainSplay, shape[4] );
+        this._stringToSplay( bml.splay2 ? bml.splay2 : bml.mainSplay, shape.index );
+        this._stringToSplay( bml.splay3, shape.middle ); // not affected by mainsplay, otherwise it feels weird
+        this._stringToSplay( bml.splay4 ? bml.splay4 : bml.mainSplay, shape.ring );
+        this._stringToSplay( bml.splay5 ? bml.splay5 : bml.mainSplay, shape.pinky );
+
+
+        this.trgG.copy( shape );
 
         // compute finger quaternions and thumb ik (if necessary)
-        this._setFingers( shape[1], shape[2], shape[3], shape[4] );
         if( this.handLocations[ bml.thumbTarget ] ){
+            this._setFingers( shape.index, shape.middle, shape.ring, shape.pinky );
             let targetPos = this.handLocations[ bml.thumbTarget ].getWorldPosition( new THREE.Vector3() );
             if( bml.thumbDistance ){ 
                 let distance = isNaN( parseFloat( bml.thumbDistance ) ) ? 0 : bml.thumbDistance;
@@ -856,29 +920,15 @@ class HandShape {
                 targetPos.addScaledVector( palmOutVec, distance * this.thumbThings.thumbSizeFull );
             }
             this.thumbIK( targetPos, 10, bml.thumbSource == "PAD", bml.thumbSplay );
-            this.trgG[0][0].copy( this.skeleton.bones[ this.fingerIdxs[0] ].quaternion );
-            this.trgG[0][1].copy( this.skeleton.bones[ this.fingerIdxs[0] + 1 ].quaternion );
-            this.trgG[0][2].copy( this.skeleton.bones[ this.fingerIdxs[0] + 2 ].quaternion );
-        }else{
-            this.trgG[0][0].copy( shape[0][0] );
-            this.trgG[0][1].copy( shape[0][1] );
-            this.trgG[0][2].copy( shape[0][2] );
-        }
-
-        // copy resulting fingers and thumb quaternions to "target" and "default"
-        for( let i = 1; i < 5; ++i ){
-            for( let j = 0; j < 3; ++j ){
-                this.trgG[i][j].copy( bones[ fingerIdxs[i] + j ].quaternion );
-                bones[ fingerIdxs[i] + j ].quaternion.copy( this.srcG[i][j] ); // set fingers as they were
-            }
+            this._getThumb( this.trgG.thumb );
+            
+            // set quaternions as they were before ik
+            this._setFingers( this.srcG.index, this.srcG.middle, this.srcG.ring, this.srcG.pinky );
+            this._getThumb( this.srcG.thumb );
         }
 
         if ( bml.shift ){
-            for( let i = 0; i < 5; ++i ){
-                for( let j = 0; j < 3; ++j ){
-                    this.defG[i][j].copy( this.trgG[i][j] );
-                }
-            }
+            this.defG.copy( this.trgG );
         }
         
         this.time = 0;
