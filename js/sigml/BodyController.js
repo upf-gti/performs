@@ -99,8 +99,6 @@ class BodyController{
         this.config.handLocationsL = locationToObjects( this.config.handLocationsL ? this.config.handLocationsL : this.config.handLocationsR, this.skeleton, !this.config.handLocationsL ); // assume symmetric mesh/skeleton
         this.config.handLocationsR = locationToObjects( this.config.handLocationsR, this.skeleton, false ); // since this.config is being overwrite, generate left before right
 
-        // finger axes do no need any change
-
         /** default elbow raise, shoulder raise, shoulder hunch */
         let correctedDefaultAngles = {
             elbowRaise: 0,
@@ -125,6 +123,34 @@ class BodyController{
         this.config.elbowRaise = correctedDefaultAngles.elbowRaise;
         this.config.shoulderRaise = correctedDefaultAngles.shoulderRaise;
         this.config.shoulderHunch = correctedDefaultAngles.shoulderHunch;
+
+        /** finger angle ranges */
+        let angleRanges = [ // in case of config...
+            [ [ 0, 45*Math.PI/180 ] ],//[ [ 0, Math.PI * 0.2 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.4 ], [ 0, Math.PI * 0.4 ] ],  // [ splay, base, mid, high ]
+            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+        ];
+        if ( Array.isArray( this.config.fingerAngleRanges ) ){
+            let userAngleRanges = this.config.fingerAngleRanges;
+            for( let i = 0; i < angleRanges.length && i < userAngleRanges.length; ++i ){ // for each finger available
+                let fingerRanges = angleRanges[i];
+                let userFingerRanges = userAngleRanges[i]
+                if( !Array.isArray( userFingerRanges ) ){ continue; }
+                for( let j = 0; j < fingerRanges.length && j < userFingerRanges.length; ++j ){ // for each range in the finger available
+                    let range = fingerRanges[j];
+                    let userRange = userFingerRanges[j];
+                    if ( !Array.isArray( userRange ) || userRange.length < 2 ){ continue; }
+                    let v = userRange[0] * Math.PI / 180; 
+                    range[0] = isNaN( v ) ? range[0] : v; 
+                    v = userRange[1] * Math.PI / 180; 
+                    range[1] = isNaN( v ) ? range[1] : v; 
+                }
+            }
+        }
+        this.config.fingerAngleRanges = angleRanges;
+
 
     }
     _createArm( isLeftHand = false ){

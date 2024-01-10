@@ -123,6 +123,8 @@ class HandShape {
             boneMap[ handName + "HandPinky" ] 
         ];
         
+        this.thumbIKMaxIter = 30;
+
         this.fingerAxes = this._computeFingerAxesOfHand( );
         this._computeLookUpTables();
         
@@ -204,7 +206,7 @@ class HandShape {
         }
     }
 
-    thumbIK( targetWorldPos, maxIter, shortChain = false, splay = null ){
+    thumbIK( targetWorldPos, shortChain = false, splay = null ){
         let tempQ_0 = new THREE.Quaternion();
         let tempQ_1 = new THREE.Quaternion();
         let tempV3_0 = new THREE.Vector3();
@@ -232,6 +234,7 @@ class HandShape {
         }
     
         // CCD
+        let maxIter = this.thumbIKMaxIter;
         for ( let iter = 0; iter < maxIter; ++iter ){
             let lastBone = (iter > 0) ? 0 : 1; // first iteration ignore base joint
             
@@ -465,14 +468,14 @@ class HandShape {
         this.thumbThings.thumbSizeFull = thumbSizeFull; // TODO store it in local coords. Currently in world size
         this.thumbThings.fingerWidth = fingerWidth;
 
-
-        this.angleRanges = [ // in case of config...
-            [ [ 0, 75*Math.PI/180 ] ],//[ [ 0, Math.PI * 0.2 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.4 ], [ 0, Math.PI * 0.4 ] ],  // [ splay, base, mid, high ]
-            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
-            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
-            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
-            [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
-        ];
+        this.angleRanges = this.config.fingerAngleRanges;
+        // this.angleRanges = [ // in case of config...
+        //     [ [ 0, 75*Math.PI/180 ] ],//[ [ 0, Math.PI * 0.2 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.4 ], [ 0, Math.PI * 0.4 ] ],  // [ splay, base, mid, high ]
+        //     [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+        //     [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+        //     [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+        //     [ [ 0, 20*Math.PI/180 ], [ 0, Math.PI * 0.5 ], [ 0, Math.PI * 0.6 ], [ 0, Math.PI * 0.5 ] ], // [ splay, base, mid, high ]
+        // ];
 
         // *** Thumbshapes ***
         this.thumbshapes = {
@@ -484,24 +487,24 @@ class HandShape {
 
         // thumbshape: OUT
         bones[ this.fingerIdxs[1] ].getWorldPosition( tempV3_0 ).addScaledVector( palmLateralVec, thumbSizeUpper * 1.2 );
-        this.thumbIK( tempV3_0, 10, true ); // do not bend tip
+        this.thumbIK( tempV3_0, true ); // do not bend tip
         this.thumbshapes.OUT = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ];
 
         // thumbshape: OPPOSED 
         bones[ this.fingerIdxs[1] ].getWorldPosition( tempV3_0 ).addScaledVector( palmOutVec, thumbSizeFull )
-        this.thumbIK( tempV3_0, 10, false );
+        this.thumbIK( tempV3_0, false );
         this.thumbshapes.OPPOSED = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ];
 
         // thumbshape: DEFAULT
         this.handLocations[ "2_BASE_PALMAR" ].getWorldPosition( tempV3_0 );
         tempV3_0.addScaledVector( palmLateralVec, fingerWidth*1.5 );
-        this.thumbIK( tempV3_0, 10, true );
+        this.thumbIK( tempV3_0, true );
         this.thumbshapes.DEFAULT = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ];
 
         // thumbshape: ACROSS
         this.handLocations[ "5_BASE_PALMAR" ].getWorldPosition( tempV3_0 );
         tempV3_0.addScaledVector( palmOutVec, fingerWidth*0.5 );
-        this.thumbIK( tempV3_0, 10, false, 0 );
+        this.thumbIK( tempV3_0, false, 0 );
         this.thumbshapes.ACROSS = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ];
 
 
@@ -537,7 +540,7 @@ class HandShape {
         this._setFingers( shape.fingers[0], shape.fingers[1], shape.fingers[2], shape.fingers[3] );
         for( let i = 2; i < 6; ++i ){
             this.handLocations[ i.toString() + "_MID_RADIAL" ].getWorldPosition( tempV3_0 );
-            this.thumbIK( tempV3_0, 10, true );
+            this.thumbIK( tempV3_0, true );
             let thumbQuats = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ]
             handshapes.FINGER_2.thumbOptions.push( thumbQuats );    
             handshapes.FINGER_23.thumbOptions.push( thumbQuats );    
@@ -552,7 +555,7 @@ class HandShape {
         this._setFingers( shape.fingers[0], shape.fingers[1], shape.fingers[2], shape.fingers[3] );
         for( let i = 2; i < 6; ++i ){
             this.handLocations[ i.toString() + "_TIP" ].getWorldPosition( tempV3_0 );
-            this.thumbIK( tempV3_0, 10, false );
+            this.thumbIK( tempV3_0, false );
             let thumbQuats = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ]
             handshapes.PINCH_12.thumbOptions.push( thumbQuats );    
             handshapes.PINCH_12_OPEN.thumbOptions.push( thumbQuats );    
@@ -560,7 +563,7 @@ class HandShape {
             
             // reuse pinch position to compute CEE thumb, opening it
             tempV3_0.addScaledVector( palmOutVec, thumbSizeUpper ); // openin thumb
-            this.thumbIK( tempV3_0, 10, false );
+            this.thumbIK( tempV3_0, false );
             thumbQuats = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ]
             handshapes.CEE_12.thumbOptions.push( thumbQuats );    
             handshapes.CEE_12_OPEN.thumbOptions.push( thumbQuats );  
@@ -588,7 +591,7 @@ class HandShape {
         this._setFingers( handBendings.BENT[2].f, handBendings.BENT[2].f, handBendings.BENT[2].f, handBendings.BENT[2].f );
         for( let i = 2; i < 6; ++i ){
             this.handLocations[ i.toString() + "_TIP" ].getWorldPosition( tempV3_0 );
-            this.thumbIK( tempV3_0, 10, false );
+            this.thumbIK( tempV3_0, false );
             let thumbQuats = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ]
             handBendings.BENT[2].t.push( thumbQuats );    
 
@@ -602,7 +605,7 @@ class HandShape {
         this._setFingers( handBendings.ROUND[2].f, handBendings.ROUND[2].f, handBendings.ROUND[2].f, handBendings.ROUND[2].f );
         for( let i = 2; i < 6; ++i ){
             this.handLocations[ i.toString() + "_PAD_BACK" ].getWorldPosition( tempV3_0 );
-            this.thumbIK( tempV3_0, 10, false );
+            this.thumbIK( tempV3_0, false );
             let thumbQuats = [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ]
             handBendings.ROUND[2].t.push( thumbQuats );
         }
@@ -610,7 +613,7 @@ class HandShape {
         this._setFingers( handBendings.HOOKED[2].f, handBendings.HOOKED[2].f, handBendings.HOOKED[2].f, handBendings.HOOKED[2].f );
         for( let i = 2; i < 6; ++i ){
             this.handLocations[ i.toString() + "_MID_BACK" ].getWorldPosition( tempV3_0 );
-            this.thumbIK( tempV3_0, 10, i < 4 ); // target with thumb tip for ring and pinky. Target with thumb pad joint for middle and index
+            this.thumbIK( tempV3_0, i < 4 ); // target with thumb tip for ring and pinky. Target with thumb pad joint for middle and index
             handBendings.HOOKED[2].t.push( [ bones[ this.fingerIdxs[0] ].quaternion.clone(), bones[ this.fingerIdxs[0] + 1 ].quaternion.clone(), bones[ this.fingerIdxs[0] + 2 ].quaternion.clone(), ] );
         }
         handBendings.DOUBLE_BENT[2].t = handBendings.HOOKED[2].t; // reference
@@ -664,11 +667,8 @@ class HandShape {
         // apply bind quaternions
         for ( let i = 1; i < 5; ++i ){
             bones[ fingers[i]     ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.bindQuats[i*3]) );
-            bones[ fingers[i]     ].updateWorldMatrix();
             bones[ fingers[i] + 1 ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.bindQuats[i*3+1]) );
-            bones[ fingers[i] + 1 ].updateWorldMatrix();
             bones[ fingers[i] + 2 ].quaternion.multiply(  this._tempQ_0.copy(this.fingerAxes.bindQuats[i*3+2]) );            
-            bones[ fingers[i] + 2 ].updateWorldMatrix();
         }
     }
        
@@ -910,21 +910,22 @@ class HandShape {
         this.trgG.copy( shape );
 
         // compute finger quaternions and thumb ik (if necessary)
-        if( this.handLocations[ bml.thumbTarget ] ){
+        let thumbTarget = ( typeof( bml.thumbTarget ) == "string" ) ? this.handLocations[ bml.thumbTarget.toUpperCase() ] : null;
+        if( thumbTarget ){
             this._setFingers( shape.index, shape.middle, shape.ring, shape.pinky );
-            let targetPos = this.handLocations[ bml.thumbTarget ].getWorldPosition( new THREE.Vector3() );
+            let targetPos = thumbTarget.getWorldPosition( new THREE.Vector3() );
             if( bml.thumbDistance ){ 
                 let distance = isNaN( parseFloat( bml.thumbDistance ) ) ? 0 : bml.thumbDistance;
                 let m3 = ( new THREE.Matrix3() ).setFromMatrix4( bones[ this.wristIdx ].matrixWorld );
                 let palmOutVec = this.thumbThings.palmOutVec.clone().applyMatrix3( m3 ).normalize();
                 targetPos.addScaledVector( palmOutVec, distance * this.thumbThings.thumbSizeFull );
             }
-            this.thumbIK( targetPos, 10, bml.thumbSource == "PAD", bml.thumbSplay );
+            this.thumbIK( targetPos, bml.thumbSource == "PAD", bml.thumbSplay );
             this._getThumb( this.trgG.thumb );
             
             // set quaternions as they were before ik
             this._setFingers( this.srcG.index, this.srcG.middle, this.srcG.ring, this.srcG.pinky );
-            this._getThumb( this.srcG.thumb );
+            this._setThumb( this.srcG.thumb );
         }
 
         if ( bml.shift ){

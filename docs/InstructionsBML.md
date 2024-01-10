@@ -466,16 +466,24 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     
     "mainBend": "HOOKED", // bend applied to selected fingers from the default handshapes. Basic handshapes and ThumbCombination handshapes behave differently. Value from the bend table
     "secondMainBend": "HOOKED", // mainbend applied to secondHandshape
-    "bend1": "044", // overrides any other bend applied by this handshape for the thumb finger
     "bend2": "044", // overrides any other bend applied by this handshape for the index finger
     "bend3": "044", // overrides any other bend applied by this handshape for the middle finger 
     "bend4": "044", // overrides any other bend applied by this handshape for the ring finger
     "bend5": "044", // overrides any other bend applied by this handshape for the pinky finger
 
     "mainSplay": 0.5, // number [-1,1]. Separates laterally fingers 2,4,5. Splay diminishes the more the finger is bent
-    "splay1": 0.5, // number [-1,1]. splay1=thumb, splay2=index, and so on. Sepparates laterally the specified finger. Splay diminishes the more the finger is bent. 
+    "splay2": 0.5, // number [-1,1]. Sepparates laterally the index finger. Splay diminishes the more the finger is bent. 
+    "splay3": 0.5, // number [-1,1]. Sepparates laterally the middle finger. Splay diminishes the more the finger is bent. 
+    "splay4": 0.5, // number [-1,1]. Sepparates laterally the ring finger. Splay diminishes the more the finger is bent. 
+    "splay5": 0.5, // number [-1,1]. Sepparates laterally the pinky finger. Splay diminishes the more the finger is bent. 
 
     "specialFingers": "5", //string of numbers [2-5], the main characteristics of the handshape are applied to the fingers specified. This is done before the mainbend and the thumbshape since they are applied to the selected fingers, and these change when applying specialFingers.
+
+    "thumbTarget": "2_TIP", // where the thumb should go to. Accepts hand locations in compact format "fingerDigit_location_side". E.G. "HAND_PALMAR", "2_BASE_PALMAR", "4_TIP" 
+    "thumbDistance": 0, // optional - thumb contact status with respect to target. Distance mesured in whole thumb size. Direction perpendicular to hand palm. Defaults to 0
+    "thumbSource": "PAD", // optional - either "TIP" or "PAD". Which part of the thumb should move to target. Defaults to tip.
+    "thumbSplay": 0, // optional - sepparates base of thumb without changing target.
+
     "shift": false,
 }
 ```
