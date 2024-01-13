@@ -43,9 +43,9 @@ class HandConstellation {
 
 
         this.srcCurOffset = null; // pointer to curOffset L or R
-        this.srcPoint = null;
+        this.srcPoints = [null,null];
         this.dstCurOffset = null; // pointer to curOffset L or R
-        this.dstPoint = null;
+        this.dstPoints = [null,null];
 
         this.distanceVec = new THREE.Vector3(0,0,0);
         this.isBothHands = false; // whether to move only src hand to dst point or move both hands to their respective destination points 
@@ -88,11 +88,23 @@ class HandConstellation {
 
         if ( this.keepUpdatingContact || !this.peakUpdated ){ 
 
-            this.srcPoint.updateWorldMatrix( true ); // self and parents
-            this.dstPoint.updateWorldMatrix( true ); // self and parents
-            let srcWorldPoint = this._tempV3_0.setFromMatrixPosition( this.srcPoint.matrixWorld );
-            let dstWorldPoint = this._tempV3_1.setFromMatrixPosition( this.dstPoint.matrixWorld );
+            // compute source and target points 
+            this.srcPoints[0].updateWorldMatrix( true ); // self and parents
+            let srcWorldPoint = this._tempV3_0.setFromMatrixPosition( this.srcPoints[0].matrixWorld );
+            if ( this.srcPoints[1] ){
+                this.srcPoints[1].updateWorldMatrix( true ); // self and parents
+                this._tempV3_2.setFromMatrixPosition( this.srcPoints[1].matrixWorld );  
+                srcWorldPoint.lerp( this._tempV3_2, 0.5 );
+            }
+            this.dstPoints[0].updateWorldMatrix( true ); // self and parents
+            let dstWorldPoint = this._tempV3_1.setFromMatrixPosition( this.dstPoints[0].matrixWorld );
+            if ( this.dstPoints[1] ){
+                this.dstPoints[1].updateWorldMatrix( true ); // self and parents
+                this._tempV3_2.setFromMatrixPosition( this.dstPoints[1].matrixWorld );  
+                srcWorldPoint.lerp( this._tempV3_2, 0.5 );
+            }
             
+            // compute offset for each hand
             if ( this.isBothHands ){
                 if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
                 else{
@@ -180,22 +192,32 @@ class HandConstellation {
     }
 
 
-    _newGestureLocationComposer( bml, handLocations, hand = "R", isSource = true ){
+    static handLocationComposer( bml, handLocations, isLeftHand = false, isSource = true, isSecond = false ){
         // check all-in-one variable first
-        let compactContact = isSource ? bml.srcContact : bml.dstContact;
+        let compactContact;
+        if ( isSource ){ compactContact = isSecond ? bml.secondSrcContact : bml.srcContact }
+        else{ compactContact = isSecond ? bml.secondDstContact : bml.dstContact; }
         if ( typeof( compactContact ) == "string" ){
-            compactContact.toUpperCase();
+            compactContact = compactContact.toUpperCase();
             let result = handLocations[ compactContact ];
             if ( result ){ return result; }
         }
 
         // check decomposed variables
-        let finger = parseInt( isSource ? bml.srcFinger : bml.dstFinger );
-        let side = isSource ? bml.srcSide : bml.dstSide; 
-        let location = isSource ? bml.srcLocation : bml.dstLocation;
+        let finger, side, location;
+        if ( isSource ){ 
+            if ( isSecond ){ finger = bml.secondSrcFinger; side = bml.secondSrcSide; location = bml.secondSrcLocation; } 
+            else{ finger = bml.srcFinger; side = bml.srcSide; location = bml.srcLocation; } 
+        }
+        else{ 
+            if ( isSecond ){ finger = bml.secondDstFinger; side = bml.secondDstSide; location = bml.secondDstLocation; } 
+            else{ finger = bml.dstFinger; side = bml.dstSide; location = bml.dstLocation; } 
+        }
+        finger = parseInt( finger );
+                
 
         if ( isNaN( finger ) || finger < 1 || finger > 5 ){ finger = ""; }
-        if ( typeof( location ) != "string" || location.length < 1){ location = ""; }
+        if ( typeof( location ) != "string" || location.length < 1 ){ location = ""; }
         else{ 
             location = ( finger > 0 ? "_" : "" ) + location.toUpperCase();
         }
@@ -203,15 +225,15 @@ class HandConstellation {
         else{ 
             side = side.toUpperCase();
             if ( !location.includes("ELBOW") && !location.includes("UPPER_ARM") ){ // jasigning...
-                if ( side == "RIGHT" ){ side = (hand == "R" ? "ULNAR" : "RADIAL"); }
-                else if ( side == "LEFT" ){ side = (hand == "R" ? "RADIAL" : "ULNAR"); }
+                if ( side == "RIGHT" ){ side = isLeftHand ?  "RADIAL" : "ULNAR" ; }
+                else if ( side == "LEFT" ){ side = isLeftHand ? "ULNAR" : "RADIAL"; }
             }
             side = "_" + side;
         }
         let name = finger + location + side; 
 
         let result = handLocations[ name ];
-        if ( !result ){ result = handLocations[ "2_TIP" ]; }
+        // if ( !result ){ result = handLocations[ "2_TIP" ]; }
         return result;
     }
     /**
@@ -242,17 +264,17 @@ class HandConstellation {
         this.cancelledArmsFlag = 0x00;
         let srcLocations = null;
         let dstLocations = null;
-        let srcHand = "R";
+        let isLeftHandSource = false; // default right
 
         if ( bml.hand == "BOTH" ){ // src default to domhand
             this.isBothHands = true;
-            srcHand = domHand == "L" ? "L" : "R";
+            isLeftHandSource = domHand == "L";
         }else{
             this.isBothHands = false;
-            if ( bml.hand == "RIGHT" ){ srcHand = "R"; }
-            else if ( bml.hand == "LEFT" ){ srcHand = "L"; }
-            else if ( bml.hand == "NON_DOMINANT" ){ srcHand = domHand == "L" ? "R" : "L"; }
-            else{ srcHand = domHand == "L" ? "L" : "R"; }
+            if ( bml.hand == "RIGHT" ){ isLeftHandSource = false; }
+            else if ( bml.hand == "LEFT" ){ isLeftHandSource = true; }
+            else if ( bml.hand == "NON_DOMINANT" ){ isLeftHandSource = domHand == "R"; }
+            else{ isLeftHandSource = domHand == "L"; }
         }
 
         // save current state as previous state. curOffset changes on each update
@@ -261,7 +283,7 @@ class HandConstellation {
 
 
         // set pointers
-        if ( srcHand == "L" ){
+        if ( isLeftHandSource ){
             this.srcCurOffset = this.curOffsetL;
             this.dstCurOffset = this.curOffsetR;
             srcLocations = this.handLocationsL; 
@@ -272,8 +294,12 @@ class HandConstellation {
             srcLocations = this.handLocationsR;
             dstLocations = this.handLocationsL
         }
-        this.srcPoint = this._newGestureLocationComposer( bml, srcLocations, srcHand, true );
-        this.dstPoint = this._newGestureLocationComposer( bml, dstLocations, srcHand =="R" ? "L":"R", false );
+        this.srcPoints[0] = HandConstellation.handLocationComposer( bml, srcLocations, isLeftHandSource, true, false );
+        this.srcPoints[1] = HandConstellation.handLocationComposer( bml, srcLocations, isLeftHandSource, true, true );
+        this.dstPoints[0] = HandConstellation.handLocationComposer( bml, dstLocations, !isLeftHandSource, false, false ); 
+        this.dstPoints[1] = HandConstellation.handLocationComposer( bml, dstLocations, !isLeftHandSource, false, true );
+        if ( !this.srcPoints[0] ){ this.srcPoints[0] = srcLocations[ "2_TIP" ]; }
+        if ( !this.dstPoints[0] ){ this.dstPoints[0] = dstLocations[ "2_TIP" ]; }
         
         let distance = parseFloat( bml.distance );
         if ( isNaN( distance ) ){ this.distanceVec.set(0,0,0); }

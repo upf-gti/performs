@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { stringToDirection } from './Utils.js';
+import { HandConstellation } from './HandConstellation.js';
 
 class LocationBodyArm {
     constructor( config, skeleton, isLeftHand = false ) {
@@ -250,38 +251,12 @@ class LocationBodyArm {
         }
 
         // in case the user selects a specific finger bone as end effector. Not affected by shift
-        this.contactFinger = null;
-        let srcFinger = parseInt( bml.srcFinger );
-        let srcSide = bml.srcSide; 
-        let srcLocation = bml.srcLocation;
-        // check all-in-one variable first. Only hand locations allowed as contact
-        
-        let srcContact = typeof( bml.srcContact ) == "string" ? bml.srcContact.toUpperCase() : "";
-        srcContact = this.handLocations[ srcContact ]; 
-        if ( srcContact && !bml.srcContact.includes( "ARM" ) && !bml.srcContact.includes( "ELBOW" ) ){
-            this.contactFinger = srcContact;
-        }
-        else if ( srcFinger || srcSide || srcLocation ){ 
-
-            if ( isNaN( srcFinger ) || srcFinger < 1 || srcFinger > 5 ){ srcFinger = ""; }
-            if ( typeof( srcLocation ) != "string" || srcLocation.length < 1){ srcLocation = ""; }
-            else{ 
-                srcLocation = ( srcFinger > 0 ? "_": "" ) + srcLocation.toUpperCase(); 
-            }
-            if ( typeof( srcSide ) != "string" || srcSide.length < 1 ){ srcSide = ""; }
-            else{ 
-                srcSide = "_" + srcSide.toUpperCase();
-                if ( !isNaN( srcFinger ) ){ // jasigning...
-                    if ( srcSide == "_RIGHT" ){ srcSide = "_" + (this.isLeftHand ? "RADIAL" : "ULNAR"); }
-                    else if ( srcSide == "_LEFT" ){ srcSide = "_" + (this.isLeftHand ? "ULNAR" : "RADIAL"); }
-                }
-            }
-            let srcName = srcFinger + srcLocation + srcSide; 
-         
+        this.contactFinger = null; 
+        let contact = HandConstellation.handLocationComposer( bml, this.handLocations, this.isLeftHand, true, false );
+        if( contact ){
             // only hand locations allowed as contact
-            if ( !srcName.includes( "ARM" ) && !srcName.includes( "ELBOW" ) ){
-                this.contactFinger = this.handLocations[ srcName ];
-            }
+            if ( contact.name && !contact.name.includes( "ARM" ) && !contact.name.includes( "ELBOW" ) ){ this.contactFinger = contact; }
+            // TODO: missing second attributes
         }
 
         // check and set timings

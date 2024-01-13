@@ -545,19 +545,27 @@ The motion is stopped if an arm location is executed afterwards.
     "end": 0.4,
 
     "handConstellation": true,
-    //Location of the hand in the specified hand (or dominant hand)
+    //Location of the hand in the specified hand (or dominant hand). Attributes should only be included if necessary
     "srcFinger": "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
     "srcLocation": "PAD", // string from hand locations (although no forearm, elbow, upperarm are valid inputs here)
-    "srcSide": "BACK", // ULNAR, RADIAL, PALMAR, BACK
-     
-    //Location of the hand in the unspecified hand (or non dominant hand)
+    "srcSide": "BACK", // ULNAR, RADIAL, PALMAR, BACK. The location "TIP" does not need any side and the attribute should not be included
+
+    //Location of the hand in the unspecified hand (or non dominant hand). Attributes should only be included if necessary
     "dstFinger": "2", // 1,2,3,4,5. If the location does not use a finger, do not include this
     "dstLocation": "BASE", // string from hand locations or arm locations
-    "dstSide": "PALMAR", // ULNAR, RADIAL, PALMAR, BACK 
+    "dstSide": "PALMAR", // ULNAR, RADIAL, PALMAR, BACK. The location "TIP" does not need any side and the attribute should not be included
     
     "hand": "DOMINANT", // if hand=="BOTH", both hand will try to reach each other, meeting in the middle. Otherwise, only the specified hand will move towards the unspecified hand.
 
     // optionals
+    // second attributes. The middle point is computed between the second attributes and their main counterparts.
+    "secondSrcFinger":   "2",
+    "secondSrcLocation": "MID",
+    "secondSrcSide":     "BACK",
+	"secondDstFinger":   "2",
+    "secondDstLocation": "PAD",
+    "secondDstSide":     "BACK",
+
     "distance": 0, //[-ifinity,+ifninity] where 0 is touching and 1 is the arm size. Distance between endpoints. 
     "distanceDirection": "L", // string, combination of 6 directions. If not provided, defaults to horizontal outwards direction
     
