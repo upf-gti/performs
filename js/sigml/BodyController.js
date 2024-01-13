@@ -196,15 +196,20 @@ class BodyController{
         this._resetArm( this.right );
         this._resetArm( this.left );
 
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "RIGHT", distance: 0.15, displace: "r", displaceDistance: 0.045, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, locationBodyArm: "NEUTRAL", hand: "LEFT",  distance: 0.1, displace: "l", displaceDistance: 0.025, shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "l", hand: "RIGHT", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, palmor: "r", hand: "LEFT", shift: true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, end: 0.1, extfidir: "dr", hand: "LEFT", mode: "local", shift:true } );
+        // this posture setting is quite hacky. To avoid dealing with handConstellation shift (not trivial)
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "RIGHT", distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "LEFT",  distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.75, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "l", hand: "RIGHT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "r", hand: "LEFT", shift: true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, extfidir: "dr", hand: "LEFT", mode: "local", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handConstellation: true, hand: "right", srcContact: "2_mid_palmar", secondSrcContact: "2_pad_palmar", dstContact:"hand_ulnar" } );
 
+        this.update( 0.15 );
+        this.left.loc.def.copy( this.left.locUpdatePoint ); // hack
+        this.right.loc.def.copy( this.right.locUpdatePoint ); // hack
         this.update( 1 );
     }
 
