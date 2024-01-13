@@ -1,4 +1,4 @@
-[ { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "handshape": "finger2" },
-{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "locationBodyArm": "chest", "distance": 0.1, "srcContact": "2Tip" },
+[ { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "handshape": "FINGER_2" },
+{ "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "locationBodyArm": "CHEST", "distance": 0.1, "srcContact": "2_TIP" },
 { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "extfidir": "il", "secondExtfidir": "i" },
 { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1.3, "end": 1.8, "palmor": "dr" } ]
