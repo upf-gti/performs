@@ -2032,11 +2032,17 @@ Text2Lip.prototype.update = function ( dt ) {
     }
 }
 
-Text2Lip.prototype.cleanQueueSentences = function () {
+Text2Lip.prototype.cleanQueueSentences = function ( clearVisemes = false ) {
     this.queueIdx = 0;
     this.currSent = null;
     this.queueSize = 0;
     this.sentenceQueue.fill( null );
+    
+    if ( clearVisemes ){
+        this.BSW.fill( 0 );
+        this.currV.fill( 0 );
+        this.targV.fill( 0 );
+    }
 }
 
 /**

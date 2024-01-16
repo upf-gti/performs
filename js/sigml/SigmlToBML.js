@@ -956,6 +956,9 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
     if ( attributes.slow == "true" ){ signSpeed *= 0.5; }
     if ( attributes.tense == "true" ){ signSpeed *= 0.5; }
     
+    let attrSignSpeed = parseFloat( attributes.speed ); 
+    signSpeed *= ( isNaN( attrSignSpeed ) ) ? 1 : attrSignSpeed;
+    
 
     if ( simpleMotionAvailable.includes( tagName ) ){
         let r = simpleMotionParser( xml, time, hand, symmetry, signSpeed, signGeneralInfo, currentPosture );
@@ -1286,7 +1289,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         }
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ 
-            result.zigzag = "l"; result.zigzagSpeed = 5; 
+            result.zigzag = "l"; result.zigzagSpeed = 5 * signSpeed; 
             if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; } // "small" == default value
             else { result.zigzagSize = 0.1; } // "small" == default value
         }
@@ -1321,7 +1324,14 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
             result.endAngle = Math.atan2( endDirection[1], endDirection[0] ) * 180 / Math.PI; 
             result.endAngle = result.endAngle < 0 ? ( 360 + result.endAngle ) : result.endAngle;
         }
-        if ( attributes.clockplus || attributes.second_clockplus ){ result.endAngle = result.startAngle + 2 * ( result.endAngle - result.startAngle );} 
+
+        let clockplus = 0;
+        if ( attributes.clockplus == "true" ){ clockplus++; }
+        if ( attributes.second_clockplus == "true" ){ clockplus++; }
+        if ( clockplus ){ 
+            let sign = ( result.endAngle - result.startAngle ) < -0.0001 ? -1 : 1;
+            result.endAngle = result.endAngle + 360 * clockplus * sign;
+        } 
         if ( typeof( result.direction ) == "string" && result.direction.includes( "i" ) ){
                 result.endAngle = (result.endAngle - result.startAngle) + ( result.startAngle * (-1) ); // new_start + old_deltaAngle
                 result.startAngle *= -1; // new_start
@@ -1329,19 +1339,26 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ 
             result.zigzag = "o"; 
-            if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; }
-            else { result.zigzagSize = 0.1; }
+            result.zigzagSpeed = 8 * signSpeed; 
+            if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.1; }
+            else { result.zigzagSize = 0.05; }
         }
 
+        let ellipseRatio = 0.5;
+        switch( attributes.ellipse_size ){
+            case "big" : ellipseRatio = 0.25; break;
+            case "small" : ellipseRatio = 0.75; break;
+            default: ellipseRatio = 0.5; break;
+        }
         switch( attributes.ellipse_direction ){
-            case "h": result.ellipseAxisDirection = "l"; result.ellipseAxisRatio = 0.5; break;
-            case "ur": result.ellipseAxisDirection = "ur"; result.ellipseAxisRatio = 0.5; break;
-            case "v": result.ellipseAxisDirection = "u"; result.ellipseAxisRatio = 0.5; break;
-            case "ul": result.ellipseAxisDirection = "ul"; result.ellipseAxisRatio = 0.5; break;
+            case "h": result.ellipseAxisDirection = "l"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "ur": result.ellipseAxisDirection = "ur"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "v": result.ellipseAxisDirection = "u"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "ul": result.ellipseAxisDirection = "ul"; result.ellipseAxisRatio = ellipseRatio; break;
             default: break; // defaults to ellipseAxisRatio = 0.5
         }
 
-        duration = TIMESLOT.MOTIONCIRC / signSpeed;
+        duration = (1+clockplus) * TIMESLOT.MOTIONCIRC / signSpeed;
         result.start = start;
         result.attackPeak = start + duration;
         resultArray.push( result );
@@ -1563,17 +1580,17 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
 
 let shoulderMovementTable = {
     // keeps that position until it changes or the sign ends
-    UL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT"  }, //_left_shoulder_raised                
-    UR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT" }, //_right_shoulder_raised               
-    UB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH"  }, //_both_shoulders_raised               
+    UL: { type: "gesture", shoulderRaise: 0.55, hand: "LEFT"  }, //_left_shoulder_raised                
+    UR: { type: "gesture", shoulderRaise: 0.55, hand: "RIGHT" }, //_right_shoulder_raised               
+    UB: { type: "gesture", shoulderRaise: 0.55, hand: "BOTH"  }, //_both_shoulders_raised               
     HL: { type: "gesture", shoulderHunch: 0.8, hand: "LEFT"  }, //_left_shoulder_hunched_forward       
     HR: { type: "gesture", shoulderHunch: 0.8, hand: "RIGHT" }, //_right_shoulder_hunched_forward      
     HB: { type: "gesture", shoulderHunch: 0.8, hand: "BOTH"  }, //_both_shoulders_hunched_forward     
     
     // up and down once
-    SL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
-    SR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
-    SB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
+    SL: { type: "gesture", shoulderRaise: 0.55, hand: "LEFT", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
+    SR: { type: "gesture", shoulderRaise: 0.55, hand: "RIGHT", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
+    SB: { type: "gesture", shoulderRaise: 0.55, hand: "BOTH", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
 };
 
 let bodyMovementTable = {
