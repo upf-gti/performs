@@ -1381,7 +1381,10 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         if ( attributes.size == "big" ){ result.intensity = 0.3; } 
         else { result.intensity = 0.1; }
         result.mode = attributes.motion.toUpperCase().replace("STIR", "STIR_");
-        result.speed = 4;
+        result.speed = 4 * signSpeed;
+
+        // non dominant hand always shows symmetry except on nodding
+        if ( result.mode != "nodding" && result.mode != "nod" ){ result.lrSym = true; }
 
         duration = TIMESLOT.MOTIONWRIST / signSpeed;
         result.end = start + duration;
@@ -1391,7 +1394,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         let result = {};
         result.motion = "FINGERPLAY";
         result.intensity = 0.5;
-        result.speed = 4;
+        result.speed = 4 * signSpeed;
         duration = TIMESLOT.MOTIONFINGERPLAY / signSpeed;
         result.end = start + duration;
         if ( attributes.digits ){ result.fingers = attributes.digits; }

@@ -555,9 +555,10 @@ class WristMotion {
      * speed = (optional) oscillations per second. A negative values accepted. Default 3. 
      * intensity = (optional) [0,1]. Default 0.3
      */
-    newGestureBML( bml ){
+    newGestureBML( bml, symmetry ){
         
         this.speed = isNaN( bml.speed ) ? 3 : bml.speed;
+        if ( symmetry & 0x07 ){ this.speed *= -1; }
         this.intensity = isNaN( bml.intensity ) ? 0.3 : bml.intensity;
         this.intensity = Math.min( 1, Math.max( 0, this.intensity ) );
         
@@ -566,8 +567,8 @@ class WristMotion {
                 case "nod": case "nodding": this.mode = 0x02; break;
                 case "swing": case "swinging": this.mode = 0x04; break;
                 case "twist": case "twisting": this.mode = 0x01; break;
-                case "stir_CW": case "stir_cw": this.mode = 0x06; break; // 0x02 | 0x04
-                case "stir_CCW": case "stir_ccw":this.mode = 0x06; this.speed *= -1; break;
+                case "stir_cw": this.mode = 0x06; break; // 0x02 | 0x04
+                case "stir_ccw": this.mode = 0x06; this.speed *= -1; break;
                 case "all": this.mode = 0x07; break;
                 default:
                     console.warn( "Gesture: No wrist motion called \"", bml.mode, "\" found" );
