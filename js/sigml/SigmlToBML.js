@@ -1612,8 +1612,8 @@ let bodyMovementTable = {
 let headMovementTable = {
     NO: { type: "head", lexeme: "NOD", repetition: 1 }, //_nodding_up_and_down     
     SH: { type: "head", lexeme: "SHAKE", repetition: 3 }, //_shaking_left_and_right  
-    SR: { type: "gaze", influence: "HEAD", target: "RIGHT", headOnly: true }, //_turned_right            
-    SL: { type: "gaze", influence: "HEAD", target: "LEFT", headOnly: true }, //_turned_left             
+    SR: { type: "head", lexeme: "ROTATE_RIGHT", repetition: 0 }, //_turned_right            
+    SL: { type: "head", lexeme: "ROTATE_LEFT", repetition: 0 }, //_turned_left             
     TR: { type: "head", lexeme: "TILT_RIGHT", repetition: 0 }, //_tilted_right            
     TL: { type: "head", lexeme: "TILT_LEFT", repetition: 0 }, //_tilted_left             
     NF: { type: "head", lexeme: "TILT_FORWARD", repetition: 0 }, //_tilted_forward          

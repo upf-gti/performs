@@ -1171,6 +1171,28 @@ HeadBML.prototype.initHeadValues = function () {
             this.strokeDeg = this.amount * 20;
             this.readyDeg = this.strokeDeg * 0.5;
             break;
+    
+        case "ROTATE_LEFT":
+            this.strokeAxis.set(0, -1, 0);
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.8;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
+        
+        case "ROTATE_RIGHT":
+            this.strokeAxis.set(0, 1, 0);
+            this.strokeDeg = this.amount * this.maxDeg;
+            this.readyDeg = this.strokeDeg * 0.8;
+            if(!this.repetition) {
+                
+                this.strokeStart = this.ready;
+                this.strokeEnd = this.relax;
+            }
+            break;
 
         case "TILT_LEFT":
             this.strokeAxis.set(0, 0, 1);
