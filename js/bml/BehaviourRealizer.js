@@ -750,12 +750,9 @@ GazeManager.prototype.reset = function () {
     this.lookAtHead.position.set(0, 2.5, 100);
     this.lookAtEyes.position.set(0, 2.5, 100);
 
-    this.gazeActions[0].transition = false;
-    this.gazeActions[1].transition = false;
-    this.gazeActions[2].transition = false;
-
-    this.gazeActions[0].eyelidsW = 0;
-    this.gazeActions[0].squintW = 0;
+    this.gazeActions[0].reset();
+    this.gazeActions[1].reset();
+    this.gazeActions[2].reset();
 }
 
 // gazeData with influence, sync attr, target, offsets...
@@ -826,10 +823,22 @@ function Gaze(lookAt, gazePositions, isEyes = false) {
     this.squintW = 0;
 
     // Define initial and end positions
-    this.InP = null; 
-    this.EndP = null;
-    this.DefP = gazePositions["FRONT"].clone();
+    this.src = { p: new THREE.Vector3(), squint: 0, lids: 0 };
+    this.trg = { p: new THREE.Vector3(), squint: 0, lids: 0 };
+    this.def = { p: gazePositions["FRONT"].clone(), squint: 0, lids: 0 };
 }
+
+Gaze.prototype.reset = function () {
+    this.transition = false;
+    this.eyelidsW = 0;
+    this.squintW = 0;
+
+    // Define initial and end positions
+    this.src.p.set(0,0,0); this.src.squint = 0; this.src.lids = 0;
+    this.trg.p.set(0,0,0); this.trg.squint = 0; this.trg.lids = 0;
+    this.def.p.copy( this.gazePositions["FRONT"] ); this.def.squint = 0; this.def.lids = 0;
+}
+
 
 Gaze.prototype.initGazeData = function (gazeData, shift) {
 
@@ -861,16 +870,18 @@ Gaze.prototype.initGazeData = function (gazeData, shift) {
     this.dynamic = gazeData.dynamic || false;
 
     //Blendshapes
-    this.eyelidsW = 0;
-    this.eyelidsInitW = 0;
-    this.eyelidsFinW = gazeData.eyelidsWeight || this.gazeBS[this.target].eyelids;
-    this.squintW = gazeData.squintWeight || 0;
-    this.squintInitW = gazeData.squintWeight || 0;
-    this.squintFinW = gazeData.squintWeight || this.gazeBS[this.target].squint;
+    this.src.lids = this.eyelidsW;
+    this.trg.lids = this.gazeBS[this.target].eyelids;
+    this.src.squint = this.squintW;
+    this.trg.squint = this.gazeBS[this.target].squint;
 
     // Define initial values
     this.initGazeValues();
-    if ( shift ){ this.DefP = this.EndP.clone(); }
+    if ( shift ){ 
+        this.def.p.copy( this.trg.p ); 
+        this.def.lids = this.trg.lids;
+        this.def.squint = this.trg.squint;
+    }
 
 }
 
@@ -888,23 +899,28 @@ Gaze.prototype.update = function (dt) {
         return;
 
     // Stay still during ready to relax
-    if (this.time > this.ready && this.time < this.relax)
+    if (this.time > this.ready && this.time < this.relax){
+        if (this.isEyes) {
+            this.eyelidsW = this.trg.lids;
+            this.squintW = this.trg.squint;
+        }
         return;
+    }
 
     // Extension - Dynamic (offsets do not work here)
     if (this.dynamic) {
-        this.EndP.copy(this.gazePositions[this.target]);
+        this.trg.p.copy(this.gazePositions[this.target]);
     }
 
     if ( this.time <= this.ready ){ 
         let inter = (this.time - this.start) / (this.ready - this.start); 
         inter = Math.sin(Math.PI * inter - Math.PI * 0.5) * 0.5 + 0.5;
         if (this.isEyes) {
-            this.eyelidsW = this.eyelidsInitW * (1 - inter) + this.eyelidsFinW * (inter);
-            this.squintW = this.squintInitW * (1 - inter) + this.squintFinW * (inter);
+            this.eyelidsW = this.src.lids * (1 - inter) + this.trg.lids * (inter);
+            this.squintW = this.src.squint * (1 - inter) + this.trg.squint * (inter);
         }
         // lookAt pos change
-        this.lookAt.position.lerpVectors(this.InP, this.EndP, inter);
+        this.lookAt.position.lerpVectors(this.src.p, this.trg.p, inter);
         return;
     } 
     
@@ -912,11 +928,11 @@ Gaze.prototype.update = function (dt) {
         let inter = (this.time - this.relax) / (this.end - this.relax);
         inter = Math.sin(Math.PI * inter - Math.PI * 0.5) * 0.5 + 0.5;
         if (this.isEyes) {
-            this.eyelidsW = this.eyelidsFinW * (1 - inter) + this.eyelidsInitW * (inter);
-            this.squintW = this.squintFinW * (1 - inter) + this.squintInitW * (inter);
+            this.eyelidsW = this.trg.lids * (1 - inter) + this.def.lids * (inter); // return to 0
+            this.squintW = this.trg.squint * (1 - inter) + this.def.squint * (inter); // return to 0
         }
         // lookAt pos change
-        this.lookAt.position.lerpVectors(this.EndP, this.DefP, inter);
+        this.lookAt.position.lerpVectors(this.trg.p, this.def.p, inter);
         return;
     }
 
@@ -924,13 +940,13 @@ Gaze.prototype.update = function (dt) {
     if (this.time > this.end) {
         // Extension - Dynamic
         if (this.dynamic) {
-            this.lookAt.position.copy(this.DefP);
+            this.lookAt.position.copy(this.def.p);
         }
         else {
             this.transition = false;
-            this.lookAt.position.copy(this.DefP);
-            this.eyelidsW = this.eyelidsInitW;
-            this.squintW = this.squintInitW;
+            this.lookAt.position.copy(this.def.p);
+            this.eyelidsW = this.def.lids;
+            this.squintW = this.def.squint;
         }
     }
 }
@@ -951,8 +967,8 @@ Gaze.prototype.initGazeValues = function () {
     let v = this.targetP.sub(this.headPos);
     let magn = v.length();
     v.normalize();
-    this.eyelidsFinW = this.gazeBS[this.target].eyelids;
-    this.squintFinW = this.gazeBS[this.target].squint;
+    this.trg.lids = this.gazeBS[this.target].eyelids;
+    this.trg.squint = this.gazeBS[this.target].squint;
     // Rotate vector and reposition
     switch (this.offsetDirection) {
         case "UP_RIGHT":
@@ -961,7 +977,7 @@ Gaze.prototype.initGazeValues = function () {
             v.applyQuaternion(q);
 
             if (this.isEyes) {
-                this.squintFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.squint *= Math.abs(this.offsetAngle / 30)
             }
             break;
 
@@ -971,7 +987,7 @@ Gaze.prototype.initGazeValues = function () {
             v.applyQuaternion(q);
             if (this.isEyes) {
 
-                this.squintFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.squint *= Math.abs(this.offsetAngle / 30)
             }
             break;
 
@@ -980,7 +996,7 @@ Gaze.prototype.initGazeValues = function () {
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
             if (this.isEyes) {
-                this.eyelidsFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.lids *= Math.abs(this.offsetAngle / 30)
             }
             break;
 
@@ -989,7 +1005,7 @@ Gaze.prototype.initGazeValues = function () {
             v.applyAxisAngle(new THREE.Vector3(0, 1, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
             if (this.isEyes) {
-                this.eyelidsFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.lids *= Math.abs(this.offsetAngle / 30)
             }
             break;
 
@@ -1007,7 +1023,7 @@ Gaze.prototype.initGazeValues = function () {
             v.applyAxisAngle(new THREE.Vector3(1, 0, 0), this.offsetAngle * DEG2RAD);
             v.applyQuaternion(q);
             if (this.isEyes) {
-                this.squintFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.squint *= Math.abs(this.offsetAngle / 30)
             }
             break;
         case "DOWN":
@@ -1024,7 +1040,7 @@ Gaze.prototype.initGazeValues = function () {
             // v.applyQuaternion(q);
             // v.normalize()
             if (this.isEyes) {
-                this.eyelidsFinW *= Math.abs(this.offsetAngle / 30)
+                this.trg.lids *= Math.abs(this.offsetAngle / 30)
             }
             break;
     }
@@ -1038,8 +1054,8 @@ Gaze.prototype.initGazeValues = function () {
         return console.log("ERROR: lookAt not defined ", this.lookAt);
 
     // Define initial and end positions
-    this.InP = this.lookAt.position.clone();
-    this.EndP = this.targetP.clone(); // why copy? targetP shared with several?
+    this.src.p.copy( this.lookAt.position );
+    this.trg.p.copy( this.targetP ); // why copy? targetP shared with several?
 }
 
 
