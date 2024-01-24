@@ -637,11 +637,12 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     let locationHand = null;
     if ( xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){
         locationHand = locationHandInfoExtract( xml.children[0], false );
-        if ( locationHand.location ){ result.srcLocation = locationHand.location; }
-        if ( locationHand.side ){ result.srcSide = locationHand.side; }
-        if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
-
         if ( !( locationHand.finger || locationHand.side || locationHand.location ) ){ locationHand = null; } // go to default settings, as if no location hand was present
+        else{
+            if ( locationHand.location ){ result.srcLocation = locationHand.location; }
+            if ( locationHand.side ){ result.srcSide = locationHand.side; }
+            if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+        }
     }
 
     if ( !locationHand ){
@@ -679,137 +680,115 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
     let result = {};
 
-    let digit = attributes.digits;
-    digit = ( digit != 1 && digit != 2 && digit != 3 && digit != 4 && digit != 5 ) ? null : parseInt( attributes.digits ); // it needs to be exactly those numbers "2asdfasd" is not valid but parseInt will return 2
+    let isSecond = false;
+    let digit, location, side;
+    
+    for( let i = 0; i < 2; ++i ){
+        isSecond = i == 1;
+        digit = isSecond ? attributes.second_digits : attributes.digits; 
+        digit = ( digit != 1 && digit != 2 && digit != 3 && digit != 4 && digit != 5 ) ? null : parseInt( digit ); // it needs to be exactly those numbers "2asdfasd" is not valid but parseInt will return 2
+        location = isSecond ? attributes.second_location : attributes.location;
+        side = isSecond ? attributes.second_side : attributes.side;
+        
+        // some fingerpart specified
+        if ( digit ){
+            switch( side ){
+                case "right_at": 
+                case "right_beside": 
+                    side = "RIGHT"; 
+                    break; 
+                case "left_at": 
+                case "left_beside": 
+                    side = "LEFT"; 
+                    break; 
+                case "front": side = "PALMAR"; break; 
+                case "dorsal": side = "BACK"; break;
+                case "palmar":
+                case "back":
+                case "radial":
+                case "ulnar": 
+                    side = side.toUpperCase(); 
+                    break;
+                default: side = "PALMAR"; break;
+            }
 
-    // some fingerpart specified
-    if ( digit ){
-        // default values tip of finger
-        result.finger = digit; 
-        result.location = "TIP"; 
+            switch( location ){
+                case "nail": location = "PAD"; break;
+                case "pad": location = "PAD"; break;
+                case "midjoint": location = "MID"; break;
+                case "side": location ="MID"; side = "ULNAR"; break;
+                case "base": location = "BASE"; break;
+                // case "tip":
+                default: location = "TIP"; side = null; break;
+            }
+        }
+        else {
+            // default values
+            
+            switch( side ){
+                case "right_at": 
+                case "right_beside": 
+                    side = "RIGHT"; // realizer will automatically compute wheter it is the ulna or the radius
+                    break; 
+                case "left_at": 
+                case "left_beside": 
+                    side = "LEFT"; // realizer will automatically compute wheter it is the ulna or the radius
+                    break;
+                case "front": side = "PALMAR"; break; 
+                case "dorsal": side = "BACK"; break;
+                case "palmar":
+                case "back":
+                case "radial":
+                case "ulnar": 
+                    side = side.toUpperCase(); 
+                    break;
+                default: 
+                    side = "PALMAR"; 
+                    break;
+            }
 
-        let side = "PALMAR";
-        switch( attributes.side ){
-            case "right_at": 
-            case "right_beside": 
-                side = "RIGHT"; 
-                break; 
-            case "left_at": 
-            case "left_beside": 
-                side = "LEFT"; 
-                break; 
-            case "front": side = "PALMAR"; break; 
-            case "dorsal": side = "BACK"; break;
-            case "palmar":
-            case "back":
-            case "radial":
-            case "ulnar": 
-                side = attributes.side.toUpperCase(); 
+            switch( location ){
+                case "wristback": location = "WRIST"; break;
+                case "thumbball": location = "THUMB_BALL"; break;
+                case "palm": location = "HAND"; side = "PALMAR"; break;
+                case "handback": location ="HAND"; side = "BACK"; break;
+                case "thumbside": finger = "2"; location = "BASE"; side = "RADIAL"; break;
+                case "pinkyside": finger = "5"; location = "BASE"; side = "ULNAR"; break;    
+
+                // arm
+                case "upperarm": 
+                    location = "UPPER_ARM";
+                    side = side == "PALMAR" ? "FRONT" : side;
+                    break;
+                case "elbow":
+                    location = "ELBOW";
+                    side = side == "PALMAR" ? "FRONT" : side;
+                    break;
+                case "elbowinside": 
+                    location = "ELBOW";
+                    side = "FRONT";
+                    break;
+                case "lowerarm":
+                    location ="FOREARM";
+                    side = side == "FRONT" ? "PALMAR" : side;
+                    break;
+
+                default: 
+                    location = null;
+                    side = null;
                 break;
-            default: break;
+            }
         }
 
-        switch( attributes.location ){
-            case "nail": 
-                result.location = "PAD";
-                result.side = side;  
-                break;
-            case "pad":
-                result.location = "PAD";
-                result.side = side;
-                break;
-            case "midjoint": 
-                result.location = "MID";
-                result.side = side;
-                break;
-            case "side":
-                result.location ="MID";
-                result.side = "UNLA";
-                break;
-            case "base":
-                result.location = "BASE";
-                result.side = side;
-                break;
-            case "tip":
-                result.location = "TIP";
-                // result.side = null;
-                break;
-            default: break;
+        if ( isSecond ){
+            if ( digit ){ result.secondFinger = digit; }
+            if ( location ){ result.secondLocation = location; }
+            if ( side ){ result.secondSide = side; }
         }
-    }
-    else {
-         // default values
-        // result.location = "HAND"; 
-        // result.side = "PALMAR";
-
-        let side = "PALMAR";
-        switch( attributes.side ){
-            case "right_at": 
-            case "right_beside": 
-                side = "RIGHT"; // realizer will automatically compute wheter it is the ulna or the radius
-                break; 
-            case "left_at": 
-            case "left_beside": 
-                side = "LEFT"; // realizer will automatically compute wheter it is the ulna or the radius
-                break;
-            case "front": side = "PALMAR"; break; 
-            case "dorsal": side = "BACK"; break;
-            case "palmar":
-            case "back":
-            case "radial":
-            case "ulnar": 
-                side = attributes.side.toUpperCase(); 
-                break;
-            default: break;
-        }
-
-        switch( attributes.location ){
-            case "wristback": 
-                result.location = "WRIST";
-                result.side = side;
-                break;
-            case "thumbball":
-                result.location = "THUMB_BALL";
-                result.side = side;
-                break;
-            case "palm": 
-                result.location = "HAND";
-                result.side = "PALMAR";
-                break;
-            case "handback":
-                result.location ="HAND";
-                result.side = "BACK";
-                break;
-            case "thumbside":
-                result.finger = "2"
-                result.location = "BASE";
-                result.side = "RADIAL";
-                break;
-            case "pinkyside":
-                result.finger = "5"
-                result.location = "BASE";
-                result.side = "ULNAR";
-                break;    
-
-            // arm
-            case "upperarm": 
-                result.location = "UPPER_ARM";
-                result.side = side == "PALMAR" ? "FRONT" : side;
-                break;
-            case "elbow":
-                result.location = "ELBOW";
-                result.side = side == "PALMAR" ? "FRONT" : side;
-                break;
-            case "elbowinside": 
-                result.location = "ELBOW";
-                result.side = "FRONT";
-                break;
-            case "lowerarm":
-                result.location ="FOREARM";
-                result.side = side == "FRONT" ? "PALMAR" : side;
-                break;
-
-            default: break;
+        else{
+            if ( digit ){ result.finger = digit; }
+            if ( location ){ result.location = location; }
+            if ( side ){ result.side = side; }
         }
     }
 
@@ -838,10 +817,16 @@ function locationHandAsHandConstellationParser( xml, start, attackPeak, hand, si
     if ( locationHand.location ){ result.dstLocation = locationHand.location; }
     if ( locationHand.side ){ result.dstSide = locationHand.side; }
     if ( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+    if ( locationHand.secondLocation ){ result.secondDstLocation = locationHand.secondLocation; }
+    if ( locationHand.secondSide ){ result.secondDstSide = locationHand.secondSide; }
+    if ( locationHand.secondFinger ){ result.secondDstFinger = locationHand.secondFinger; }
     if ( locationHand.child ){
         if ( locationHand.child.location ){ result.srcLocation = locationHand.child.location; }
         if ( locationHand.child.side ){ result.srcSide = locationHand.child.side; }
         if ( locationHand.child.finger ){ result.srcFinger = locationHand.child.finger; }
+        if ( locationHand.child.secondLocation ){ result.secondSrcLocation = locationHand.child.secondLocation; }
+        if ( locationHand.child.secondSide ){ result.secondSrcSide = locationHand.child.secondSide; }
+        if ( locationHand.child.secondFinger ){ result.secondSrcFinger = locationHand.child.secondFinger; }
     }else{
         result.srcLocation = "tip";
         result.srcFinger = "1";
@@ -877,14 +862,20 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         }else if ( child.tagName == "location_hand" ){
             let locationHand = locationHandInfoExtract( child, false );
             if ( i == 0 ){
-                if( locationHand.location ){ result.dstLocation = locationHand.location; }
-                if( locationHand.side ){ result.dstSide = locationHand.side; }
-                if( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+                if ( locationHand.location ){ result.dstLocation = locationHand.location; }
+                if ( locationHand.side ){ result.dstSide = locationHand.side; }
+                if ( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+                if ( locationHand.secondLocation ){ result.secondDstLocation = locationHand.secondLocation; }
+                if ( locationHand.secondSide ){ result.secondDstSide = locationHand.secondSide; }
+                if ( locationHand.secondFinger ){ result.secondDstFinger = locationHand.secondFinger; }
                 locationHandCount++;
             }else{
-                if( locationHand.location ){ result.srcLocation = locationHand.location; }
-                if( locationHand.side ){ result.srcSide = locationHand.side; }
-                if( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+                if ( locationHand.location ){ result.srcLocation = locationHand.location; }
+                if ( locationHand.side ){ result.srcSide = locationHand.side; }
+                if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+                if ( locationHand.secondLocation ){ result.secondSrcLocation = locationHand.secondLocation; }
+                if ( locationHand.secondSide ){ result.secondSrcSide = locationHand.secondSide; }
+                if ( locationHand.secondFinger ){ result.secondSrcFinger = locationHand.secondFinger; }
                 locationHandCount++;
             }
             continue;

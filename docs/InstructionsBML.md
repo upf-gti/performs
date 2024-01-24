@@ -562,7 +562,7 @@ The motion is stopped if an arm location is executed afterwards.
     "secondSrcFinger":   "2",
     "secondSrcLocation": "MID",
     "secondSrcSide":     "BACK",
-	"secondDstFinger":   "2",
+    "secondDstFinger":   "2",
     "secondDstLocation": "PAD",
     "secondDstSide":     "BACK",
 

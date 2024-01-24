@@ -48,9 +48,9 @@ class HandConstellation {
         this.dstPoints = [null,null];
 
         this.distanceVec = new THREE.Vector3(0,0,0);
+        
         this.isBothHands = false; // whether to move only src hand to dst point or move both hands to their respective destination points 
-
-        this.cancelledArmsFlag = 0x00; // 0x01 source cancelled, 0x02 destination cancelled (if both hands enabled)
+        this.activeArmsFlag = 0x00; // 0x01 source active, 0x02 destination active (if both hands enabled, otherwise only 0x01 should be set)
         // set default poses
         this.reset();
 
@@ -67,7 +67,7 @@ class HandConstellation {
         this.curOffsetR.set(0,0,0);
         this.distanceVec.set(0,0,0);
         this.isBothHands = false;
-        this.cancelledArmsFlag = 0x00;
+        this.activeArmsFlag = 0x00;
 
         this.keepUpdatingContact = false;
         this.peakUpdated = false;
@@ -101,24 +101,24 @@ class HandConstellation {
             if ( this.dstPoints[1] ){
                 this.dstPoints[1].updateWorldMatrix( true ); // self and parents
                 this._tempV3_2.setFromMatrixPosition( this.dstPoints[1].matrixWorld );  
-                srcWorldPoint.lerp( this._tempV3_2, 0.5 );
+                dstWorldPoint.lerp( this._tempV3_2, 0.5 );
             }
             
             // compute offset for each hand
             if ( this.isBothHands ){
-                if ( this.cancelledArmsFlag & 0x01 ){ this.srcCurOffset.set(0,0,0); }
-                else{
+                if ( this.activeArmsFlag & 0x01 ){
                     this.srcCurOffset.lerpVectors( srcWorldPoint, dstWorldPoint, 0.5 );
                     this.srcCurOffset.sub( srcWorldPoint );
                     this.srcCurOffset.addScaledVector( this.distanceVec, 0.5 );
                 }
+                else{ this.srcCurOffset.set(0,0,0); }
                 
-                if ( this.cancelledArmsFlag & 0x02 ){ this.dstCurOffset.set(0,0,0); }
-                else{
+                if ( this.activeArmsFlag & 0x02 ){
                     this.dstCurOffset.lerpVectors( dstWorldPoint, srcWorldPoint, 0.5 );
                     this.dstCurOffset.sub( dstWorldPoint );
                     this.dstCurOffset.addScaledVector( this.distanceVec, -0.5 ); // same as subScaledVector but this function does not exist
                 }
+                else{ this.dstCurOffset.set(0,0,0); }
             }else{
                 this.srcCurOffset.copy( dstWorldPoint );
                 this.srcCurOffset.sub( srcWorldPoint );
@@ -170,25 +170,21 @@ class HandConstellation {
     }
 
     cancelArm( arm = "R" ){
-        if ( arm == "B" ){ this.reset(); }
-        if ( this.isBothHands ){
-            if ( arm == "R"){ 
-                this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetR ) ? 0x01 : 0x02; 
-                this.prevOffsetR.set(0,0,0); 
-                this.curOffsetR.set(0,0,0); 
-                this.peakOffsetR.set(0,0,0);
-            }
-            else if ( arm == "L"){ 
-                this.cancelledArmsFlag |= ( this.srcCurOffset == this.curOffsetL ) ? 0x01 : 0x02; 
-                this.prevOffsetL.set(0,0,0); 
-                this.curOffsetL.set(0,0,0); 
-                this.peakOffsetL.set(0,0,0);
-            }
+        if ( arm == "B" ){ this.activeArmsFlag = 0x00 }
+        if ( arm == "R"){ 
+            this.activeArmsFlag &= ( this.srcCurOffset == this.curOffsetR ) ? (~0x01) : (~0x02); 
+            this.prevOffsetR.set(0,0,0); 
+            this.curOffsetR.set(0,0,0); 
+            this.peakOffsetR.set(0,0,0);
         }
-        else{ // only one arm is working. Cancel only if it is the selected arm
-            if ( arm == "R" && this.srcCurOffset == this.curOffsetR ){ this.reset(); }
-            else if ( arm == "L" && this.srcCurOffset == this.curOffsetL ){ this.reset(); }
+        else if ( arm == "L"){ 
+            this.activeArmsFlag &= ( this.srcCurOffset == this.curOffsetL ) ? (~0x01) : (~0x02); 
+            this.prevOffsetL.set(0,0,0); 
+            this.curOffsetL.set(0,0,0); 
+            this.peakOffsetL.set(0,0,0);
         }
+
+        if ( !this.activeArmsFlag ){ this.reset(); }
     }
 
 
@@ -261,16 +257,17 @@ class HandConstellation {
     newGestureBML( bml, domHand = "R"  ) {
         this.keepUpdatingContact = !!bml.keepUpdatingContact;
         this.peakUpdated = false;
-        this.cancelledArmsFlag = 0x00;
         let srcLocations = null;
         let dstLocations = null;
         let isLeftHandSource = false; // default right
 
         if ( bml.hand == "BOTH" ){ // src default to domhand
             this.isBothHands = true;
+            this.activeArmsFlag = 0x03; // both source and destination arms are activated
             isLeftHandSource = domHand == "L";
         }else{
             this.isBothHands = false;
+            this.activeArmsFlag = 0x01; // only source is activated
             if ( bml.hand == "RIGHT" ){ isLeftHandSource = false; }
             else if ( bml.hand == "LEFT" ){ isLeftHandSource = true; }
             else if ( bml.hand == "NON_DOMINANT" ){ isLeftHandSource = domHand == "R"; }
