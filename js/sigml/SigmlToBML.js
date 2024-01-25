@@ -752,8 +752,8 @@ function locationHandInfoExtract( xml, parseChildren = true ){
                 case "thumbball": location = "THUMB_BALL"; break;
                 case "palm": location = "HAND"; side = "PALMAR"; break;
                 case "handback": location ="HAND"; side = "BACK"; break;
-                case "thumbside": finger = "2"; location = "BASE"; side = "RADIAL"; break;
-                case "pinkyside": finger = "5"; location = "BASE"; side = "ULNAR"; break;    
+                case "thumbside": digit = "2"; location = "BASE"; side = "RADIAL"; break;
+                case "pinkyside": digit = "5"; location = "BASE"; side = "ULNAR"; break;    
 
                 // arm
                 case "upperarm": 

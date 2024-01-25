@@ -340,7 +340,7 @@ class AppGUI{
                     }
                 });
 
-                p.addButton( null, this.app.cameraMode ? "Free View": "Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
+                p.addButton( null, this.app.cameraMode ? "Change to Free View": "Change to Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
 
                 p.branch( "Random signs" );
                 p.addButton( "Send", "send", (v,e)=>{ 
