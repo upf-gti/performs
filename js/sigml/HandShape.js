@@ -841,7 +841,15 @@ class HandShape {
                     let relocationThumbshape = shapeName.includes("PINCH_") ? this.handshapes.PINCH_ALL.thumbOptions : this.handshapes.CEE_ALL.thumbOptions;
                     relocationThumbshape = relocationThumbshape[ specFing[0] - 1 ]; // relocate to first specialFinger
                     outHand.thumb = relocationThumbshape;
-                }        
+                }       
+                if ( shapeName == "FINGER_2" || shapeName == "FINGER_23" || shapeName == "FINGER_23_SPREAD" ){
+                    let relocationFinger = 0; 
+                    for( let i = 1; i < selectedFingers.length; ++i ){
+                        if ( !selectedFingers[i] ){ relocationFinger = i; break; }
+                    }
+                    if ( relocationFinger ){ outHand.thumb = this.handshapes[ "FINGER_2" ].thumbOptions[ relocationFinger -1 ]; }
+                    else { outHand.thumb = this.thumbshapes.DEFAULT; }
+                }       
             }    
         } // end of special fingers
 
