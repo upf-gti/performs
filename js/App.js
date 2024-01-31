@@ -517,7 +517,7 @@ class App {
         const urlParams = new URLSearchParams(queryString);
         let showControls = true;
         if(urlParams.has('controls')) {
-            showControls = urlParams.get('controls') === "true";
+            showControls = !(urlParams.get('controls') === "false");
         }
         let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
         this.loadAvatar(modelFilePath, configFilePath, modelRotation, "Eva", ()=>{
