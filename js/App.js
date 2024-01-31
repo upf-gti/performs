@@ -513,11 +513,16 @@ class App {
         this.scene.add(this.eyesTarget);
         this.scene.add(this.headTarget);
         this.scene.add(this.neckTarget);
-
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        let showControls = true;
+        if(urlParams.has('controls')) {
+            showControls = urlParams.get('controls') === "true";
+        }
         let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
         this.loadAvatar(modelFilePath, configFilePath, modelRotation, "Eva", ()=>{
             this.changeAvatar( "Eva" );
-            if ( typeof AppGUI != "undefined" ) { this.gui = new AppGUI( this ); }
+            if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
             if ( this.pendingMessageReceived ){
