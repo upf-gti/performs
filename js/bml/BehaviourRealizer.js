@@ -525,7 +525,8 @@ FacialEmotion.prototype.initFaceValAro = function (faceData, shift) {
     //let valaro = faceData.valaro || [0.1, 0.1];
     this.valaro = new THREE.Vector2().fromArray(faceData.valaro || [0.1, 0.1]);
     if (faceData.emotion) {
-        switch (faceData.emotion) {
+        let emotion = faceData.emotion.toUpperCase ? faceData.emotion.toUpperCase() : faceData.emotion;
+        switch (emotion) {
             case "ANGER":
                 this.valaro.fromArray(this._emotionsVAE[0].slice(0, 2));
                 break;

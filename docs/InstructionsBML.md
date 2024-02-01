@@ -81,7 +81,7 @@ Blink is automatically executed by the realizer. However, a blink can be forced 
     "amount": 1,  
 	"repetition": 3,       //amount of times to REPEAT. Default 0 (meaning only moves once)
 
-    "lexeme": "NOD", // available values: [ "NOD", "SHAKE", "TILT", "TILT_LEFT", "TILT_RIGHT", "TILT_FORWARD", "TILT_BACKWARD", "FORWARD", "BACKWARD" ]
+    "lexeme": "NOD", // available values: [ "NOD", "SHAKE", "TILT", "ROTATE_LEFT", "ROTATE_RIGHT", "TILT_LEFT", "TILT_RIGHT", "TILT_FORWARD", "TILT_BACKWARD", "FORWARD", "BACKWARD" ]
 
 }
 ```
