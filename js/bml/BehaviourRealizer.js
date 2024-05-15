@@ -1708,7 +1708,7 @@ function Text2Lip() {
     this.upperBoundVisemes = null;
     this.coarts = null;
     this.ph2v = null;
-    this.numShapes = 0;
+    this.numShapes = [ 0, 0 ]; // [jaw, lip]
 
     // manages display of a sentence
     this.working = false;
@@ -1728,12 +1728,12 @@ function Text2Lip() {
     this.sentenceQueue = new Array( Text2Lip.QUEUE_MAX_SIZE );
     this.sentenceIDCount = 1; // when pushing, a 0 will mean failure. Start IDs at 1
 
-    // blendshape weights. User can use this to do mouthing
-    this.BSW = new Float32Array( this.numShapes ); this.BSW.fill( 0 );
+    // blendshape weights. User can use this to do mouthing [jaw, lip]
+    this.BSW = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.BSW[0].fill( 0 ); this.BSW[1].fill( 0 );
 
     // needed because of coarticulation
-    this.currV = new Float32Array( this.numShapes ); this.currV.fill( 0 );
-    this.targV = new Float32Array( this.numShapes ); this.targV.fill( 0 ); // next visem - target
+    this.currV = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.currV[0].fill( 0 ); this.currV[1].fill( 0 );
+    this.targV = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.targV[0].fill( 0 ); this.targV[1].fill( 0 ); // next visem - target
 
     // event listeners
     this.onIdle = null;
@@ -1741,7 +1741,7 @@ function Text2Lip() {
     this.onSentenceStart = null; // receives starting sentence
 
     // default setup
-    this.setTables( T2LTABLES.PhonemeToViseme, T2LTABLES.Coarticulations, T2LTABLES.LowerBound, T2LTABLES.UpperBound );
+    this.setTables( T2LTABLES.PhonemeToViseme, T2LTABLES.Coarticulations, T2LTABLES.Visemes2Au );
 }
 
 Text2Lip.prototype.setDefaultSpeed = function ( speed ) {
@@ -1771,8 +1771,10 @@ Text2Lip.prototype.setSourceBSWValues = function ( values ) {
 
     // values is an array
     for ( let i = 0; i < this.BSW.length && i < values.length; ++i ) {
-        let value = ( typeof ( values[ i ] ) == "number" ) ? values[ i ] : 0.0;
-        this.currV[ i ] = value;
+        for ( let j = 0; j < this.BSW[i].length && j < values.length; ++j ) {
+            let value = ( typeof ( values[ j ] ) == "number" ) ? values[ j ] : 0.0;
+            this.currV[ i ][ j ] = value;
+        }
     }
 }
 
@@ -1787,20 +1789,22 @@ Text2Lip.prototype.setEvent = function ( eventType, fun ) {
     return true;
 }
 
-Text2Lip.prototype.setTables = function ( phonemeToViseme, coarts, lowerBoundVisemes, upperBoundVisemes = null ) {
-    this.lowerBoundVisemes = lowerBoundVisemes;
-    this.upperBoundVisemes = ( upperBoundVisemes && upperBoundVisemes.length > 0 ) ? upperBoundVisemes : lowerBoundVisemes;
+Text2Lip.prototype.setTables = function ( phonemeToViseme, coarts, visemes ) {
+    this.jawVisemes = visemes[0];
+    this.lipVisemes = visemes[1];
     this.coarts = coarts;
     this.ph2v = phonemeToViseme;
 
-    this.numShapes = 0
-    if ( lowerBoundVisemes && lowerBoundVisemes.length > 0 ) {
-        this.numShapes = lowerBoundVisemes[ 0 ].length;
+    this.numShapes = [ 0, 0 ]; // [jaw, lip]
+    for (let i = 0; i < this.numShapes.length; i++) {
+        if ( visemes[i] && visemes[i].length > 0 ) {
+           this.numShapes[i] = visemes[i][ 0 ].length;
+        }
     }
 
-    this.BSW = new Float32Array( this.numShapes ); this.BSW.fill( 0 );
-    this.currV = new Float32Array( this.numShapes ); this.currV.fill( 0 );
-    this.targV = new Float32Array( this.numShapes ); this.targV.fill( 0 ); // next visem - target
+    this.BSW = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.BSW[0].fill( 0 ); this.BSW[1].fill( 0 );
+    this.currV = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.currV[0].fill( 0 ); this.currV[1].fill( 0 );
+    this.targV = [new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] )]; this.targV[0].fill( 0 ); this.targV[1].fill( 0 ); // next visem - target
 }
 
 Text2Lip.prototype.getDefaultSpeed = function () { return this.DEFAULT_SPEED; }
@@ -1826,17 +1830,20 @@ Text2Lip.prototype.getIntensityAtIndex = function ( index ) {
 */
 Text2Lip.prototype.getViseme = function ( phoneme, outResult = null, ) {
     // this handles properly undefined and nulls.
-    if ( !( phoneme in this.ph2v ) ) { return this.lowerBoundVisemes[ 0 ]; } // assuming there are visemes
+    if ( !( phoneme in this.ph2v ) ) { return [ this.jawVisemes[ 0 ], this.lipVisemes[ 0 ] ]; } // assuming there are visemes
     let visIdx = this.ph2v[ phoneme ];
-    if ( visIdx < 0 || visIdx >= this.lowerBoundVisemes.length ) { return this.lowerBoundVisemes[ 0 ]; } // assuming there are visemes
+    if ( visIdx < 0 || visIdx >= this.jawVisemes.length ) { return [ this.jawVisemes[ 0 ], this.lipVisemes[ 0 ] ]; } // assuming there are visemes
 
-    let lower = this.lowerBoundVisemes[ visIdx ];
-    let upper = this.upperBoundVisemes[ visIdx ];
+    let jaw = this.jawVisemes[ visIdx ];
+    let lip = this.lipVisemes[ visIdx ];
+    let jaliVisemes = [jaw, lip];
 
-    let result = ( outResult ) ? outResult : ( new Float32Array( this.numShapes ) );
+    let result = ( outResult ) ? outResult : ( [ new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] ) ] );
     let intensity = this.intensity;
-    for ( let i = 0; i < this.numShapes; i++ ) {
-        result[ i ] = lower[ i ] * ( 1 - intensity ) + upper[ i ] * intensity;
+    for ( let i = 0; i < this.numShapes.length; i++ ) {
+        for ( let j = 0; j < this.numShapes[i]; j++ ) {
+            result[ i ][ j ] = jaliVisemes[ i ][ j ] * intensity;
+        }
     }
     return result;
 }
@@ -1855,7 +1862,7 @@ Text2Lip.prototype.getCoarts = function ( phoneme ) {
 }
 
 /**
-* 
+ * 
 * @param {*} phoneme 
 * @param {*} phonemeAfter 
 * @param {*} outResult  if not null, result will be written to this array. Otherwise a new array is generated with the resulting values and returned 
@@ -1864,14 +1871,17 @@ Text2Lip.prototype.getCoarts = function ( phoneme ) {
 Text2Lip.prototype.getCoarticulatedViseme = function ( phoneme, phonemeAfter, outResult = null ) {
     let rawTarget = this.getViseme( phoneme );
     let coartsW = this.getCoarts( phoneme ); // coarticulation weights of target phoneme
-
+    coartsW.fill(0);
+    
     //let visemePrev = this.currV; // phoneme before target
     let visemeAfter = this.getViseme( phonemeAfter ); // phoneme after target
+    
+    let result = ( outResult ) ? outResult : ( [ new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] ) ] );
 
-    let result = ( outResult ) ? outResult : ( new Float32Array( this.numShapes ) );
-
-    for ( let i = 0; i < this.numShapes; ++i ) {
-        result[ i ] = ( 1.0 - coartsW[ i ] ) * rawTarget[ i ] + coartsW[ i ] * visemeAfter[ i ]//(0.2 * visemePrev[i] + 0.8 * visemeAfter[i]);
+    for ( let i = 0; i < this.numShapes.length; ++i ) {
+        for ( let j = 0; j < this.numShapes[i]; ++j ) {
+            result[ i ][ j ] = ( 1.0 - coartsW[ j ] ) * rawTarget[ i ][ j ] + coartsW[ j ] * visemeAfter[ i ][ j ]//(0.2 * visemePrev[i] + 0.8 * visemeAfter[i]);
+        }
     }
 
     return result;
@@ -1903,9 +1913,9 @@ Text2Lip.prototype.stop = function ( cleanQueue = false ) {
     this.currTargetIdx = 0; // for a smooth intro
     this.currT = 0;
 
-    this.BSW.fill( 0 );
-    this.currV.fill( 0 );
-    this.targV.fill( 0 );
+    this.BSW[0].fill( 0 ); this.BSW[1].fill( 0 );
+    this.currV[0].fill( 0 ); this.currV[1].fill( 0 );
+    this.targV[0].fill( 0 ); this.targV[1].fill( 0 );
 
     if ( !!cleanQueue ) // force to be boolean
         this.cleanQueueSentences();
@@ -1999,14 +2009,20 @@ Text2Lip.prototype.update = function ( dt ) {
         // else{
         //     this.getViseme( lastPhoneme, this.currV );
         // }
-        for ( let i = 0; i < this.numShapes; ++i ) {
-            this.currV[ i ] = this.BSW[ i ];
+        for ( let i = 0; i < this.numShapes.length; ++i ) {
+            for ( let j = 0; j < this.numShapes[i]; ++j ) {
+                this.currV[ i ][ j ] = this.BSW[ i ][ j ];
+            }
         }
 
         // end of sentence reached
         if ( this.currTargetIdx >= this.text.length ) {
             this.getViseme( this.text[ this.text.length-1 ], this.currV );
-            for ( let i = 0; i < this.numShapes; ++i ) { this.BSW[ i ] = this.currV[ i ]; } // currV holds the last real target phoneme
+            for ( let i = 0; i < this.numShapes.length; ++i ) {
+                for ( let j = 0; j < this.numShapes[i]; ++j ) {
+                    this.BSW[ i ][ j ] = this.currV[ i ][ j ];
+                } // currV holds the last real target phoneme
+            }
             this.changeCurrentSentence();
             return;
         }
@@ -2027,8 +2043,10 @@ Text2Lip.prototype.update = function ( dt ) {
     let BSW_0 = this.currV;
     let BSW_1 = this.targV;
 
-    for ( let i = 0; i < this.numShapes; ++i ) {
-        this.BSW[ i ] = ( 1.0 - t ) * BSW_0[ i ] + t * BSW_1[ i ];
+    for ( let i = 0; i < this.numShapes.length; ++i ) {
+        for ( let j = 0; j < this.numShapes[i]; ++j ) {
+            this.BSW[ i ][ j ] = ( 1.0 - t ) * BSW_0[ i ][ j ] + t * BSW_1[ i ][ j ];
+        }
     }
 }
 
@@ -2239,44 +2257,39 @@ Text2Lip.prototype.getSentenceDuration = function ( text, options ) {
 
 // TABLES ------------------------------
 
-//[ "kiss", "upperLipClosed", "lowerLipClosed", "jawOpen", "tongueFrontUp", "tongueBackUp", "tongueOut" ],
-let t2lLowerBound = [
-  [ 0,     0,     0,     0,     0,     0,     0   ], // 0
-  [ 0,     0,     0,     0,     0,     0,     0   ],
-  [ 0.1,   0.15,  0,     0.2,   0,     0,     0   ],
-  [ 0.0,   0.13,  0,     0.2,   0.2,   0,     0   ],
-  [ 0,     0.08,  0,     0.1,   0.5,   0.5,   0   ], // 4
-  [ 0.25,  0.15,  0.15,  0.2,   0,     0,     0   ],
-  [ 0.35,  0.15,  0.15,  0.2,   0,     0,     0   ],
-  [ 0.0,   0.15,  0,     0.1,   1,     0,     0   ],
-  [ 0,     0.5,   0.2,   0.0,   0,     0,     0   ], // 8
-  [ 0,     0.0,   0.2,   0.1,   0,     0,     0   ],
-  [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
-  [ 0.0,   0,     0,     0.2,   0.0,   0.3,   0   ],
-  [ 0.0,   0,     0,     0.1,   0.0,   1,     0   ], // 12
-  [ 0.3,   0,     0,     0.1,   1,     0,     0   ],
-  [ 0,     0,     0.0,   0.1,   0.35,  0,     0.3 ],
-  [ 0.3,   0,     0,     0.13,   0.8,   0,     0  ],
+
+// [ Chin_Raiser, Mouth_Stretch, Tongue_Up, Tongue_Show ]
+let jawVisemes2Au = [
+    [ 1.0,   0.2,  0,    0   ], // MMM - 0
+    [ 0.2,   0.4,  0,    0.2 ], // TTH
+    [ 1.0,   0.2,    0,    0   ], // FFF
+    [ 0,     0,    0,    0   ], // RRR
+    [ 0,     0,    0,    0   ], // SSS
+    [ 0,     0,    0,    0   ], // SSH - 5
+    [ 0,     1.0,  0,    0   ], // AAA
+    [ 0,     0,    0,    0   ], // EEE
+    [ 0,     0,    0,    0   ], // III
+    [ 0,     0,    0,    0   ], // OOO
+    [ 0,     0,    0,    0   ], // UUU
+    [ 0,     0,    0,    0   ], // ._  - 11
 ];
 
-let t2lUpperBound = [
-  [ 0,     0,     0,     0,     0,     0,     0   ], // 0
-  [ 0,     0,     0,     0,     0,     0,     0   ], 
-  [ 0.1,   0.15,  0,     0.6,   0,     0,     0   ],
-  [ 0.0,   0.13,  0,     0.3,   0.2,   0,     0   ],
-  [ 0,     0.08,  0,     0.2,   0.6,   0.6,   0.2 ], // 4
-  [ 0.45,  0.15,  0.15,  0.6,   0,     0,     0   ],
-  [ 0.85,  0.3,   0.3,   0.3,   0,     0,     0   ],
-  [ 0.0,   0.15,  0,     0.4,   1,     0,     0.5 ],
-  [ 0,     1,     1,     0.0,   0,     0,     0   ], // 8
-  [ 0,     0.0,   1,     0.4,   0,     0,     0   ],
-  [ 0.15,  0,     0,     0.13,  0.8,   0,     0   ],
-  [ 0.0,   0,     0,     0.4,   0.0,   0.3,   0   ],
-  [ 0.1,   0,     0,     0.2,   0.0,   1,     0   ], // 12
-  [ 0.3,   0,     0,     0.22,  1,     0,     0   ],
-  [ 0,     0,     0.0,   0.4,   0.55,  0,     0.8 ],
-  [ 0.3,   0,     0,     0.13,  0.8,   0,     0   ],
+// [ Upper_Lip_Raiser_Left, Upper_Lip_Raiser_Right, Lip_Corner_Puller_Left, Lip_Corner_Puller_Right, Lower_Lip_Depressor_Left, Lower_Lip_Depressor_Right, Lip_Puckerer_Left, Lip_Puckerer_Right, Lip_Funneler ]
+let lipVisemes2Au = [
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // MMM - 0
+    [ 0.6,  0.6,   0,     0,    0,    0,    0,     0.8 ], // TTH
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // FFF
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // RRR
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // SSS
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // SSH - 5
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // AAA
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // EEE
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // III
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // OOO
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // UUU
+    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // ._  - 11
 ];
+
 
 // coarticulation weights for each phoneme. 0= no modification to phoneme, 1=use phonemes arround to build viseme
 let t2lCoarts = [
@@ -2295,70 +2308,69 @@ let t2lCoarts = [
   [ 0.7,   0.5,   0.5,   0.9,   0.6,   0,     0.5 ], //12
   [ 1,     1,     1,     0.5,   0,     0,     0.5 ],
   [ 1,     0.3,   0.3,   0.3,   0,     0.6,   0   ], 
-  [ 0.5,   0.3,   0.3,   0.5,  0,     0,     0    ],
+  [ 0.5,   0.3,   0.3,   0.5,   0,     0,     0    ],
 
 ];
 
 let t2lPh2v = {
-    ".": 0, "_": 1, " ": 1,
-    "a": 2,//"AA"	 
-    "@": 2,//"AE"	 
-    "A": 2,//"AH"	 
-    "c": 5,//"AO"	 
-    "W": 2,//"AW"	 
-    "x": 2,//"AX"	 
-    "Y": 2,//"AY"	 
-    "E": 3,//"EH"	 
-    "R": 3,//"ER"	 
-    "e": 3,//"EY"	 
-    "I": 4,//"IH"	 
-    "X": 4,//"IX"	 
-    "i": 4,//"IY"	 
-    "o": 5,//"OW"	 
-    "O": 5,//"OY"	 
-    "U": 6,//"UH"	 
-    "u": 6,//"UW"	 
+    ".": 11, "_": 11, " ": 11,
+    "a": 6,   // "AA"	 
+    "@": 6,   // "AE"	 
+    "A": 6,   // "AH"	 
+    "c": 6,   // "AO"	 
+    "W": 6,   // "AW"	 
+    "x": 6,   // "AX"	 
+    "Y": 6,   // "AY"	 
+    "E": 7,   // "EH"	 
+    "R": 7,   // "ER"	 
+    "e": 7,   // "EY"	 
+    "I": 8,   // "IH"	 
+    "X": 8,   // "IX"	 
+    "i": 8,   // "IY"	 
+    "o": 9,   // "OW"	 
+    "O": 9,   // "OY"	 
+    "U": 10,   // "UH"	 
+    "u": 10,   // "UW"	 
 
-    "b": 8,//"B"	
-    "C": 15,//"CH"	 // ------------------------ Really needs a new viseme - 'SH'
-    "d": 13,//"D"	
-    "D": 13,//"DH"	
-    "F": 13,//"DX"	
-    "L": 7,//"EL"	
-    "M": 8,//"EM"	
-    "N": 7,//"EN"	
-    "f": 9,//"F"	
-    "g": 12,//"G"	
-    "h": 11,//"H"	// reduced
-    "J": 15,//"JH"	 // ------------------------- Really needs a new viseme 'ZH'
-    "k": 12,//"K"	
-    "l": 7,//"L"	
-    "m": 8,//"M"	
-    "n": 7,//"N"	
-    "G": 12,//"NG"	// reduced
-    "p": 8,//"P"	
-    "Q": 2,//"Q"	 // -------------------------- What is this?
-    "r": 7,//"R"	
-    "s": 10,//"S"	
-    "S": 15,//"SH"	 // ------------------------ Really needs a new viseme - 'CH'
-    "t": 13,//"T"	
-    "T": 14,//"TH"	
-    "v": 9,//"V"	
-    "w": 6,//"W"	
-    "H": 6,//"WH"	
-    "y": 4,//"Y"	
-    "z": 10,//"Z"	
-    "Z": 10,//"ZH"	 // ------------------------- Really needs a new viseme 'JH'
+    "b": 0,   // "B"   -  MMM
+    "C": 5,   // "CH"  -  SSH
+    "d": 1 ,  // "D"   -  DDD
+    "D": 1,   // "DH"  -  TTH
+    "F": 9,  // "DX"  -  ?
+    "L": 9,   // "EL"  -  ?
+    "M": 0,   // "EM"  -  MMM	
+    "N": 9,   // "EN"  -  ?
+    "f": 2,   // "F"   -  FFF
+    "g": 12,  // "G"   -  GGG
+    "h": 9,  // "H"   -  ?
+    "J": 5,   // "JH"  -  SSH
+    "k": 12,  // "K"   -  GGG
+    "l": 7,   // "L"   -  LLL
+    "m": 0,   // "M"   -  MMM
+    "n": 7,   // "N"   -  LLL
+    "G": 9,  // "NG"  -  ?
+    "p": 0,   // "P"   -  MMM
+    "Q": 9,   // "Q"   -  ?
+    "r": 3,   // "R"   -  RRR
+    "s": 4,   // "S"   -  SSS
+    "S": 5,   // "SH"  -  SSH
+    "t": 1 ,  // "T"   -  DDD
+    "T": 1,   // "TH"  -  TTH
+    "v": 2,   // "V"   -  FFF
+    "w": 9,   // "W"   -  ?
+    "H": 9,   // "WH"  -  ?
+    "y": 9,   // "Y"   -  ?
+    "z": 4,   // "Z"   -  SSS
+    "Z": 5,   // "ZH"  -  SSH
 };
 
 let T2LTABLES = {
-    BlendshapeMapping: { kiss: 0, upperLipClosed: 1, lowerLipClosed: 2, jawOpen: 3, tongueFrontUp: 4, tongueBackUp: 5, tongueOut: 6 },
-    LowerBound: t2lLowerBound,
-    UpperBound: t2lUpperBound,
+    BlendshapeMapping: [ { "Chin_Raiser": 0, "Mouth_Stretch": 1, "Tongue_Up": 2, "Tongue_Show": 3 }, // jaw
+                         { "Upper_Lip_Raiser_Left": 0, "Upper_Lip_Raiser_Right": 1, "Lip_Corner_Puller_Left": 2, "Lip_Corner_Puller_Right": 3, "Lower_Lip_Depressor_Left": 4, "Lower_Lip_Depressor_Right": 5, "Lip_Puckerer_Left": 6, "Lip_Puckerer_Right": 7, "Lip_Funneler": 8 } ], // lip
+    Visemes2Au: [ jawVisemes2Au, lipVisemes2Au ], // [ jaw, lip ]
     Coarticulations: t2lCoarts,
     PhonemeToViseme : t2lPh2v,
 }
-
 /* ANIMATION */
 AnimationManager.prototype.animations = {
     "IDLE": "evalls/projects/animations/animations_idle.wbin",

@@ -35,15 +35,8 @@ function FacialController(config = null) {
     this._eyeLidsAU = [51, 52]; // idx number of eyelids related AU - gaze and blink easy access
     this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
-    // weighting factor for t2l interface
-    this._t2lMap = {
-        "kiss": ["Lip_Puckerer_Left", "Lip_Puckerer_Right"],
-        "upperLipClosed": ["Lip_Suck_Upper"], 
-        "lowerLipClosed": ["Lip_Suck_Lower"],
-        "jawOpen": ["Mouth_Stretch"],
-        "tongueFrontUp": ["Tongue_Up"],
-        "tongueOut": ["Tongue_Show"],
-    };
+    // t2l
+    this._jali = [1, 1]; // [jaw, lip]
 
     // TODO: update a2l names ?
     this.lipsPressedBSName = "Jaw_Up";
@@ -51,7 +44,7 @@ function FacialController(config = null) {
     this.lowerLipDownBSName = "Lower_Lip_Depressor_Left";
     this.mouthNarrowBSName = "MouthNarrow";
     this.mouthOpenBSName = "MouthOpen";
-        
+    
     this.lipsyncModule = new Lipsync();
 
     // if we have the state passed, then we restore the state
@@ -262,13 +255,17 @@ FacialController.prototype.faceUpdate = function (dt) {
     if (this.textToLip && this.textToLip.getCompactState() == 0) { // when getCompactState==0 lipsync is working, not paused and has sentences to process
         this.textToLip.update(dt);
         let t2lBSW = this.textToLip.getBSW(); // reference, not a copy
-        for (let i = 0; i < this.textToLipBSMapping.length; i++) {
-            let mapping = this.textToLipBSMapping[i];
-            let value = Math.min(1, Math.max(-1, t2lBSW[mapping[1]]));
-            let index = mapping[0];
-            // for this model, some blendshapes need to be negative
-            this._facialAUAcc[index] += Math.abs(value); // denominator of biased average
-            this._facialAUFinal[index] += value * Math.abs(value); // numerator of biased average
+        
+        // textToLipBSMapping = [ [], [] ] --> [jaw, lip]
+        for (let i = 0; i < this.textToLipBSMapping.length; i++) { // jaw or lip
+            for (let j = 0; j < this.textToLipBSMapping[i].length; j++) {
+                let mapping = this.textToLipBSMapping[i][j]; // [ MeshBSIndex, T2Lindex ]
+                let value = this._jali[i] * Math.min(1, Math.max(-1, t2lBSW[i][mapping[1]]));
+                let index = mapping[0];
+                // for this model, some blendshapes need to be negative
+                this._facialAUAcc[index] += Math.abs(value); // denominator of biased average
+                this._facialAUFinal[index] += value * Math.abs(value); // numerator of biased average
+            }
         }
     }
 
@@ -402,18 +399,18 @@ FacialController.prototype.newTextToLip = function (bml) {
 
         this.textToLip = new Text2LipInterface();
         this.textToLip.start(); // keep started but idle
-        this.textToLipBSMapping = []; // array of [ MeshBSIndex, T2Lindex ]
+        this.textToLipBSMapping = [ [], [] ]; // [jaw, lip] array of [ MeshBSIndex, T2Lindex ]
 
-        let t2lBSWMap = T2LTABLES.BlendshapeMapping;
-
+        let t2lBSWMap = T2LTABLES.BlendshapeMapping; // [ {auName: 0, ...}, ]
+                
         // map blendshapes to text2lip output
-        for(const part in this._t2lMap) {
-            for(let i = 0; i < this._t2lMap[part].length; i++) {
-                // instead of looping through all BS, access directly the index of the desired blendshape
-                let idx = this._actionUnits.dictionary[this._t2lMap[part][i]];
-                if (idx) this.textToLipBSMapping.push([ idx, t2lBSWMap[part]]);
+        for (let i = 0; i < t2lBSWMap.length; i++) {
+            for (const auName in t2lBSWMap[i]) {   
+                let idx = this._actionUnits.dictionary[ auName ];
+                if (idx) this.textToLipBSMapping[i].push([ idx, t2lBSWMap[i][auName] ]);
             }
         }
+    
     }
 
     let text = bml.text;
