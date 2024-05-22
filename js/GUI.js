@@ -10,11 +10,11 @@ class AppGUI{
         
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
-            "Eva": ['./data/EvaHandsEyesFixed.glb', './data/EvaConfig.json', -Math.PI/2],
-            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', -Math.PI/2],
+            "Eva": ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json', 0],
+            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', 0],
+            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', 0],
             "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0],
-            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', -Math.PI/2],
-            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0],
+            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0]
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 

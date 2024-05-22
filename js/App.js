@@ -368,12 +368,8 @@ class App {
                 let hair = model.getObjectByName( "Classic_short" );
                 if( hair && hair.children.length > 1 ){ hair.children[1].renderOrder = 1; }
             }
-
-            // correct Eva hand's size
-            let b = model.getObjectByName("mixamorig_RightHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
-            b = model.getObjectByName("mixamorig_LeftHand"); if ( b ){ b.scale.set( 0.85, 0.85, 0.85 ); } // eva
                         
-            // this.scene.add( new THREE.SkeletonHelper( model ) );
+            // model.add( new THREE.SkeletonHelper( model ) );
 
             model.eyesTarget = this.eyesTarget;
             model.headTarget = this.headTarget;
@@ -519,8 +515,9 @@ class App {
         if(urlParams.has('controls')) {
             showControls = !(urlParams.get('controls') === "false");
         }
-        let modelFilePath = './data/EvaHandsEyesFixed.glb'; let configFilePath = './data/EvaConfig.json'; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), -Math.PI/2 ); 
-        this.loadAvatar(modelFilePath, configFilePath, modelRotation, "Eva", ()=>{
+
+        let modelToLoad = ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json',  (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ) ];
+        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], "Eva", ()=>{
             this.changeAvatar( "Eva" );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             this.animate();
