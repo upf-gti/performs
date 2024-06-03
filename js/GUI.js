@@ -340,6 +340,23 @@ class AppGUI{
                     }
                 });
 
+                // switch between cameras buttons
+                p.sameLine();
+                for (let i = 0; i < this.app.cameras.length; i++) {
+                    p.addButton(null, i + 1, (v,e) => {
+                        this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
+                        this.app.camera = v - 1; // update active camera
+                        this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
+                    });
+                }
+                p.endLine();
+
+                p.addButton("Record", this.app.animationRecorder.isRecording ? "Stop": "Start", (value, event) => {
+                    this.app.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); // replay animation
+                    this.app.animationRecorder.manageCapture();
+                    this.refresh();
+                });
+                
                 p.addButton( null, this.app.cameraMode ? "Change to Free View": "Change to Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
 
                 p.branch( "Random signs" );

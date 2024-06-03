@@ -4,6 +4,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
+import { AnimationRecorder } from './recorder/recorder.js';
 import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 import { AppGUI } from './GUI.js';
 
@@ -23,7 +24,8 @@ class App {
         this.scene = null;
         this.renderer = null;
         this.camera = null;
-        this.controls = null;
+        this.cameras = [];
+        this.controls = [];
         this.cameraMode = 0;
         
         this.controllers = {}; // store avatar controllers
@@ -41,6 +43,7 @@ class App {
         this.signingSpeed = 1;
         this.backPlane = null;
         this.avatarShirt = null;
+        
     }
 
     setSigningSpeed( value ){ this.signingSpeed = value; }
@@ -302,8 +305,8 @@ class App {
         this.scene.add( this.controllers[avatarName].character ); // add model to scene
         this.model = this.controllers[avatarName].character;
         this.ECAcontroller = this.controllers[avatarName];
-        if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
-        this.controls.update();
+        if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target ); }
+        this.controls[this.camera].update();
         if ( this.gui ){ this.gui.refresh(); }
     }
 
@@ -402,6 +405,22 @@ class App {
         });
     }
 
+    newCamera( x = 0, controlsEnabled = true) {
+        let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
+        let controls = new OrbitControls( camera, this.renderer.domElement );
+        controls.object.position.set( Math.sin(5*Math.PI/180) + x, 1.5, Math.cos(5*Math.PI/180) );
+
+        controls.target.set(0.0, 1.3, 0);
+        controls.enableDamping = true; // this requires controls.update() during application update
+        controls.dampingFactor = 0.1;
+
+        controls.enabled = controlsEnabled;
+        
+        this.cameras.push(camera);
+        controls.update(); 
+        this.controls.push(controls);
+    }
+
     init() {
 
         this.loadLanguageDictionaries( "NGT" );
@@ -421,14 +440,12 @@ class App {
         // this.renderer.shadowMap.enabled = false;
         document.body.appendChild( this.renderer.domElement );
         
-        // camera
-        this.camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
-        this.controls = new OrbitControls( this.camera, this.renderer.domElement );
-        this.controls.object.position.set( Math.sin(5*Math.PI/180), 1.5, Math.cos(5*Math.PI/180) );
-        this.controls.target.set(0.0, 1.3, 0);
-        this.controls.enableDamping = true; // this requires controls.update() during application update
-        this.controls.dampingFactor = 0.1;
-        
+        this.newCamera(); // camera 0
+        this.newCamera(-1.0, false); // camera 1
+        this.newCamera(1.0, false); // camera 2
+    
+        this.camera = 0;
+
         // IBL Light
         // var that = this;
 
@@ -497,7 +514,7 @@ class App {
 
         // so the screen is not black while loading
         this.changeCameraMode( false ); //moved here because it needs the backplane to exist
-        this.renderer.render( this.scene, this.camera );
+        this.renderer.render( this.scene, this.cameras[this.camera] );
         
         // Behaviour Planner
         this.eyesTarget = new THREE.Object3D(); //THREE.Mesh( new THREE.SphereGeometry(0.5, 16, 16), new THREE.MeshPhongMaterial({ color: 0xffff00 , depthWrite: false }) );
@@ -531,6 +548,8 @@ class App {
                 delete this.pendingMessageReceived; 
             }
         });
+
+        this.animationRecorder = new AnimationRecorder(this.cameras.length);
         
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
@@ -561,26 +580,32 @@ class App {
             },
             false,
         );
+
     }
 
     animate() {
 
         requestAnimationFrame( this.animate.bind(this) );
 
-        this.controls.update(); // needed because of this.controls.enableDamping = true
+        this.controls[this.camera].update(); // needed because of this.controls.enableDamping = true
         let delta = this.clock.getDelta()         
         delta *= this.signingSpeed;
         this.elapsedTime += delta;
-
+        
         if ( this.ECAcontroller ){ this.ECAcontroller.update( delta, this.elapsedTime ); }
-
-        this.renderer.render( this.scene, this.camera );
+        
+        if (this.animationRecorder.isRecording) {
+            this.animationRecorder.update(this.renderer, this.scene, this.cameras);
+        }
+        
+        this.renderer.render( this.scene, this.cameras[this.camera] );
     }
     
     onWindowResize() {
-
-        this.camera.aspect = window.innerWidth / window.innerHeight;
-        this.camera.updateProjectionMatrix();
+        for (let i = 0; i < this.cameras.length; i++) {
+            this.cameras[i].aspect = window.innerWidth / window.innerHeight;
+            this.cameras[i].updateProjectionMatrix();
+        }
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
@@ -588,26 +613,26 @@ class App {
     changeCameraMode( mode ) {
 
         if ( mode ) {
-            this.controls.enablePan = true;
-            this.controls.minDistance = 0.1;
-            this.controls.maxDistance = 10;
-            this.controls.minAzimuthAngle = THREE.Infinity;
-            this.controls.maxAzimuthAngle = THREE.Infinity;
-            this.controls.minPolarAngle = 0.0;
-            this.controls.maxPolarAngle = Math.PI;     
+            this.controls[this.camera].enablePan = true;
+            this.controls[this.camera].minDistance = 0.1;
+            this.controls[this.camera].maxDistance = 10;
+            this.controls[this.camera].minAzimuthAngle = THREE.Infinity;
+            this.controls[this.camera].maxAzimuthAngle = THREE.Infinity;
+            this.controls[this.camera].minPolarAngle = 0.0;
+            this.controls[this.camera].maxPolarAngle = Math.PI;     
             this.setBackPlaneColour( 0x4f4f9c );
         } else {
-            this.controls.enablePan = false;
-            this.controls.minDistance = 0.7;
-            this.controls.maxDistance = 2;
-            this.controls.minAzimuthAngle = -2;
-            this.controls.maxAzimuthAngle = 2;
-            this.controls.minPolarAngle = 0.6;
-            this.controls.maxPolarAngle = 2.1;
+            this.controls[this.camera].enablePan = false;
+            this.controls[this.camera].minDistance = 0.7;
+            this.controls[this.camera].maxDistance = 2;
+            this.controls[this.camera].minAzimuthAngle = -2;
+            this.controls[this.camera].maxAzimuthAngle = 2;
+            this.controls[this.camera].minPolarAngle = 0.6;
+            this.controls[this.camera].maxPolarAngle = 2.1;
             this.setBackPlaneColour( 0x175e36 );
-            if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls.target ); }
+            if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target ); }
         }
-        this.controls.update();
+        this.controls[this.camera].update();
         this.cameraMode = mode; 
     }
 
