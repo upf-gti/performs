@@ -352,7 +352,12 @@ class AppGUI{
                 p.endLine();
 
                 p.addButton("Record", this.app.animationRecorder.isRecording ? "Stop": "Start", (value, event) => {
-                    this.app.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); // replay animation
+                    // process message on start
+                    if (!this.app.animationRecorder.isRecording) {
+                        this.gui.setValue( "Mood", "Neutral" ); 
+                        this.app.ECAcontroller.reset(); // reset pose
+                        this.app.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); // replay animation
+                    }
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
                 });
