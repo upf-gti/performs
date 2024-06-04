@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
 import { AnimationRecorder } from './recorder/recorder.js';
@@ -199,6 +200,29 @@ class App {
         this.ECAcontroller.processMsg( msg );
 
         return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
+    }
+
+     /* 
+    * Given an array of animations of type { name: "bvh",  url: "" } 
+    * 
+    */
+    async processMessageFiles( files = [], delayTime = 0 ) {
+        let animations = {};
+        let loader = new BVHLoader();
+        let promises = [];
+
+        for(let i = 0; i < files.length; i++) {
+            const file = files[i];
+            let filePromise = new Promise(resolve => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    resolve(animations[file.name] = loader.parse(reader.result));
+                }
+                reader.readAsText(file.url);
+            });
+            promises.push(filePromise);           
+        }
+        return Promise.all(promises);
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -562,7 +586,20 @@ class App {
                     }catch( e ){ console.error("Error while parsing an external message: ", event ); };
                 }
                 
-                if ( !Array.isArray(data) ){ return; }
+                if ( !data ) {
+                    return;
+                }
+
+                if ( !Array.isArray(data) ){ 
+                    if(data.type == 'bvh') {
+                        this.processMessageFiles(data.data).then( (animations) => {
+                            console.log(animations);
+                        });
+                    }
+                    else {
+                        return; 
+                    }
+                }
                 
                 if ( !this.ECAcontroller ){ this.pendingMessageReceived = event.data; return; }
                 this.ECAcontroller.reset();
