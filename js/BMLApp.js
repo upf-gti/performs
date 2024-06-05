@@ -1,13 +1,8 @@
-
 import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
-import { AnimationRecorder } from './recorder/recorder.js';
 import { sigmlStringToBML } from './sigml/SigmlToBML.js';
-import { AppGUI } from './GUI.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -31,12 +26,7 @@ class BMLApp {
         this.msg = {};
         
         this.languageDictionaries = {}; // key = NGT, value = { glosses: {}, word2ARPA: {} }
-        this.selectedLanguage = "NGT";
-        
-        this.signingSpeed = 1;
-        this.backPlane = null;
-        this.avatarShirt = null;
-        
+        this.selectedLanguage = "NGT";       
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.

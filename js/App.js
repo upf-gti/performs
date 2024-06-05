@@ -9,6 +9,7 @@ import { AnimationRecorder } from './recorder/recorder.js';
 import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 import { AppGUI } from './GUI.js';
 import { BMLApp } from './BMLApp.js';
+import { KeyframeApp } from './KeyframeApp.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -40,10 +41,15 @@ class App {
         
         this.mode = App.Modes.SCRIPT;
         this.bmlApp = new BMLApp();        
+        this.keyframeApp = new KeyframeApp();        
     }
 
     setSpeed( value ){ this.speed = value; }
     getSpeed( ){ return this.speed; }
+
+    changeMode( mode ) {
+        this.mode = mode;
+    }
 
     // returns value (hex) with the colour in sRGB space
     getBackPlaneColour(){
@@ -401,4 +407,4 @@ class App {
 let app = new App();
 app.init();
 window.global = {app:app};
-export { app };
+export { App };
