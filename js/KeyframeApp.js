@@ -13,7 +13,7 @@ class KeyframeApp {
         this.loaderBVH = new GLTFLoader();
         
         this.currentCharacter = "";
-        this.controllers = {}; // store avatar controllers
+        this.loadedCharacters = {}; // store avatar loadedCharacters
 
         this.currentAnimation = "";
         this.loadedAnimations = {};
@@ -29,20 +29,20 @@ class KeyframeApp {
         }
     }
 
-    onLoadAvatar(newAvatar, config){      
+    onLoadAvatar(newAvatar, config, skeleton){      
 
         // Create mixer for animation
         const mixer = new THREE.AnimationMixer(newAvatar);  
-        this.controllers[newAvatar.name] = { mixer, config };
+        this.loadedCharacters[newAvatar.name] = { mixer, config, model: newAvatar, skeleton};
         this.mixer = mixer;
     }
 
     onChangeAvatar(avatarName) {
-        if (!this.controllers[avatarName]) { 
+        if (!this.loadedCharacters[avatarName]) { 
             return false; 
         }
         this.currentCharacter = avatarName;
-        this.mixer = this.controllers[avatarName].mixer;  
+        this.mixer = this.loadedCharacters[avatarName].mixer;  
         this.bindAnimationToCharacter(this.currentAnimation, avatarName);
         return true;
     }
@@ -73,7 +73,8 @@ class KeyframeApp {
 
                     resolve(parsedFiles[file.name] = data);
                 }
-                reader.readAsText(file.data);
+                let data = file.data ?? file;
+                reader.readAsText(data);
             });
             promises.push(filePromise);           
         }
@@ -99,8 +100,8 @@ class KeyframeApp {
         }
         
         if ( animationData && animationData.blendshapesAnim ){
-            animationData.blendshapesAnim.name = "faceAnimation";       
-            faceAnimation = animationData.blendshapesAnim;
+            animationData.blendshapesAnim.clip.name = "faceAnimation";       
+            faceAnimation = animationData.blendshapesAnim.clip;
         }
         
         this.loadedAnimations[name] = {
@@ -126,7 +127,7 @@ class KeyframeApp {
         }
         this.currentAnimation = animationName;
         
-        let currentCharacter = this.controllers[characterName];
+        let currentCharacter = this.loadedCharacters[characterName];
         if(!currentCharacter) {
             console.warn(characterName + ' not loaded')
         }
@@ -137,12 +138,11 @@ class KeyframeApp {
         while(mixer._actions.length){
             mixer.uncacheClip(mixer._actions[0]._clip); // removes action
         }
-        currentCharacter.skeletonHelper.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
+        currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
 
         // if not yet binded, create it. Otherwise just change to the existing animation
         if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][currentCharacter.name] ) {
             let bodyAnimation = animation.bodyAnimation;        
-            let skeletonAnimation = null;
             if(bodyAnimation) {
             
                 let tracks = [];        
@@ -164,41 +164,37 @@ class KeyframeApp {
                 forceBindPoseQuats(skeleton); 
                 // trgUseCurrentPose: use current Bone obj quats,pos, and scale
                 // trgEmbedWorldTransform: take into account external rotations like bones[0].parent.quaternion and model.quaternion
-                let retargeting = new AnimationRetargeting(skeleton, this.currentCharacter.model, { trgUseCurrentPose: true, trgEmbedWorldTransforms: true } ); // TO DO: change trgUseCurrentPose param
+                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { trgUseCurrentPose: true, trgEmbedWorldTransforms: true } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);
 
                 bodyAnimation.name = "bodyAnimation";   // mixer
-                skeletonAnimation.name = "bodyAnimation";  // timeline
             }
                 
             let faceAnimation = animation.faceAnimation;        
-            let auAnimation = null;
-            if(faceAnimation) { // TO DO: Check if it's if-else or if-if
+            // if(faceAnimation) { // TO DO: Check if it's if-else or if-if
                 
-                // Get the formated animation
-                if(animation.type == "video") {
-                    faceAnimation = this.currentCharacter.blendshapesManager.createBlendShapesAnimation(animation.blendshapes);
-                }
+            //     // Get the formated animation
+            //     if(animation.type == "video") {
+            //         faceAnimation = currentCharacter.blendshapesManager.createBlendShapesAnimation(animation.blendshapes);
+            //     }
 
-                faceAnimation.name = "faceAnimation";   // mixer
-                auAnimation.name = "faceAnimation";  // timeline
-            }
+            //     faceAnimation.name = "faceAnimation";   // mixer
+            // }
             
             if(!this.bindedAnimations[animationName]) {
                 this.bindedAnimations[animationName] = {};
             }
-            this.bindedAnimations[animationName][this.currentCharacter.name] = {
+            this.bindedAnimations[animationName][this.currentCharacter] = {
                 mixerBodyAnimation: bodyAnimation, mixerFaceAnimation: faceAnimation, // for threejs mixer 
-                skeletonAnimation, auAnimation // from gui timeline
             }
         }
 
-        let bindedAnim = this.bindedAnimations[animationName][currentCharacter.name];
-        mixer.clipAction(bindedAnim.mixerFaceAnimation).setEffectiveWeight(1.0).play(); // already handles nulls and undefines
+        let bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
+        // mixer.clipAction(bindedAnim.mixerFaceAnimation).setEffectiveWeight(1.0).play(); // already handles nulls and undefines
         mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
-        
+        mixer.update(0);
         this.mixer = mixer;
 
         return true;
@@ -209,7 +205,7 @@ class KeyframeApp {
 
         let newTracks = [];
         let tracks = clip.tracks;
-        let bones = this.currentCharacter.skeletonHelper.bones;
+        let bones = this.loadedCharacters[this.currentCharacter].skeleton.bones;
         let bonesNames = [];
         tracks.map((v) => { bonesNames.push(v.name.split(".")[0])});
 

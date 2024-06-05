@@ -2,7 +2,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { BVHLoader } from 'three/addons/loaders/BVHLoader.js';
 
 import { CharacterController } from './controllers/CharacterController.js';
 import { AnimationRecorder } from './recorder/recorder.js';
@@ -81,6 +80,7 @@ class App {
         this.scene.add( this.currentCharacter.model ); // add model to scene
 
         this.bmlApp.onChangeAvatar(avatarName);
+        this.keyframeApp.onChangeAvatar(avatarName);
         
         this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
         this.controls[this.camera].update();
@@ -169,6 +169,7 @@ class App {
                 let config = JSON.parse( text ); 
                 this.loadedCharacters[avatarName].config = config;
                 this.bmlApp.onLoadAvatar(model, config);
+                this.keyframeApp.onLoadAvatar(model, config, skeleton);
                 if (callback) {
                     callback();
                 }
@@ -318,14 +319,15 @@ class App {
                 }
 
                 if ( Array.isArray(data) ){
+                    this.changeMode(App.SCRIPT);
                     this.bmlApp.onMessage(data); 
                     return;
                 } 
-                
-                
-                if(data.type == 'bvh') {
-                    this.processMessageFiles(data.data).then( (animations) => {
-                        console.log(animations);
+                                
+                if(data.type == 'bvh' || data.type == 'bvhe') {
+                    this.changeMode(App.KEYFRAME);
+                    this.keyframeApp.processMessageFiles(data.data).then( (animations) => {
+                        this.gui.animationDialog.refresh();
                     });
                 }
                 else {
@@ -334,7 +336,6 @@ class App {
             },
             false,
         );
-
     }
 
     animate() {
@@ -351,6 +352,7 @@ class App {
                 this.bmlApp.update(delta); 
                 break;
             case App.Modes.KEYFRAME:
+                this.keyframeApp.update(delta); 
                 break;
             default:
                 break;
@@ -371,7 +373,10 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
-    toggleCameraMode(){ this.changeCameraMode( !this.cameraMode ); }
+    toggleCameraMode() { 
+        this.changeCameraMode( !this.cameraMode ); 
+    }
+
     changeCameraMode( mode ) {
 
         if ( mode ) {
@@ -401,6 +406,24 @@ class App {
         this.cameraMode = mode; 
     }
 
+    loadFiles( files, callback ) {
+        for(let i = 0; i < files; i++) {
+            //load json (bml) file
+            const extension = UTILS.getExtension(file.name);
+            const formats = ['bvh', 'bvhe'];
+            if(formats.indexOf(extension) < 0) {
+                alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe'\n\t");
+            }
+        }
+
+        this.changeMode(App.Modes.KEYFRAME);
+
+        this.keyframeApp.processMessageFiles(files).then((data) => {
+            if(callback) {
+                callback();
+            }
+        });
+    }
 }
 
 

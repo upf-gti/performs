@@ -22,12 +22,19 @@ class AppGUI {
         let main_area = LX.init();
         main_area.attach( this.app.renderer.domElement );
 
+        main_area.root.ondrop = (e) => {
+			e.preventDefault();
+			e.stopPropagation();
+
+			this.app.loadFiles(e.dataTransfer.files, () => this.animationDialog.refresh());      
+        };
+
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
         this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
-        this.bmlGui = null;
+        this.animationDialog = null;
 
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
@@ -210,14 +217,6 @@ class AppGUI {
 
     createBMLPanel(panel) {
         
-        // if(this.bmlGui) {
-        //     this.bmlGui.refresh();
-        //     this.animationDialog.panel = this.bmlGui;
-        //     this.animationDialog.refresh();
-
-        //     return;
-        // }
-       
         this.bmlGui = panel;
 
         this.bmlGui.refresh = () =>{
@@ -341,7 +340,7 @@ class AppGUI {
                     this.bmlInputData.codeObj = null;
                     root.remove();
                 }});
-            
+        
             });
 
             this.sigmlInputData.openButton = this.bmlGui.addButton( null, "SiGML Input", (value, event) =>{
@@ -472,7 +471,7 @@ class AppGUI {
         this.keyframeGui = panel;
 
         this.keyframeGui.refresh = () =>{
-            this.keyframeGui = panel;
+            this.keyframeGui.clear();
             this.keyframeGui.addComboButtons("Animation from", [
                 {
                     value: "BML",
@@ -489,7 +488,10 @@ class AppGUI {
                     }
                 }
             ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
-            this.keyframeGui.clear();      
+            
+            this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
+                this.app.keyframeApp.onChangeAnimation(v);
+            })
         }
        
         this.keyframeGui.refresh();
