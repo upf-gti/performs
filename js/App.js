@@ -298,7 +298,7 @@ class App {
             this.changeAvatar( "Eva" );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             this.animate();
-            $('#loading').fadeOut(); //hide();
+            $('#loading').fadeOut(); //hide();            
         });
 
         this.animationRecorder = new AnimationRecorder(this.cameras.length);
@@ -319,16 +319,14 @@ class App {
                 }
 
                 if ( Array.isArray(data) ){
-                    this.changeMode(App.SCRIPT);
+                    this.changeMode(App.Modes.SCRIPT);
                     this.bmlApp.onMessage(data); 
                     return;
                 } 
                                 
                 if(data.type == 'bvh' || data.type == 'bvhe') {
-                    this.changeMode(App.KEYFRAME);
-                    this.keyframeApp.processMessageFiles(data.data).then( (animations) => {
-                        this.gui.animationDialog.refresh();
-                    });
+                    this.changeMode(App.Modes.KEYFRAME);
+                    this.keyframeApp.onMessage(data);
                 }
                 else {
                     return; 

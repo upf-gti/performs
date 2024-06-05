@@ -169,9 +169,6 @@ class BMLApp {
             return false; 
         }
         this.ECAcontroller = this.controllers[avatarName];
-        
-        // if( this.ECAcontroller ){ this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target ); }
-        // this.controls[this.camera].update();
         return true;
     }
 
@@ -279,7 +276,10 @@ class BMLApp {
             return;
         }
             
-        if ( !this.ECAcontroller ){ this.pendingMessageReceived = data; return; }
+        if ( !this.ECAcontroller ){ 
+            this.pendingMessageReceived = data; 
+            return; 
+        }
         this.ECAcontroller.reset();
         this.processMessageRawBlocks( data ).then(()=>{ 
             if ( !this.msg || !this.msg.data || !this.gui ){ return; }

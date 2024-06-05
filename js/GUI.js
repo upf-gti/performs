@@ -102,20 +102,22 @@ class AppGUI {
                     });
                 }
 
-                p.addNumber("Signing Speed", this.app.signingSpeed, (value, event) => {
-                    // this.app.signingSpeed = Math.pow( Math.E, (value - 1) );
-                    this.app.signingSpeed = value;
+                p.addNumber("Signing Speed", this.app.speed, (value, event) => {
+                    // this.app.speed = Math.pow( Math.E, (value - 1) );
+                    this.app.speed = value;
                 }, { min: 0, max: 2, step: 0.01});
                 
                 
                 p.addDropdown("Avatar", ["Upload Avatar", ...Object.keys( this.avatarOptions )], this.app.currentCharacter.model.name, (value, event) => {
-                    this.gui.setValue( "Mood", "Neutral" );  
+                    if(this.app.mode == App.Modes.SCRIPT) {
+                        this.animationDialog.panel.setValue( "Mood", "Neutral" );  
+                    }
                     
                     // upload model
                     if (value == "Upload Avatar") {
                         this.uploadAvatar((value) => {
                             
-                            if ( !this.app.controllers[value] ) {
+                            if ( !this.app.loadedCharacters[value] ) {
                                 $('#loading').fadeIn(); //hide();
                                 let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                                 this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
@@ -132,7 +134,7 @@ class AppGUI {
                     }
                     else {
                         // load desired model
-                        if ( !this.app.controllers[value] ) {
+                        if ( !this.app.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
                             let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 

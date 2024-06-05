@@ -33,8 +33,14 @@ class KeyframeApp {
 
         // Create mixer for animation
         const mixer = new THREE.AnimationMixer(newAvatar);  
+        this.currentCharacter = newAvatar.name;
         this.loadedCharacters[newAvatar.name] = { mixer, config, model: newAvatar, skeleton};
         this.mixer = mixer;
+        if(this.pendingMessageReceived) {
+            this.currentAnimation = this.pendingMessageReceived;
+            this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+            this.pendingMessageReceived = false;
+        }
     }
 
     onChangeAvatar(avatarName) {
@@ -53,6 +59,12 @@ class KeyframeApp {
         }
         this.currentAnimation = animationName;
         this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+    }
+
+    onMessage( data ) {
+        this.processMessageFiles(data.data).then( (animations) => {
+            //this.gui.animationDialog.refresh();
+        });
     }
     /* 
     * Given an array of animations of type { name: "", data: "" } where "data" is Blob of text/plain type 
@@ -77,6 +89,10 @@ class KeyframeApp {
                 reader.readAsText(data);
             });
             promises.push(filePromise);           
+        }
+        if ( !this.mixer ){ 
+            this.pendingMessageReceived = files[0].name; 
+            return; 
         }
         return Promise.all(promises);
     }
