@@ -72,7 +72,7 @@ class AppGUI {
             this.gui.refresh = () =>{
                 this.gui.clear();
                 // // --------- Customization ---------
-                // p.branch( "Customization" );
+                p.branch( "Customization" );
                 // get color set on the actual objects and set them as default values to the colorpicker
                 let color = new THREE.Color();
 
@@ -140,15 +140,43 @@ class AppGUI {
                     }
                 });
 
-                // switch between cameras buttons
-                p.sameLine();
+                p.branch( "Recording" );
+
+          
+                let cameras = [];
                 for (let i = 0; i < this.app.cameras.length; i++) {
-                    p.addButton(null, i + 1, (v,e) => {
-                        this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
-                        this.app.camera = v - 1; // update active camera
-                        this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
-                    });
+                    const camera = {
+                        value: (i + 1).toString(),
+                        callback: (v,e) => {
+                            this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
+                            this.app.camera = v - 1; // update active camera
+                            this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
+                        }
+                    }
+
+                    cameras.push(camera);                  
                 }
+
+                p.sameLine();
+                p.addComboButtons("Camera View", cameras, {selected: (this.app.camera + 1).toString()});     
+                p.addComboButtons(null, [
+                    {
+                        value: "Restricted View",
+                        icon: "fa-solid fa-camera",
+                        callback: (v, e) => {
+                            this.app.toggleCameraMode(); 
+                            this.refresh();
+                        }
+                    },
+                    {
+                        value: "Free View",
+                        icon: "fa-solid fa-up-down-left-right",
+                        callback: (v, e) => {
+                            this.app.toggleCameraMode(); 
+                            this.refresh();
+                        }
+                    }
+                ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
                 p.endLine();
 
                 p.addButton("Record", this.app.animationRecorder.isRecording ? "Stop": "Start", (value, event) => {
@@ -156,25 +184,6 @@ class AppGUI {
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
                 });
-                
-                p.addButton( null, this.app.cameraMode ? "Change to Free View": "Change to Restricted View", (v,e)=>{ this.app.toggleCameraMode(); this.refresh(); } );
-                
-                p.addComboButtons("Animation from", [
-                    {
-                        value: "BML",
-                        callback: (v, e) => {
-                            this.app.changeMode(App.Modes.SCRIPT);
-                            this.animationDialog.refresh();
-                        }
-                    },
-                    {
-                        value: "File",
-                        callback: (v, e) => {
-                            this.app.changeMode(App.Modes.KEYFRAME);
-                            this.animationDialog.refresh();
-                        }
-                    }
-                ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
                 p.merge(); // random signs
             }
 
@@ -213,12 +222,22 @@ class AppGUI {
 
         this.bmlGui.refresh = () =>{
             this.bmlGui.clear();               
-
-            this.bmlGui.addNumber("Signing Speed", this.app.signingSpeed, (value, event) => {
-                // this.app.signingSpeed = Math.pow( Math.E, (value - 1) );
-                this.app.signingSpeed = value;
-            }, { min: 0, max: 2, step: 0.01});
-            
+            this.bmlGui.addComboButtons("Animation from", [
+                {
+                    value: "BML",
+                    callback: (v, e) => {
+                        this.app.changeMode(App.Modes.SCRIPT);
+                        this.animationDialog.refresh();
+                    }
+                },
+                {
+                    value: "File",
+                    callback: (v, e) => {
+                        this.app.changeMode(App.Modes.KEYFRAME);
+                        this.animationDialog.refresh();
+                    }
+                }
+            ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
             this.bmlGui.addButton( null, "Replay", (value, event) =>{
                 this.app.bmlApp.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); 
             });
@@ -454,6 +473,22 @@ class AppGUI {
 
         this.keyframeGui.refresh = () =>{
             this.keyframeGui = panel;
+            this.keyframeGui.addComboButtons("Animation from", [
+                {
+                    value: "BML",
+                    callback: (v, e) => {
+                        this.app.changeMode(App.Modes.SCRIPT);
+                        this.animationDialog.refresh();
+                    }
+                },
+                {
+                    value: "File",
+                    callback: (v, e) => {
+                        this.app.changeMode(App.Modes.KEYFRAME);
+                        this.animationDialog.refresh();
+                    }
+                }
+            ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
             this.keyframeGui.clear();      
         }
        
