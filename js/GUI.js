@@ -79,7 +79,7 @@ class AppGUI {
             this.gui.refresh = () =>{
                 this.gui.clear();
                 // // --------- Customization ---------
-                p.branch( "Customization" );
+                p.branch( "Customization", { icon: "fa-solid fa-palette"} );
                 // get color set on the actual objects and set them as default values to the colorpicker
                 let color = new THREE.Color();
 
@@ -149,7 +149,7 @@ class AppGUI {
                     }
                 });
 
-                p.branch( "Recording" );
+                p.branch( "Recording", { icon: "fa-solid fa-video"} );
 
           
                 let cameras = [];
@@ -188,11 +188,11 @@ class AppGUI {
                 ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
                 p.endLine();
 
-                p.addButton("Record", this.app.animationRecorder.isRecording ? "Stop": "Start", (value, event) => {
+                p.addButton("Record", "<i class='fa-solid fa-circle'>", (value, event) => {
                     this.app.bmlApp.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); // replay animation
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
-                });
+                }, {buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
                 p.merge(); // random signs
             }
 
@@ -457,19 +457,11 @@ class AppGUI {
             this.bmlGui.merge(); // random signs
         }
 
-        this.bmlGui.refresh();
-        // this.animationDialog.panel = this.bmlGui;
-        // this.animationDialog.refresh();
+        this.bmlGui.refresh();      
     }
 
     createKeyframePanel(panel) {
-        // if(this.keyframeGui) {
-        //     this.keyframeGui.refresh();
-        //     this.animationDialog.panel = this.keyframeGui;
-        //     this.animationDialog.refresh();
-        //     return;
-        // }
-        
+      
         this.keyframeGui = panel;
 
         this.keyframeGui.refresh = () =>{
@@ -491,13 +483,19 @@ class AppGUI {
                 }
             ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
             
+            this.keyframeGui.sameLine();
             this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
                 this.app.keyframeApp.onChangeAnimation(v);
-            })
+            });
+
+            this.keyframeGui.addButton("", "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
+                this.app.keyframeApp.changePlayState();
+                this.keyframeGui.refresh();
+            }, { width: "40px"});
+            this.keyframeGui.endLine(); 
         }
-       
+     
         this.keyframeGui.refresh();
-  
     }
     
     uploadAvatar(callback = null) {

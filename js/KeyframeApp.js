@@ -20,12 +20,20 @@ class KeyframeApp {
         this.bindedAnimations = {};
 
         this.mixer = null;
+        this.playing = false;
     }
 
     update( deltaTime ) {
         this.elapsedTime += deltaTime;
-        if ( this.mixer ) { 
+        if (this.playing && this.mixer) { 
             this.mixer.update( deltaTime ); 
+        }
+    }
+
+    changePlayState(state = !this.playing) {
+        this.playing = state;
+        if(this.playing && this.mixer) {
+            this.mixer.setTime(0);                      
         }
     }
 
@@ -48,6 +56,7 @@ class KeyframeApp {
             return false; 
         }
         this.currentCharacter = avatarName;
+        this.changePlayState(this.playing);
         this.mixer = this.loadedCharacters[avatarName].mixer;  
         this.bindAnimationToCharacter(this.currentAnimation, avatarName);
         return true;
