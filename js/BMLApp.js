@@ -151,6 +151,14 @@ class BMLApp {
         if ( this.ECAcontroller ){ this.ECAcontroller.update( deltaTime, this.elapsedTime ); }
     }
 
+    replay() {
+        if(!this.msg) {
+            return;
+        }
+        
+        this.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.msg) ) ); 
+    }
+
     onLoadAvatar(newAvatar, config){
         newAvatar.eyesTarget = this.eyesTarget;
         newAvatar.headTarget = this.headTarget;

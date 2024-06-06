@@ -10,11 +10,11 @@ class AppGUI {
         
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
-            "Eva": ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json', 0],
-            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', 0],
-            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', 0],
-            "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0],
-            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0]
+            "Eva": ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json', 0, '/3Dcharacters/Eva/Eva.png'],
+            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', 0, '/3Dcharacters/Eva_Low/Eva_Low.png'],
+            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', 0, '/3Dcharacters/Eva_Witch/Eva_Witch.png'],
+            "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0, '/3Dcharacters/Kevin/Kevin.png'],
+            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0, '/3Dcharacters/Ada/Ada.png']
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -26,7 +26,7 @@ class AppGUI {
 			e.preventDefault();
 			e.stopPropagation();
 
-			this.app.loadFiles(e.dataTransfer.files, () => this.animationDialog.refresh());      
+			this.app.loadFiles(e.dataTransfer.files, () => this.gui.refresh());      
         };
 
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
@@ -102,15 +102,14 @@ class AppGUI {
                     });
                 }
 
-                p.addNumber("Signing Speed", this.app.speed, (value, event) => {
-                    // this.app.speed = Math.pow( Math.E, (value - 1) );
-                    this.app.speed = value;
-                }, { min: 0, max: 2, step: 0.01});
-                
-                
-                p.addDropdown("Avatar", ["Upload Avatar", ...Object.keys( this.avatarOptions )], this.app.currentCharacter.model.name, (value, event) => {
+                p.sameLine();
+                let avatars = [];
+                for(let avatar in this.avatarOptions) {
+                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3]});
+                }
+                p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.animationDialog.panel.setValue( "Mood", "Neutral" );  
+                        this.bmlGui.setValue( "Mood", "Neutral" );  
                     }
                     
                     // upload model
@@ -149,9 +148,29 @@ class AppGUI {
                     }
                 });
 
+                p.addButton( null, "Upload Avatar", (v) => {
+                    this.uploadAvatar((value) => {
+                            
+                        if ( !this.app.loadedCharacters[value] ) {
+                            $('#loading').fadeIn(); //hide();
+                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                                this.app.changeAvatar(value);
+                                $('#loading').fadeOut();
+                            } );
+                            return;
+                        } 
+
+                        // use controller if it has been already loaded in the past
+                        this.app.changeAvatar(value);
+
+                    });
+                } ,{ width: "40px", icon: "fa-solid fa-cloud-arrow-up" } );
+                
+                p.endLine();
+
                 p.branch( "Recording", { icon: "fa-solid fa-video"} );
 
-          
                 let cameras = [];
                 for (let i = 0; i < this.app.cameras.length; i++) {
                     const camera = {
@@ -167,7 +186,7 @@ class AppGUI {
                 }
 
                 p.sameLine();
-                p.addComboButtons("Camera View", cameras, {selected: (this.app.camera + 1).toString()});     
+                p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "70%"});     
                 p.addComboButtons(null, [
                     {
                         value: "Restricted View",
@@ -186,29 +205,68 @@ class AppGUI {
                         }
                     }
                 ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
-                p.endLine();
+                p.endLine("left");
 
-                p.addButton("Record", "<i class='fa-solid fa-circle'>", (value, event) => {
-                    this.app.bmlApp.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); // replay animation
+                p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
+                    // Replay animation
+                    if(this.mode == App.Modes.SCRIPT) {
+                        this.app.bmlApp.replay(); 
+                    }
+                    else {
+                        this.app.keyframeApp.changeMode(true);
+                    }
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
-                }, {buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
+                }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
                 p.merge(); // random signs
-            }
 
-            this.gui.refresh();
+                p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting"});
+                p.addComboButtons("Animation from", [
+                    {
+                        value: "BML",
+                        callback: (v, e) => {
+                            this.app.changeMode(App.Modes.SCRIPT);
+                            this.refresh();
+                        }
+                    },
+                    {
+                        value: "File",
+                        callback: (v, e) => {
+                            this.app.changeMode(App.Modes.KEYFRAME);
+                            this.refresh();
+                        }
+                    }
+                ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"});
+                
+                
+                p.addNumber("Signing Speed", this.app.speed, (value, event) => {
+                    // this.app.speed = Math.pow( Math.E, (value - 1) );
+                    this.app.speed = value;
+                }, { min: 0, max: 2, step: 0.01});
+                
 
-            this.animationDialog = new LX.PocketDialog( "Animation", p => { 
                 if(this.app.mode == App.Modes.SCRIPT) {
                     this.createBMLPanel(p);
                 }
                 else {
                     this.createKeyframePanel(p);
                 }
-            });
+                p.merge();
+            }
+
+            this.gui.refresh();
+
+            // this.animationDialog = new LX.PocketDialog( "Animation", p => { 
+            //     if(this.app.mode == App.Modes.SCRIPT) {
+            //         this.createBMLPanel(p);
+            //     }
+            //     else {
+            //         this.createKeyframePanel(p);
+            //     }
+            // }, { size: ["20%", null], float: "left", draggable: true });
             // p.merge(); // end of customization
 
-        }, { size: ["20%", null], float:"left", draggable:false });
+        }, { size: ["20%", null], float: "left", draggable: false });
         
         
         if ( window.innerWidth < window.innerHeight || pocketDialog.title.offsetWidth > (0.21*window.innerWidth) ){
@@ -221,281 +279,245 @@ class AppGUI {
         
         this.bmlGui = panel;
 
-        this.bmlGui.refresh = () =>{
-            this.bmlGui.clear();               
-            this.bmlGui.addComboButtons("Animation from", [
-                {
-                    value: "BML",
-                    callback: (v, e) => {
-                        this.app.changeMode(App.Modes.SCRIPT);
-                        this.animationDialog.refresh();
-                    }
-                },
-                {
-                    value: "File",
-                    callback: (v, e) => {
-                        this.app.changeMode(App.Modes.KEYFRAME);
-                        this.animationDialog.refresh();
-                    }
-                }
-            ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
-            this.bmlGui.addButton( null, "Replay", (value, event) =>{
-                this.app.bmlApp.ECAcontroller.processMsg( JSON.parse( JSON.stringify(this.app.msg) ) ); 
-            });
+        this.bmlGui.sameLine();
+        this.bmlGui.addButton( null, "Replay", (value, event) =>{
+            this.app.bmlApp.replay();             
+        }, {icon: "fa-solid fa-play"});
 
-            this.bmlGui.addButton( null, "Reset Pose", (value, event) =>{
-                this.bmlGui.setValue( "Mood", "Neutral" ); 
-                this.app.bmlApp.ECAcontroller.reset();
-            });
-            
-            this.bmlInputData.openButton = this.bmlGui.addButton( null, "BML Input", (value, event) =>{
+        this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
+            this.bmlGui.setValue( "Mood", "Neutral" ); 
+            this.app.bmlApp.ECAcontroller.reset();
+        }, {icon: "fa-solid fa-rotate-left"});
+        this.bmlGui.endLine();
 
-                if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
+        this.bmlGui.addSeparator();
+        this.bmlInputData.openButton = this.bmlGui.addButton( null, "BML Input", (value, event) =>{
 
-                this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
-                    this.bmlInputData.dialog = p;
+            if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
 
-                    let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
-                    this.bmlGui.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-        
-                    this.bmlGui.addButton(null, "Click here to see BML instructions and attributes", () => {
-                        window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
-                    });
-        
-                    htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
-                    htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
-                    this.bmlGui.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-        
-                    htmlStr = 'An example: { "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }';
-                    this.bmlGui.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-        
-                    const area = new LX.Area({ height: "59%" });
-                    this.bmlGui.attach( area.root );
-        
-                    let editor = new LX.CodeEditor(area, {
-                        highlight: 'JSON',
-                        skip_info: true,
-                        allow_add_scripts: false, 
-                        name : "BML"
-                    });
-                    editor.setText( this.bmlInputData.prevInstanceText );
-                    this.bmlInputData.codeObj = editor;
+            this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
+                this.bmlInputData.dialog = p;
 
-                    this.bmlGui.addButton(null, "Send", () => {
-                        let msg = {
-                            type: "behaviours",
-                            data: this._stringToBML( this.bmlInputData.codeObj.getText() )
-                        };
-                        
-                        if ( !msg.data.length ){ return; }
+                let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+    
+                p.addButton(null, "Click here to see BML instructions and attributes", () => {
+                    window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
+                });
+    
+                htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
+                htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+    
+                htmlStr = 'An example: { "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }';
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+    
+                const area = new LX.Area({ height: "59%" });
+                p.attach( area.root );
+    
+                let editor = new LX.CodeEditor(area, {
+                    highlight: 'JSON',
+                    skip_info: true,
+                    allow_add_scripts: false, 
+                    name : "BML"
+                });
+                editor.setText( this.bmlInputData.prevInstanceText );
+                this.bmlInputData.codeObj = editor;
 
-                        this.app.msg = JSON.parse(JSON.stringify(msg)); // copy object
-                        this.app.bmlApp.ECAcontroller.processMsg( msg );
-                    });
+                p.addButton(null, "Send", () => {
+                    let msg = {
+                        type: "behaviours",
+                        data: this._stringToBML( this.bmlInputData.codeObj.getText() )
+                    };
+                    
+                    if ( !msg.data.length ){ return; }
 
-                    this.bmlGui.addButton(null, "Edit on Animics", () => {
+                    this.app.msg = JSON.parse(JSON.stringify(msg)); // copy object
+                    this.app.bmlApp.ECAcontroller.processMsg( msg );
+                });
 
-                        const sendData = () => {
-                            if(!this.animics.app.global) 
-                            {
-                                setTimeout(sendData, 1000)
-                            }
-                            else {
-                                if(!this.animics.app.global.app) {
+                p.addButton(null, "Edit on Animics", () => {
 
-                                    this.animics.app.global.createApp({mode:"bml"});
-                                    this.animics.app.global.app.editor.realizer = window;
-                                    this.animics.app.global.app.editor.performsApp = this.app;
-                                }
-
-                                let msg = {
-                                    type: "behaviours",
-                                    data: this._stringToBML( this.bmlInputData.codeObj.getText() )
-                                };
-                                
-                                //Send to ANIMICS
-                                if(this.animics.app.global.app.editor.activeTimeline)
-                                    this.animics.app.global.app.editor.clearAllTracks(false);
-                                this.animics.app.global.app.editor.gui.loadBMLClip({behaviours: msg.data});
-                                
-                            }
-                        }
-                        if(!this.animics || this.animics.closed) {
-                            this.animics = window.open("https://webglstudio.org/projects/signon/animics");
-                            
-                            this.animics.onload = (e, d) => {
-                                this.animics.app = e.currentTarget;
-                                sendData();
-                            }
-                            this.animics.addEventListener("beforeunload", () => {
-                                this.animics = null;
-                            });
+                    const sendData = () => {
+                        if(!this.animics.app.global) 
+                        {
+                            setTimeout(sendData, 1000)
                         }
                         else {
+                            if(!this.animics.app.global.app) {
+
+                                this.animics.app.global.createApp({mode:"bml"});
+                                this.animics.app.global.app.editor.realizer = window;
+                                this.animics.app.global.app.editor.performsApp = this.app;
+                            }
+
+                            let msg = {
+                                type: "behaviours",
+                                data: this._stringToBML( this.bmlInputData.codeObj.getText() )
+                            };
+                            
+                            //Send to ANIMICS
+                            if(this.animics.app.global.app.editor.activeTimeline)
+                                this.animics.app.global.app.editor.clearAllTracks(false);
+                            this.animics.app.global.app.editor.gui.loadBMLClip({behaviours: msg.data});
+                            
+                        }
+                    }
+                    if(!this.animics || this.animics.closed) {
+                        this.animics = window.open("https://webglstudio.org/projects/signon/animics");
+                        
+                        this.animics.onload = (e, d) => {
+                            this.animics.app = e.currentTarget;
                             sendData();
                         }
-                    })
-        
-                }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true, onclose: (root)=>{
-                    this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
-                    this.bmlInputData.dialog = null;
-                    this.bmlInputData.codeObj = null;
-                    root.remove();
-                }});
-        
-            });
-
-            this.sigmlInputData.openButton = this.bmlGui.addButton( null, "SiGML Input", (value, event) =>{
-
-                if ( this.sigmlInputData.dialog ){ 
-                    this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
-                    this.sigmlInputData.dialog.close(); 
-                }
-
-                this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
-                    let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
-                    this.bmlGui.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
-        
-                    const area = new LX.Area({ height: "85%" });
-                    this.bmlGui.attach( area.root );
-        
-                    let editor = new LX.CodeEditor(area, {
-                        highlight: 'XML',
-                        skip_info: true,
-                        allow_add_scripts: false, 
-                        name : "XML"
-                    });
-                    editor.setText( this.sigmlInputData.prevInstanceText );
-                    this.sigmlInputData.codeObj = editor;
-        
-                    this.bmlGui.addButton(null, "Send", () => {
-                        let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
-                        this.app.bmlApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
-                    });
-        
-                }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});
-            
-
-            });
-
-            let languages = Object.keys(this.app.bmlApp.languageDictionaries);
-            let glossesDictionary = {};
-            this.language = languages[0];
-
-            for(let i = 0; i < languages.length; i++) {
-                let lang = languages[i];
-                glossesDictionary[lang] = [];
-                for(let glossa in this.app.bmlApp.languageDictionaries[lang].glosses) {
-                    glossesDictionary[lang].push(glossa.replaceAll(".sigml", ""));
-                }
-            }
-            this.glossInputData.openButton = this.bmlGui.addButton( null, "Glosses Input", (value, event) =>{
-
-                if ( this.glossInputData.dialog ){ this.glossInputData.dialog.close(); }
-
-                this.glossInputData.dialog = new LX.PocketDialog( "Glosses Input", p => {
-                    this.bmlGui.refresh = () => {
-                        this.bmlGui.clear();
-                        let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
-                        this.bmlGui.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
-                        
-                        const area = new LX.Area({ height: "85%" });
-                        this.bmlGui.attach( area.root );
-                        
-                        this.bmlGui.addDropdown("Language", languages, this.app.bmlApp.selectedLanguage, (value, event) => {
-                            this.app.bmlApp.selectedLanguage = value;
-                            this.bmlGui.refresh();
-                        } );
-
-                        this.bmlGui.addDropdown("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
-                            this.glossInputData.glosses += " " + value;
-                            this.glossInputData.textArea.set( this.glossInputData.glosses );
-                        }, {filter: true});
-                        
-                        this.glossInputData.textArea = this.bmlGui.addTextArea("Write glosses", this.glossInputData.glosses, (value, event) => {
-                            this.glossInputData.glosses = value;
-                        }, {placeholder: "Hallo Leuk"});
-
-                        this.bmlGui.addButton(null, "Send", () => {
-            
-                            let glosses = this.glossInputData.glosses.replaceAll( "\n", " ").split( " " );
-                            for ( let i = 0; i < glosses.length; ++i ){
-                                if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
-                                    glosses.splice( i, 1 ); 
-                                    --i; 
-                                    continue; 
-                                }
-                                glosses[i] = { type: "glossName", data: glosses[i].toUpperCase() };
-                            }
-                            if(!glosses.length) alert("Please, write or select at least one gloss");
-                            this.app.bmlApp.processMessageRawBlocks(glosses);    
+                        this.animics.addEventListener("beforeunload", () => {
+                            this.animics = null;
                         });
                     }
-                    this.bmlGui.refresh();
-                }, { closable: true } );
-            
-            });
-            
-            this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], "Neutral", (value, event) => {
-                let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
-                this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
-            });
+                    else {
+                        sendData();
+                    }
+                })
+    
+            }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true, onclose: (root)=>{
+                this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
+                this.bmlInputData.dialog = null;
+                this.bmlInputData.codeObj = null;
+                root.remove();
+            }});
+    
+        });
 
-            this.bmlGui.branch( "Random signs" );
-            this.bmlGui.addButton( "Send", "send", (v,e)=>{ 
-                if (!this.randomSignAmount ){ return; }
-                let k = Object.keys( this.app.bmlApp.languageDictionaries[this.app.bmlApp.selectedLanguage]["glosses"] );
-                
-                let m = [];
-                for( let i = 0; i < this.randomSignAmount; ++i ){
-                    m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
-                }
-                console.log( JSON.parse(JSON.stringify(m)));
-                this.app.bmlApp.processMessageRawBlocks( m );
-            } );
-            this.bmlGui.addNumber("amount", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100 } );
-            this.bmlGui.merge(); // random signs
+        this.sigmlInputData.openButton = this.bmlGui.addButton( null, "SiGML Input", (value, event) =>{
+
+            if ( this.sigmlInputData.dialog ){ 
+                this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
+                this.sigmlInputData.dialog.close(); 
+            }
+
+            this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
+                let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
+    
+                const area = new LX.Area({ height: "85%" });
+                p.attach( area.root );
+    
+                let editor = new LX.CodeEditor(area, {
+                    highlight: 'XML',
+                    skip_info: true,
+                    allow_add_scripts: false, 
+                    name : "XML"
+                });
+                editor.setText( this.sigmlInputData.prevInstanceText );
+                this.sigmlInputData.codeObj = editor;
+    
+                p.addButton(null, "Send", () => {
+                    let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
+                    this.app.bmlApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
+                });
+    
+            }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});
+        
+
+        });
+
+        let languages = Object.keys(this.app.bmlApp.languageDictionaries);
+        let glossesDictionary = {};
+        this.language = languages[0];
+
+        for(let i = 0; i < languages.length; i++) {
+            let lang = languages[i];
+            glossesDictionary[lang] = [];
+            for(let glossa in this.app.bmlApp.languageDictionaries[lang].glosses) {
+                glossesDictionary[lang].push(glossa.replaceAll(".sigml", ""));
+            }
         }
+        this.glossInputData.openButton = this.bmlGui.addButton( null, "Glosses Input", (value, event) =>{
 
-        this.bmlGui.refresh();      
+            if ( this.glossInputData.dialog ){ this.glossInputData.dialog.close(); }
+
+            this.glossInputData.dialog = new LX.PocketDialog( "Glosses Input", p => {
+                p.refresh = () => {
+                    p.clear();
+                    let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
+                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
+                    
+                    const area = new LX.Area({ height: "85%" });
+                    p.attach( area.root );
+                    
+                    p.addDropdown("Language", languages, this.app.bmlApp.selectedLanguage, (value, event) => {
+                        this.app.bmlApp.selectedLanguage = value;
+                        p.refresh();
+                    } );
+
+                    p.addDropdown("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
+                        this.glossInputData.glosses += " " + value;
+                        this.glossInputData.textArea.set( this.glossInputData.glosses );
+                    }, {filter: true});
+                    
+                    this.glossInputData.textArea = p.addTextArea("Write glosses", this.glossInputData.glosses, (value, event) => {
+                        this.glossInputData.glosses = value;
+                    }, {placeholder: "Hallo Leuk"});
+
+                    p.addButton(null, "Send", () => {
+        
+                        let glosses = this.glossInputData.glosses.replaceAll( "\n", " ").split( " " );
+                        for ( let i = 0; i < glosses.length; ++i ){
+                            if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
+                                glosses.splice( i, 1 ); 
+                                --i; 
+                                continue; 
+                            }
+                            glosses[i] = { type: "glossName", data: glosses[i].toUpperCase() };
+                        }
+                        if(!glosses.length) alert("Please, write or select at least one gloss");
+                        this.app.bmlApp.processMessageRawBlocks(glosses);    
+                    });
+                }
+                p.refresh();
+            }, { closable: true } );
+        
+        });
+        
+        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], "Neutral", (value, event) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
+            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+        });
+
+        //this.bmlGui.branch( "Random signs" );
+        this.bmlGui.sameLine();
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"fa-solid fa-dice" } );
+        this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
+            if (!this.randomSignAmount ){ return; }
+            let k = Object.keys( this.app.bmlApp.languageDictionaries[this.app.bmlApp.selectedLanguage]["glosses"] );
+            
+            let m = [];
+            for( let i = 0; i < this.randomSignAmount; ++i ){
+                m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
+            }
+            console.log( JSON.parse(JSON.stringify(m)));
+            this.app.bmlApp.processMessageRawBlocks( m );
+        }, { width: "40px", icon: "fa-solid fa-share"} );
+        this.bmlGui.endLine();
+        this.bmlGui.merge(); // random signs
+        
+              
     }
 
     createKeyframePanel(panel) {
       
         this.keyframeGui = panel;
+  
+        this.keyframeGui.sameLine();
+        this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
+            this.app.keyframeApp.onChangeAnimation(v);
+        });
 
-        this.keyframeGui.refresh = () =>{
-            this.keyframeGui.clear();
-            this.keyframeGui.addComboButtons("Animation from", [
-                {
-                    value: "BML",
-                    callback: (v, e) => {
-                        this.app.changeMode(App.Modes.SCRIPT);
-                        this.animationDialog.refresh();
-                    }
-                },
-                {
-                    value: "File",
-                    callback: (v, e) => {
-                        this.app.changeMode(App.Modes.KEYFRAME);
-                        this.animationDialog.refresh();
-                    }
-                }
-            ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"})
-            
-            this.keyframeGui.sameLine();
-            this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
-                this.app.keyframeApp.onChangeAnimation(v);
-            });
-
-            this.keyframeGui.addButton("", "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
-                this.app.keyframeApp.changePlayState();
-                this.keyframeGui.refresh();
-            }, { width: "40px"});
-            this.keyframeGui.endLine(); 
-        }
-     
-        this.keyframeGui.refresh();
+        this.keyframeGui.addButton("", "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
+            this.app.keyframeApp.changePlayState();
+            this.keyframeGui.refresh();
+        }, { width: "40px"});
+        this.keyframeGui.endLine(); 
     }
     
     uploadAvatar(callback = null) {
