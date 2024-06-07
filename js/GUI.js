@@ -209,7 +209,7 @@ class AppGUI {
 
                 p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
                     // Replay animation
-                    if(this.mode == App.Modes.SCRIPT) {
+                    if(this.app.mode == App.Modes.SCRIPT) {
                         this.app.bmlApp.replay(); 
                     }
                     else {
