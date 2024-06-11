@@ -55,7 +55,7 @@
 
 .recording-button-playing {
 	border-radius: 80px !important;
-    width: 26px !important;
+    width: 22px !important;
 	animation: ease pulse 2s infinite;
 	-webkit-animation: ease pulse 2s infinite;
 }

@@ -62,6 +62,19 @@ class AppGUI {
                     window.sessionStorage.setItem( "glossInput", this.glossInputData.glosses );
                 }
             });
+
+            window.addEventListener("keyup", (event) => {
+                if(event.key == " ") {
+                    if(this.app.mode == App.Modes.KEYFRAME && this.keyframeGui) {
+                        this.app.keyframeApp.changePlayState();
+                        this.keyframeGui.refresh();
+                    }
+                    else if (this.app.mode == App.Modes.SCRIPT && this.bmlGui) {
+                        this.app.bmlApp.replay();
+                        this.bmlGui.refresh();
+                    }
+                }
+            });
         }
 
         this.createPanel();
