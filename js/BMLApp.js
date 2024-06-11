@@ -169,7 +169,17 @@ class BMLApp {
         ECAcontroller.reset();
         ECAcontroller.processMsg( { control: 2 } ); // speaking mode
 
-        this.controllers[newAvatar.name] = ECAcontroller;
+        this.ECAcontroller = this.controllers[newAvatar.name] = ECAcontroller;
+
+        if(this.pendingMessageReceived) {
+            this.processMessageRawBlocks( this.pendingMessageReceived ).then((data)=> { 
+                if(this.pendingMessageReceived.callback)
+                    {
+                        this.pendingMessageReceived.callback(data);
+                    }
+                this.pendingMessageReceived = false;
+            } );   
+        }
     }
 
     onChangeAvatar(avatarName) {
@@ -279,24 +289,21 @@ class BMLApp {
         return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
     }
 
-    onMessage(data){
+    onMessage(data, callback){
         if ( !data || !Array.isArray(data) ) {
             return;
         }
             
         if ( !this.ECAcontroller ){ 
+            data.callback = callback;
             this.pendingMessageReceived = data; 
             return; 
         }
         this.ECAcontroller.reset();
-        this.processMessageRawBlocks( data ).then(()=>{ 
-            if ( !this.msg || !this.msg.data || !this.gui ){ return; }
-
-            this.gui.setBMLInputText( 
-                JSON.stringify(this.msg.data, function(key, val) {
-                    return val.toFixed ? Number(val.toFixed(3)) : val;
-                }) 
-            );
+        this.processMessageRawBlocks( data ).then((data)=>{ 
+            if(callback) {
+                callback(data);
+            }          
         } );          
     };
 

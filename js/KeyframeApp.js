@@ -70,8 +70,11 @@ class KeyframeApp {
         this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
     }
 
-    onMessage( data ) {
+    onMessage( data, callback ) {
         this.processMessageFiles(data.data).then( (animations) => {
+            if(callback) {
+                callback(animations);
+            }
             //this.gui.animationDialog.refresh();
         });
     }

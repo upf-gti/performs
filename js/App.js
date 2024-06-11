@@ -48,6 +48,12 @@ class App {
 
     changeMode( mode ) {
         this.mode = mode;
+        if(this.currentCharacter) {
+            this.currentCharacter.skeleton.pose();
+        }
+        if(this.bmlApp.ECAcontroller) {
+            this.bmlApp.ECAcontroller.reset();
+        }
     }
 
     // returns value (hex) with the colour in sRGB space
@@ -320,13 +326,22 @@ class App {
 
                 if ( Array.isArray(data) ){
                     this.changeMode(App.Modes.SCRIPT);
-                    this.bmlApp.onMessage(data); 
+                    this.bmlApp.onMessage(data, (data) => {
+                        this.gui.setBMLInputText( 
+                            JSON.stringify(data, function(key, val) {
+                                return val.toFixed ? Number(val.toFixed(3)) : val;
+                            }) 
+                        );
+                    }); 
                     return;
                 } 
                                 
                 if(data.type == 'bvh' || data.type == 'bvhe') {
                     this.changeMode(App.Modes.KEYFRAME);
-                    this.keyframeApp.onMessage(data);
+                    this.keyframeApp.onMessage(data, () => {
+                        this.gui.animationDialog.refresh();
+
+                    });
                 }
                 else {
                     return; 
@@ -417,6 +432,7 @@ class App {
         this.changeMode(App.Modes.KEYFRAME);
 
         this.keyframeApp.processMessageFiles(files).then((data) => {
+            this.keyframeApp.onChangeAnimation(files[0].name);
             if(callback) {
                 callback();
             }
