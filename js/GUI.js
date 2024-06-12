@@ -34,7 +34,6 @@ class AppGUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
-        this.animationDialog = null;
 
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
@@ -267,17 +266,7 @@ class AppGUI {
                 p.merge();
             }
 
-            this.gui.refresh();
-
-            // this.animationDialog = new LX.PocketDialog( "Animation", p => { 
-            //     if(this.app.mode == App.Modes.SCRIPT) {
-            //         this.createBMLPanel(p);
-            //     }
-            //     else {
-            //         this.createKeyframePanel(p);
-            //     }
-            // }, { size: ["20%", null], float: "left", draggable: true });
-            // p.merge(); // end of customization
+            this.gui.refresh();           
 
         }, { size: ["20%", null], float: "left", draggable: false });
         

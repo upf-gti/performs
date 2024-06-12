@@ -339,8 +339,9 @@ class App {
                 if(data.type == 'bvh' || data.type == 'bvhe') {
                     this.changeMode(App.Modes.KEYFRAME);
                     this.keyframeApp.onMessage(data, () => {
-                        this.gui.animationDialog.refresh();
-
+                        if(this.gui) {
+                            this.gui.refresh();
+                        }
                     });
                 }
                 else {
