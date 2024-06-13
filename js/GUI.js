@@ -34,7 +34,6 @@ class AppGUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
-        this.animationDialog = null;
 
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
@@ -60,6 +59,19 @@ class AppGUI {
                 }
                 if( this.glossInputData && this.glossInputData.glosses ){
                     window.sessionStorage.setItem( "glossInput", this.glossInputData.glosses );
+                }
+            });
+
+            window.addEventListener("keyup", (event) => {
+                if(event.key == " ") {
+                    if(this.app.mode == App.Modes.KEYFRAME && this.keyframeGui) {
+                        this.app.keyframeApp.changePlayState();
+                        this.keyframeGui.refresh();
+                    }
+                    else if (this.app.mode == App.Modes.SCRIPT && this.bmlGui) {
+                        this.app.bmlApp.replay();
+                        this.bmlGui.refresh();
+                    }
                 }
             });
         }
@@ -105,7 +117,7 @@ class AppGUI {
                 p.sameLine();
                 let avatars = [];
                 for(let avatar in this.avatarOptions) {
-                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3]});
+                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? "data/imgs/monster.png"});
                 }
                 p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
                     if(this.app.mode == App.Modes.SCRIPT) {
@@ -118,7 +130,9 @@ class AppGUI {
                             
                             if ( !this.app.loadedCharacters[value] ) {
                                 $('#loading').fadeIn(); //hide();
-                                let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                                let modelFilePath = this.avatarOptions[value][0]; 
+                                let configFilePath = this.avatarOptions[value][1]; 
+                                let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                                 this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                     this.app.changeAvatar(value);
                                     $('#loading').fadeOut();
@@ -135,7 +149,9 @@ class AppGUI {
                         // load desired model
                         if ( !this.app.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            let modelFilePath = this.avatarOptions[value][0]; 
+                            let configFilePath = this.avatarOptions[value][1]; 
+                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                 this.app.changeAvatar(value);
                                 $('#loading').fadeOut();
@@ -153,7 +169,9 @@ class AppGUI {
                             
                         if ( !this.app.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            let modelFilePath = this.avatarOptions[value][0]; 
+                            let configFilePath = this.avatarOptions[value][1]; 
+                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                 this.app.changeAvatar(value);
                                 $('#loading').fadeOut();
@@ -213,7 +231,7 @@ class AppGUI {
                         this.app.bmlApp.replay(); 
                     }
                     else {
-                        this.app.keyframeApp.changeMode(true);
+                        this.app.keyframeApp.changePlayState(true);
                     }
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
@@ -254,17 +272,7 @@ class AppGUI {
                 p.merge();
             }
 
-            this.gui.refresh();
-
-            // this.animationDialog = new LX.PocketDialog( "Animation", p => { 
-            //     if(this.app.mode == App.Modes.SCRIPT) {
-            //         this.createBMLPanel(p);
-            //     }
-            //     else {
-            //         this.createKeyframePanel(p);
-            //     }
-            // }, { size: ["20%", null], float: "left", draggable: true });
-            // p.merge(); // end of customization
+            this.gui.refresh();           
 
         }, { size: ["20%", null], float: "left", draggable: false });
         
@@ -280,14 +288,15 @@ class AppGUI {
         this.bmlGui = panel;
 
         this.bmlGui.sameLine();
+        this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
+            this.bmlGui.setValue( "Mood", "Neutral" ); 
+            this.app.bmlApp.ECAcontroller.reset();
+        }, {icon: "fa-solid fa-rotate-left", width: "40px"});
+
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.app.bmlApp.replay();             
         }, {icon: "fa-solid fa-play"});
 
-        this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
-            this.bmlGui.setValue( "Mood", "Neutral" ); 
-            this.app.bmlApp.ECAcontroller.reset();
-        }, {icon: "fa-solid fa-rotate-left"});
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
@@ -554,7 +563,8 @@ class AppGUI {
             panel.addButton(null, "Upload", () => {
                 if (name && model && config) {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
-                    this.avatarOptions[name] = [model, config, rotation];
+                    this.avatarOptions[name] = [model, config, rotation, "data/imgs/monster.png"];
+                    
                     panel.clear();
                     this.avatarDialog.root.remove();
                     if (callback) callback(name);
