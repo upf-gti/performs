@@ -117,7 +117,7 @@ class AppGUI {
                 p.sameLine();
                 let avatars = [];
                 for(let avatar in this.avatarOptions) {
-                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3]});
+                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? "data/imgs/monster.png"});
                 }
                 p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
                     if(this.app.mode == App.Modes.SCRIPT) {
@@ -130,7 +130,9 @@ class AppGUI {
                             
                             if ( !this.app.loadedCharacters[value] ) {
                                 $('#loading').fadeIn(); //hide();
-                                let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                                let modelFilePath = this.avatarOptions[value][0]; 
+                                let configFilePath = this.avatarOptions[value][1]; 
+                                let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                                 this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                     this.app.changeAvatar(value);
                                     $('#loading').fadeOut();
@@ -147,7 +149,9 @@ class AppGUI {
                         // load desired model
                         if ( !this.app.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            let modelFilePath = this.avatarOptions[value][0]; 
+                            let configFilePath = this.avatarOptions[value][1]; 
+                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                 this.app.changeAvatar(value);
                                 $('#loading').fadeOut();
@@ -165,7 +169,9 @@ class AppGUI {
                             
                         if ( !this.app.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; let configFilePath = this.avatarOptions[value][1]; let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            let modelFilePath = this.avatarOptions[value][0]; 
+                            let configFilePath = this.avatarOptions[value][1]; 
+                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                 this.app.changeAvatar(value);
                                 $('#loading').fadeOut();
@@ -557,7 +563,8 @@ class AppGUI {
             panel.addButton(null, "Upload", () => {
                 if (name && model && config) {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
-                    this.avatarOptions[name] = [model, config, rotation];
+                    this.avatarOptions[name] = [model, config, rotation, "data/imgs/monster.png"];
+                    
                     panel.clear();
                     this.avatarDialog.root.remove();
                     if (callback) callback(name);
