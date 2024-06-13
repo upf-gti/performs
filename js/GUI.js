@@ -225,7 +225,7 @@ class AppGUI {
                         this.app.bmlApp.replay(); 
                     }
                     else {
-                        this.app.keyframeApp.changeMode(true);
+                        this.app.keyframeApp.changePlayState(true);
                     }
                     this.app.animationRecorder.manageCapture();
                     this.refresh();
@@ -282,14 +282,15 @@ class AppGUI {
         this.bmlGui = panel;
 
         this.bmlGui.sameLine();
+        this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
+            this.bmlGui.setValue( "Mood", "Neutral" ); 
+            this.app.bmlApp.ECAcontroller.reset();
+        }, {icon: "fa-solid fa-rotate-left", width: "40px"});
+
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.app.bmlApp.replay();             
         }, {icon: "fa-solid fa-play"});
 
-        this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
-            this.bmlGui.setValue( "Mood", "Neutral" ); 
-            this.app.bmlApp.ECAcontroller.reset();
-        }, {icon: "fa-solid fa-rotate-left"});
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
