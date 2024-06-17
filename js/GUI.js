@@ -40,7 +40,7 @@ class AppGUI {
         if ( window.sessionStorage ){
             let text;
             text = window.sessionStorage.getItem( "msg" );
-            this.app.msg = text ? JSON.parse( text ) : null;
+            this.app.bmlApp.msg = text ? JSON.parse( text ) : null;
             text = window.sessionStorage.getItem( "bmlInput" ); 
             this.bmlInputData.prevInstanceText = text ? text : "";
             text = window.sessionStorage.getItem( "sigmlInput" ); 
@@ -50,7 +50,7 @@ class AppGUI {
             
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
-                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.msg) );
+                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.bmlApp.msg) );
                 if( this.bmlInputData && this.bmlInputData.codeObj ){
                     window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
                 }
@@ -226,14 +226,16 @@ class AppGUI {
                 p.endLine("left");
 
                 p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
+                    let timeLimit = null;
                     // Replay animation
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.replay(); 
+                    if(this.app.mode == App.Modes.SCRIPT && !this.app.animationRecorder.isRecording) {
+                        this.app.bmlApp.replay();
                     }
-                    else {
-                        this.app.keyframeApp.changePlayState(true);
+                    else { 
+                        timeLimit = this.app.keyframeApp.duration; // stop automatically
                     }
-                    this.app.animationRecorder.manageCapture();
+
+                    this.app.animationRecorder.manageCapture(timeLimit);
                     this.refresh();
                 }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
                 p.merge(); // random signs
@@ -341,7 +343,7 @@ class AppGUI {
                     
                     if ( !msg.data.length ){ return; }
 
-                    this.app.msg = JSON.parse(JSON.stringify(msg)); // copy object
+                    this.app.bmlApp.msg = JSON.parse(JSON.stringify(msg)); // copy object
                     this.app.bmlApp.ECAcontroller.processMsg( msg );
                 });
 
