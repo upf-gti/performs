@@ -40,7 +40,7 @@ class AppGUI {
         if ( window.sessionStorage ){
             let text;
             text = window.sessionStorage.getItem( "msg" );
-            this.app.msg = text ? JSON.parse( text ) : null;
+            this.app.bmlApp.msg = text ? JSON.parse( text ) : null;
             text = window.sessionStorage.getItem( "bmlInput" ); 
             this.bmlInputData.prevInstanceText = text ? text : "";
             text = window.sessionStorage.getItem( "sigmlInput" ); 
@@ -50,7 +50,7 @@ class AppGUI {
             
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
-                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.msg) );
+                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.bmlApp.msg) );
                 if( this.bmlInputData && this.bmlInputData.codeObj ){
                     window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
                 }
@@ -341,8 +341,7 @@ class AppGUI {
                     
                     if ( !msg.data.length ){ return; }
 
-                    this.app.msg = JSON.parse(JSON.stringify(msg)); // copy object
-                    this.app.bmlApp.ECAcontroller.processMsg( msg );
+                    this.app.bmlApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
                 });
 
                 p.addButton(null, "Edit on Animics", () => {
