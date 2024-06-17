@@ -46,3 +46,35 @@
         transform: translate(70px, 0) rotate(360deg);
     }
 }
+
+/* Extend lexgui css */
+.recording-button {
+	border-radius: 80px !important;
+    width: 26px !important;
+}
+
+.recording-button-playing {
+	border-radius: 80px !important;
+    width: 22px !important;
+	animation: ease pulse 2s infinite;
+	-webkit-animation: ease pulse 2s infinite;
+}
+
+@keyframes pulse {
+	0% {
+		background-color: red;
+		border-color: red;
+		border: 2px;
+	}
+	50% {
+		background-color: #f06c6c;
+		border-color: #f06c6c;
+		border: 2px;
+	}
+	100% {
+		background-color: red;
+		border-color: red;
+		border: 2px;
+	}
+}
+  
