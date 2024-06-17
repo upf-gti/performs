@@ -36,11 +36,13 @@ class App {
         this.speed = 1;
         this.backPlane = null;
         this.avatarShirt = null;
-        
+
         this.mode = App.Modes.SCRIPT;
         this.bmlApp = new BMLApp();        
-        this.keyframeApp = new KeyframeApp();
-       
+        this.keyframeApp = new KeyframeApp();   
+        
+        this.isAppReady = false;
+        this.pendingMessageReceived = null;
     }
 
     setSpeed( value ){ this.speed = value; }
@@ -161,10 +163,8 @@ class App {
                 let hair = model.getObjectByName( "Classic_short" );
                 if( hair && hair.children.length > 1 ){ hair.children[1].renderOrder = 1; }
             }
-
-
                         
-            // this.scene.add( new THREE.SkeletonHelper( model ) );
+            // model.add( new THREE.SkeletonHelper( model ) );
 
             model.name = avatarName;
 
@@ -304,53 +304,20 @@ class App {
             this.changeAvatar( "Eva" );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             this.animate();
-            $('#loading').fadeOut(); //hide();            
+            $('#loading').fadeOut(); //hide();
+            this.isAppReady = true;
+                        
+            if(this.pendingMessageReceived) {
+                this.onMessage( this.pendingMessageReceived );
+                this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
+            }
         });
 
         this.animationRecorder = new AnimationRecorder(this.cameras.length);
         
+        window.addEventListener( "message", this.onMessage.bind(this) );
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
-        window.addEventListener( "message", (event) => {         
-                let data = event.data;
-                
-                if ( typeof( data ) == "string" ){ 
-                    try{ 
-                        data =  JSON.parse( data ); 
-                    }catch( e ){ console.error("Error while parsing an external message: ", event ); };
-                }
-                
-                if ( !data ) {
-                    return;
-                }
-
-                if ( Array.isArray(data) ){
-                    this.changeMode(App.Modes.SCRIPT);
-                    this.bmlApp.onMessage(data, (data) => {
-                        this.gui.setBMLInputText( 
-                            JSON.stringify(data, function(key, val) {
-                                return val.toFixed ? Number(val.toFixed(3)) : val;
-                            }) 
-                        );
-                    }); 
-                    return;
-                } 
-                                
-                if(data.type == 'bvh' || data.type == 'bvhe') {
-                    this.changeMode(App.Modes.KEYFRAME);
-                    this.keyframeApp.onMessage(data, () => {
-                        if(this.gui) {
-                            this.gui.refresh();
-                        }
-                    });
-                }
-                else {
-                    return; 
-                }
-            },
-            false,
-        );
-                
     }
 
     animate() {
@@ -379,6 +346,49 @@ class App {
         
 
         this.renderer.render( this.scene, this.cameras[this.camera] );
+    }
+
+    onMessage(event){
+        if ( !this.isAppReady ){ 
+            this.pendingMessageReceived = event; 
+            return; 
+        }
+
+        let data = event.data;
+        
+        if ( typeof( data ) == "string" ){ 
+            try{ 
+                data =  JSON.parse( data ); 
+            }catch( e ){ console.error("Error while parsing an external message: ", event ); };
+        }
+        
+        if ( !data ) {
+            return;
+        }
+
+        if ( Array.isArray(data) ){
+            this.changeMode(App.Modes.SCRIPT);
+            this.bmlApp.onMessage(data, (processedData) => {
+                this.gui.setBMLInputText( 
+                    JSON.stringify(this.bmlApp.msg.data, function(key, val) {
+                        return val.toFixed ? Number(val.toFixed(3)) : val;
+                    }) 
+                );
+            }); 
+            return;
+        } 
+                        
+        if(data.type == 'bvh' || data.type == 'bvhe') {
+            this.changeMode(App.Modes.KEYFRAME);
+            this.keyframeApp.onMessage(data, () => {
+                if(this.gui) {
+                    this.gui.refresh();
+                }
+            });
+        }
+        else {
+            return; 
+        }
     }
     
     onWindowResize() {

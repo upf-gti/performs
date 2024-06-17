@@ -1,6 +1,5 @@
 # Performs
 
-
 <img src="./data/imgs/performs.png" height="200" align="right">
 
 Performs is designed to integrate a variety of BML (Behavior Markup Language) instructions pertaining to both Manual Features (MF) and Non-Manual Features (NMF) into cohesive animations. The current progress of the project has achieved a robust synthesis of NMF, crucial for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
@@ -39,10 +38,13 @@ To add a new avatar to performs, you must follow this steps:
 
 ## Examples
 Some examples on simple NGT (Dutch Sign Language) 
+
 Kind lezen boek (child reads a book):
-![Alt Text](https://iili.io/JYsmKzX.gif)
+![Alt Text](https://iili.io/JYsmKzX.gif) 
+
 Man rijden fiets (Man rides a bicycle) :
 ![Alt Text](https://iili.io/JYL9aBn.gif)
+
 ## Architecture
 
 The realizer is divided into main sections, each containing several files. 
@@ -84,4 +86,12 @@ The files in this block: _BehaviourManager_, _BehavhourPlanner_ and _BehaviourRe
 - [Lexgui.js](https://github.com/jxarco/lexgui.js/) - A simple and lightweight GUI library for creating graphical user interfaces for web applications.
 
 We would like to extend our gratitude to the creators and maintainers of these libraries for their invaluable contributions to the open-source community.
+
+## Support
+
+This project is being developed with partial financial support of:
+
+| EMERALD Project (2023-2026) | SignON Project (2021-2023) |
+| --- | --- |
+| ![miciu](./data/imgs/marco_EMERALD.png) | ![logomaxr](./data/imgs/marco_SignON.png) |
 

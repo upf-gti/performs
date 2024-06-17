@@ -38,17 +38,11 @@ class KeyframeApp {
     }
 
     onLoadAvatar(newAvatar, config, skeleton){      
-
         // Create mixer for animation
         const mixer = new THREE.AnimationMixer(newAvatar);  
         this.currentCharacter = newAvatar.name;
         this.loadedCharacters[newAvatar.name] = { mixer, config, model: newAvatar, skeleton};
         this.mixer = mixer;
-        if(this.pendingMessageReceived) {
-            this.currentAnimation = this.pendingMessageReceived;
-            this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
-            this.pendingMessageReceived = false;
-        }
     }
 
     onChangeAvatar(avatarName) {
@@ -71,9 +65,14 @@ class KeyframeApp {
     }
 
     onMessage( data, callback ) {
-        this.processMessageFiles(data.data).then( (animations) => {
+        this.processMessageFiles(data.data).then( (processedAnimationNames) => {
+            if( processedAnimationNames && processedAnimationNames.length && this.loadedAnimations[processedAnimationNames[0]] ) {
+                this.currentAnimation = processedAnimationNames[0];
+                this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+            }
+
             if(callback) {
-                callback(animations);
+                callback(processedAnimationNames);
             }
             //this.gui.animationDialog.refresh();
         });
@@ -95,17 +94,14 @@ class KeyframeApp {
                     const data = loader.parseExtended(reader.result);
                     this.loadBVHAnimation( file.name, data );
 
-                    resolve(parsedFiles[file.name] = data);
+                    resolve( file.name ); // this is what is returned by promise.all.then
                 }
                 let data = file.data ?? file;
                 reader.readAsText(data);
             });
             promises.push(filePromise);           
         }
-        if ( !this.mixer ){ 
-            this.pendingMessageReceived = files[0].name; 
-            return; 
-        }
+       
         return Promise.all(promises);
     }
 

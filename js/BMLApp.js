@@ -170,16 +170,6 @@ class BMLApp {
         ECAcontroller.processMsg( { control: 2 } ); // speaking mode
 
         this.ECAcontroller = this.controllers[newAvatar.name] = ECAcontroller;
-
-        if(this.pendingMessageReceived) {
-            this.processMessageRawBlocks( this.pendingMessageReceived ).then((data)=> { 
-                if(this.pendingMessageReceived.callback)
-                    {
-                        this.pendingMessageReceived.callback(data);
-                    }
-                this.pendingMessageReceived = false;
-            } );   
-        }
     }
 
     onChangeAvatar(avatarName) {
@@ -237,8 +227,9 @@ class BMLApp {
                 if ( gloss.type == "bml" ){ // BML
                     let result = gloss.data;
                     if( typeof( result ) == "string" ){ result = JSON.parse( result ) };
-                    if ( Array.isArray( result.behaviours ) ){ result = result.behaviours; }
-                    if ( !Array.isArray( result ) ){ throw true; }
+                    if ( Array.isArray( result.behaviours ) ){ result = result.behaviours; } // animics returns this
+                    else if ( Array.isArray( result.data ) ){ result = result.data; } // bml messages uses this
+                    else if ( !Array.isArray( result ) ){ throw "error"; }
 
                     time = time - relaxEndDuration - peakRelaxDuration; // if not last, remove relax-end and peak-relax stages
                     let maxDuration = 0;
@@ -283,26 +274,21 @@ class BMLApp {
             type: "behaviours",
             data: orders
         };
-        this.msg = JSON.parse(JSON.stringify(msg));
+        this.msg = JSON.parse(JSON.stringify(msg)); // make copy
         this.ECAcontroller.processMsg( msg );
 
-        return { duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
+        return { msg: msg, duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
     }
 
     onMessage(data, callback){
         if ( !data || !Array.isArray(data) ) {
             return;
         }
-            
-        if ( !this.ECAcontroller ){ 
-            data.callback = callback;
-            this.pendingMessageReceived = data; 
-            return; 
-        }
+
         this.ECAcontroller.reset();
-        this.processMessageRawBlocks( data ).then((data)=>{ 
+        this.processMessageRawBlocks( data ).then((processedData)=>{ 
             if(callback) {
-                callback(data);
+                callback(processedData);
             }          
         } );          
     };

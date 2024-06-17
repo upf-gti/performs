@@ -343,8 +343,7 @@ class AppGUI {
                     
                     if ( !msg.data.length ){ return; }
 
-                    this.app.bmlApp.msg = JSON.parse(JSON.stringify(msg)); // copy object
-                    this.app.bmlApp.ECAcontroller.processMsg( msg );
+                    this.app.bmlApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
                 });
 
                 p.addButton(null, "Edit on Animics", () => {
