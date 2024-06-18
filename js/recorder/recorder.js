@@ -35,18 +35,43 @@ function AnimationRecorder(numCameras) {
 
 }
 
-AnimationRecorder.prototype.manageCapture = function (timeLimit = null) {
-    if (this.isRecording) { this.stopCapture() }
-    else {this.startCapture(); }
+AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp) {
+    this.keyframeApp = keyframeApp;
+    for (let animationName in keyframeApp.loadedAnimations) {
+        let animation = keyframeApp.loadedAnimations[animationName];
+        if (!animation.record) {
+            continue;
+        }
 
-    // automatically stop recording after animation stops
-    this.timeLimit = timeLimit; // in seconds
+        await this.manageCapture(animationName, animation.bodyAnimation.duration);
+
+    }
 }
 
-AnimationRecorder.prototype.startCapture = function () {
+AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit = null) {
+    if (window.global.app.mode == App.Modes.BML){
+        if (this.isRecording) { this.stopCapture(); }
+        else { this.startCapture("BML"); }
+    }
+    else if (window.global.app.mode == App.Modes.KEYFRAME) {
+       
+        return new Promise((resolve) => {
+            this.onCaptureComplete = resolve;
+            this.keyframeApp.onChangeAnimation(animationName);
+            this.startCapture(animationName);
+            
+            // automatically stop recording after animation stops
+            this.timeLimit = timeLimit; // in seconds
+        });
+
+    }
+}
+
+AnimationRecorder.prototype.startCapture = function (animationName) {
     this.isRecording = true;
     this.recordedChunks.forEach((chunk, i, arr) => arr[i] = []); // reset chuncks
     this.mediaRecorders.forEach(recorder => { recorder.start() });
+    this.currentAnimationName = animationName; // Store the animation name
 }
     
 AnimationRecorder.prototype.stopCapture = function () {
@@ -61,16 +86,20 @@ AnimationRecorder.prototype.handleDataAvailable = function (event, idx) {
 }
 
 AnimationRecorder.prototype.handleStart = function (idx) {
-    if (idx === 0) window.global.app.keyframeApp.changePlayState(true); // start animation
+    if (idx === 0) {
+        window.global.app.keyframeApp.changePlayState(true); // start animation
+        window.global.app.gui.keyframeGui.refresh();
+    }
     this.clock.start();
 }
 
 AnimationRecorder.prototype.handleStop = function (idx) {
+    const animationName = this.currentAnimationName;
     const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
     const downloadLink = document.createElement('a');
     downloadLink.href = url;
-    downloadLink.download = `camera ${idx + 1} recording.webm`;
+    downloadLink.download = `${animationName} ${idx + 1}.webm`;
     downloadLink.style.display = 'none';
     downloadLink.click();
 
@@ -83,6 +112,14 @@ AnimationRecorder.prototype.handleStop = function (idx) {
     // reset clock to 0
     this.clock.elapsedTime = 0;
     this.clock.stop();
+
+    // Check if all recorders have stopped
+    if (this.mediaRecorders.every(recorder => recorder.state === 'inactive') && idx == this.mediaRecorders.length - 1) {
+        if (this.onCaptureComplete) {
+            this.onCaptureComplete(); // Resolve the promise to indicate that capture is complete
+            this.onCaptureComplete = null; // Clear the reference
+        }
+    }
 }
 
 AnimationRecorder.prototype.update = function (scene, cameras) {
