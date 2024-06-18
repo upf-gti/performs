@@ -51,7 +51,9 @@ AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp)
     for (let i = 0; i < animations.length; i++) {
         const animationName = animations[i];
         let animation = keyframeApp.loadedAnimations[animationName];
-       
+        if(this.onStartCapture) {
+            this.onStartCapture('(' + (i+1) + '/' + animations.length+ ') ' + animationName);
+        }
         await this.manageCapture(animationName, animation.bodyAnimation.duration);
     }
 }
@@ -81,10 +83,7 @@ AnimationRecorder.prototype.startCapture = function (animationName) {
     this.recordedChunks.forEach((chunk, i, arr) => arr[i] = []); // reset chuncks
     this.mediaRecorders.forEach(recorder => { recorder.start() });
     this.currentAnimationName = animationName; // Store the animation name
-    if(this.onStartCapture) {
-       
-        this.onStartCapture(animationName);
-    }
+
 }
     
 AnimationRecorder.prototype.stopCapture = function () {
