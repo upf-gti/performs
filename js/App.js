@@ -183,7 +183,7 @@ class App {
         });
     }
 
-    newCamera( x = 0, controlsEnabled = true) {
+    newCamera( x = 0, {controlsEnabled = true} = {} ) {
         let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         let controls = new OrbitControls( camera, this.renderer.domElement );
         controls.object.position.set( Math.sin(5*Math.PI/180) + x, 1.5, Math.cos(5*Math.PI/180) );
@@ -216,8 +216,8 @@ class App {
         document.body.appendChild( this.renderer.domElement );
         
         this.newCamera(); // camera 0
-        this.newCamera(-1.0, false); // camera 1
-        this.newCamera(1.0, false); // camera 2
+        this.newCamera(-1.0, {controlsEnabled: false} ); // camera 1
+        this.newCamera(1.0, {controlsEnabled: false} ); // camera 2
     
         this.camera = 0;
 
@@ -341,24 +341,31 @@ class App {
         }
         
         if (this.animationRecorder.isRecording) {
-            this.animationRecorder.update(this.renderer, this.scene, this.cameras);
+            this.animationRecorder.update(this.scene, this.cameras);
         }
         
+
         this.renderer.render( this.scene, this.cameras[this.camera] );
     }
 
-    onMessage(event){
-        if ( !this.isAppReady ){ 
+    onMessage(event) {
+        if ( !this.isAppReady ) { 
             this.pendingMessageReceived = event; 
             return; 
         }
 
         let data = event.data;
         
-        if ( typeof( data ) == "string" ){ 
-            try{ 
+        if ( typeof( data ) == "string" ) { 
+            try { 
                 data =  JSON.parse( data ); 
-            }catch( e ){ console.error("Error while parsing an external message: ", event ); };
+            }
+            catch( e ) { 
+                if(data.includes("setImmediate")) {
+                    return;
+                }
+                console.error("Error while parsing an external message: ", event ); 
+            };
         }
         
         if ( !data ) {

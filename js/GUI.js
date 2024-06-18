@@ -226,15 +226,20 @@ class AppGUI {
                 p.endLine("left");
 
                 p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
-                    // Replay animation
+                    // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.replay(); 
+                        if ( !this.app.animationRecorder.isRecording ) this.app.bmlApp.replay();
+                        this.app.animationRecorder.manageCapture();
+                        this.refresh();
                     }
-                    else {
-                        this.app.keyframeApp.changePlayState(true);
+                    else { 
+                        this.showRecordingDialog(() => {
+                            this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+                            this.refresh();
+                        });
                     }
-                    this.app.animationRecorder.manageCapture();
-                    this.refresh();
+
+
                 }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
                 p.merge(); // random signs
 
@@ -526,6 +531,26 @@ class AppGUI {
             this.keyframeGui.refresh();
         }, { width: "40px"});
         this.keyframeGui.endLine(); 
+    }
+
+    showRecordingDialog(callback) {
+        const dialog = new LX.Dialog("Record all animations", p => {
+            let animations = this.app.keyframeApp.loadedAnimations;
+            for (let animationName in animations) {
+                let animation = animations[animationName];
+                animation.record = animation.record === undefined ? true : animation.record;
+                p.addCheckbox(animationName, animation.record, 
+                    (v, e) => {animation.record = v;}
+                    );
+            }
+
+            p.sameLine(2);
+            p.addButton("", "Record", () => {
+                if (callback) callback();
+                dialog.close();
+            }, {buttonClass: "accept"});
+            p.addButton(null, "Cancel", () => { dialog.close(); })
+        });
     }
     
     uploadAvatar(callback = null) {

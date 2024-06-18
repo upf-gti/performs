@@ -219,6 +219,7 @@ class KeyframeApp {
         // mixer.clipAction(bindedAnim.mixerFaceAnimation).setEffectiveWeight(1.0).play(); // already handles nulls and undefines
         mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
         mixer.update(0);
+        this.duration = bindedAnim.mixerBodyAnimation.duration;
         this.mixer = mixer;
 
         return true;
