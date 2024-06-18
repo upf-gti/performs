@@ -115,20 +115,19 @@ function blobToBase64(blob, callback) {
 AnimationRecorder.prototype.handleStop = function (idx) {
     const animationName = this.currentAnimationName;
     const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
-    const url = URL.createObjectURL(blob);
-    const name =   `${animationName} ${idx + 1}.webm`;
+    const name =  `${animationName} ${idx + 1}.webm`;
+
     blobToBase64(blob, (binaryData) => {
-        // add downloaded file to zip:
+        // Add downloaded file video to zip in the specified folder:
         zip.folder(animationName).file(name, binaryData, {base64: true})
         let files = Object.keys(zip.files);
 
         if((files.length - this.animationsCount) == this.animationsCount * this.renderers.length) {
-            // all files have been downloaded, create the zip
-    
+            // All files have been downloaded, create the zip and download it
             zip.generateAsync({type:"base64"}).then(function (base64) {
                 let zipName = 'performs-recording.zip';
                 let a = document.createElement('a'); 
-                // then trigger the download link:        
+                // Then trigger the download link
                 a.href = "data:application/zip;base64," + base64;
                 a.download = zipName;
                 a.click();
