@@ -314,7 +314,8 @@ class App {
         });
 
         this.animationRecorder = new AnimationRecorder(this.cameras.length);
-        
+        this.animationRecorder.onStartCapture = (v) => {this.gui.showCaptureModal(v)};
+        this.animationRecorder.onStopCapture = () => {this.gui.hideCaptureModal()};
         window.addEventListener( "message", this.onMessage.bind(this) );
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
@@ -342,8 +343,7 @@ class App {
         
         if (this.animationRecorder.isRecording) {
             this.animationRecorder.update(this.scene, this.cameras);
-        }
-        
+        }        
 
         this.renderer.render( this.scene, this.cameras[this.camera] );
     }

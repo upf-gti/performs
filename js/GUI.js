@@ -652,6 +652,18 @@ class AppGUI {
 
         return result;
     }
+
+    showCaptureModal(capture) {
+        $("#loading p").text( "Capturing animation: " + capture);
+		$("#loading").removeClass("hidden");
+		$("#loading").css({ background: "rgba(17,17,17," + 0.5 + ")" })
+		$("#loading").fadeIn();
+       
+    }
+
+    hideCaptureModal() {
+        $("#loading").addClass("hidden");
+    }
 }
 
 export { AppGUI };

@@ -74,16 +74,22 @@ AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit =
     }
 }
 
+let zip = new JSZip();
+
 AnimationRecorder.prototype.startCapture = function (animationName) {
     this.isRecording = true;
     this.recordedChunks.forEach((chunk, i, arr) => arr[i] = []); // reset chuncks
     this.mediaRecorders.forEach(recorder => { recorder.start() });
     this.currentAnimationName = animationName; // Store the animation name
+    if(this.onStartCapture) {
+       
+        this.onStartCapture(animationName);
+    }
 }
     
 AnimationRecorder.prototype.stopCapture = function () {
     this.isRecording = false;
-    this.mediaRecorders.forEach(recorder => recorder.stop());
+    this.mediaRecorders.forEach(recorder => recorder.stop());   
 }
 
 AnimationRecorder.prototype.handleDataAvailable = function (event, idx) {
@@ -100,7 +106,7 @@ AnimationRecorder.prototype.handleStart = function (idx) {
     this.clock.start();
 }
 
-let zip = new JSZip();
+
 
 function blobToBase64(blob, callback) {
     var reader = new FileReader();
@@ -123,14 +129,18 @@ AnimationRecorder.prototype.handleStop = function (idx) {
         let files = Object.keys(zip.files);
 
         if((files.length - this.animationsCount) == this.animationsCount * this.renderers.length) {
+            if(this.onStopCapture) {
+                this.onStopCapture();
+            }
             // All files have been downloaded, create the zip and download it
             zip.generateAsync({type:"base64"}).then(function (base64) {
-                let zipName = 'performs-recording.zip';
+                let zipName = 'performs-recordings.zip';
                 let a = document.createElement('a'); 
                 // Then trigger the download link
                 a.href = "data:application/zip;base64," + base64;
                 a.download = zipName;
                 a.click();
+                zip.files = {};
             });
         }
     });
