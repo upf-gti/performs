@@ -204,7 +204,11 @@ class AppGUI {
                 }
 
                 p.sameLine();
-                p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "70%"});     
+                p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "55%"});    
+                p.addButton(null, "Reset", (V) => {
+                    this.app.controls[this.app.camera].reset();
+
+                }, { width: "30px", icon: "fa-solid fa-rotate-left"} ) 
                 p.addComboButtons(null, [
                     {
                         value: "Restricted View",

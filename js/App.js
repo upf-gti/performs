@@ -91,7 +91,11 @@ class App {
         this.keyframeApp.onChangeAvatar(avatarName);
         
         this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
-        this.controls[this.camera].update();
+        this.controls.forEach((control) => {
+            control.target.copy(this.controls[this.camera].target); 
+            control.saveState();
+            control.update();
+        });
         if ( this.gui ){ this.gui.refresh(); }
     }
 
@@ -183,20 +187,31 @@ class App {
         });
     }
 
-    newCamera( x = 0, {controlsEnabled = true} = {} ) {
+    newCameraFrom(srcControls, azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false) {
         let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         let controls = new OrbitControls( camera, this.renderer.domElement );
-        controls.object.position.set( Math.sin(5*Math.PI/180) + x, 1.5, Math.cos(5*Math.PI/180) );
 
-        controls.target.set(0.0, 1.3, 0);
+        controls.target.set(...srcControls.target);
+        let newPos = srcControls.object.position.clone();
+        let distance = newPos.distanceTo(controls.target);
+
+        let dir = new THREE.Vector3().subVectors(srcControls.object.position, controls.target).normalize();
+        dir.applyAxisAngle(new THREE.Vector3(1,0,0), polarAngle * Math.PI / 180);
+        dir.applyAxisAngle(new THREE.Vector3(0,1,0), azimuthAngle * Math.PI / 180);
+        newPos.addVectors(controls.target, dir.multiplyScalar(distance));
+        newPos.add(new THREE.Vector3(0,0,depth));
+
+        controls.object.position.set(...newPos);
+
         controls.enableDamping = true; // this requires controls.update() during application update
         controls.dampingFactor = 0.1;
-
         controls.enabled = controlsEnabled;
-        
-        this.cameras.push(camera);
-        controls.update(); 
+        controls.update();
+
+        this.cameras.push(camera); 
         this.controls.push(controls);
+        
+        return {camera: camera, controls: controls};
     }
 
     init() {        
@@ -215,9 +230,19 @@ class App {
         // this.renderer.shadowMap.enabled = false;
         document.body.appendChild( this.renderer.domElement );
         
-        this.newCamera(); // camera 0
-        this.newCamera(-1.0, {controlsEnabled: false} ); // camera 1
-        this.newCamera(1.0, {controlsEnabled: false} ); // camera 2
+        // init main Camera (0)
+        let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
+        let controls = new OrbitControls( camera, this.renderer.domElement );
+        controls.object.position.set( Math.sin(5*Math.PI/180), 1.5, Math.cos(5*Math.PI/180) );
+        controls.target.set(0.0, 1.3, 0);
+        controls.enableDamping = true; // this requires controls.update() during application update
+        controls.dampingFactor = 0.1;
+        controls.update();
+        this.cameras.push(camera);
+        this.controls.push(controls);
+
+        this.newCameraFrom(controls, 25);
+        this.newCameraFrom(controls, -25);
     
         this.camera = 0;
 
