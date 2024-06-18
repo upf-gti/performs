@@ -5,9 +5,13 @@ authors:
   given-names: "Jaume"
 - family-names: "Ubieto"
   given-names: "Víctor"
-- family-names: "Valls"
+- family-names: "Valls-Garolera"
   given-names: "Eva"
-title: "SignON Realizer BML Instructions"
+- family-names: "del Corral"
+  given-names: "Carolina"
+- family-names: "Rodríguez"
+  given-names: "Alejandro"
+title: "Performs"
 version: 1.0.0
 date-released: 2023
-url: "https://github.com/upf-gti/SignON-realizer/blob/main/docs/InstructionsBML.md"
+url: "https://github.com/upf-gti/performs"
