@@ -348,18 +348,24 @@ class App {
         this.renderer.render( this.scene, this.cameras[this.camera] );
     }
 
-    onMessage(event){
-        if ( !this.isAppReady ){ 
+    onMessage(event) {
+        if ( !this.isAppReady ) { 
             this.pendingMessageReceived = event; 
             return; 
         }
 
         let data = event.data;
         
-        if ( typeof( data ) == "string" ){ 
-            try{ 
+        if ( typeof( data ) == "string" ) { 
+            try { 
                 data =  JSON.parse( data ); 
-            }catch( e ){ console.error("Error while parsing an external message: ", event ); };
+            }
+            catch( e ) { 
+                if(data.includes("setImmediate")) {
+                    return;
+                }
+                console.error("Error while parsing an external message: ", event ); 
+            };
         }
         
         if ( !data ) {

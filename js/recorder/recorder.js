@@ -8,9 +8,9 @@ function AnimationRecorder(numCameras) {
     this.recordedChunks = [];
     this.renderers = [];
     this.clock = new THREE.Clock();
-
     this.handleDataAvailable = this.handleDataAvailable.bind(this);
     this.handleStop = this.handleStop.bind(this);
+    this.animationsCount = 0;
 
     for (let i = 0; i < numCameras; i++) {
         // offscreen renderer for each camera
@@ -37,14 +37,22 @@ function AnimationRecorder(numCameras) {
 
 AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp) {
     this.keyframeApp = keyframeApp;
+    let animations = [];
+    
     for (let animationName in keyframeApp.loadedAnimations) {
         let animation = keyframeApp.loadedAnimations[animationName];
         if (!animation.record) {
             continue;
         }
+        animations.push(animationName);
+    }
+    this.animationsCount = animations.length;
 
+    for (let i = 0; i < animations.length; i++) {
+        const animationName = animations[i];
+        let animation = keyframeApp.loadedAnimations[animationName];
+       
         await this.manageCapture(animationName, animation.bodyAnimation.duration);
-
     }
 }
 
@@ -63,7 +71,6 @@ AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit =
             // automatically stop recording after animation stops
             this.timeLimit = timeLimit; // in seconds
         });
-
     }
 }
 
@@ -93,15 +100,41 @@ AnimationRecorder.prototype.handleStart = function (idx) {
     this.clock.start();
 }
 
+let zip = new JSZip();
+
+function blobToBase64(blob, callback) {
+    var reader = new FileReader();
+    reader.onload = function() {
+        var dataUrl = reader.result;
+        var base64 = dataUrl.split(',')[1];
+        callback(base64);
+    };
+    reader.readAsDataURL(blob);
+}
+
 AnimationRecorder.prototype.handleStop = function (idx) {
     const animationName = this.currentAnimationName;
     const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
     const url = URL.createObjectURL(blob);
-    const downloadLink = document.createElement('a');
-    downloadLink.href = url;
-    downloadLink.download = `${animationName} ${idx + 1}.webm`;
-    downloadLink.style.display = 'none';
-    downloadLink.click();
+    const name =   `${animationName} ${idx + 1}.webm`;
+    blobToBase64(blob, (binaryData) => {
+        // add downloaded file to zip:
+        zip.folder(animationName).file(name, binaryData, {base64: true})
+        let files = Object.keys(zip.files);
+
+        if((files.length - this.animationsCount) == this.animationsCount * this.renderers.length) {
+            // all files have been downloaded, create the zip
+    
+            zip.generateAsync({type:"base64"}).then(function (base64) {
+                let zipName = 'performs-recording.zip';
+                let a = document.createElement('a'); 
+                // then trigger the download link:        
+                a.href = "data:application/zip;base64," + base64;
+                a.download = zipName;
+                a.click();
+            });
+        }
+    });
 
     // stop animation
     if (idx === 0 && window.global.app.mode == App.Modes.KEYFRAME) {
