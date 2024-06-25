@@ -539,22 +539,51 @@ class AppGUI {
 
     showRecordingDialog(callback) {
         const dialog = new LX.Dialog("Record all animations", p => {
+            let panel = new LX.Panel({height: "calc(100% - 40px)"});
+
+            // let animations = this.app.keyframeApp.loadedAnimations;
+            // for (let animationName in animations) {
+            //     let animation = animations[animationName];
+            //     animation.record = animation.record === undefined ? true : animation.record;
+            //     panel.addCheckbox(animationName, animation.record, 
+            //         (v, e) => {animation.record = v;}
+            //         );
+            // }
+            let assetData = [];
             let animations = this.app.keyframeApp.loadedAnimations;
             for (let animationName in animations) {
                 let animation = animations[animationName];
                 animation.record = animation.record === undefined ? true : animation.record;
-                p.addCheckbox(animationName, animation.record, 
-                    (v, e) => {animation.record = v;}
-                    );
+                let data = {
+                    id: animationName,
+                    type: "animation",
+                    selected: true
+                };
+                assetData.push(data);
             }
-
+                
+            let assetView = new LX.AssetView({ 
+                skip_browser: true,
+                skip_preview: true,
+                layout: LX.AssetView.LAYOUT_LIST,   
+                context_menu: false             
+            });
+            assetView.load( assetData, event => { 
+                const item = event.item;
+                let animation = animations[item.id];
+                animation.record = item.selected;
+            })
+            panel.attach(assetView);
+            p.attach(panel);
             p.sameLine(2);
             p.addButton("", "Record", () => {
                 if (callback) callback();
                 dialog.close();
             }, {buttonClass: "accept"});
             p.addButton(null, "Cancel", () => { dialog.close(); })
-        });
+        }, {size: ["40%", "60%"], resizable: true, draggable: true, scroll: false });
+
+        
     }
     
     uploadAvatar(callback = null) {
