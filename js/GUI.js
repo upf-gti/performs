@@ -539,16 +539,7 @@ class AppGUI {
 
     showRecordingDialog(callback) {
         const dialog = new LX.Dialog("Record all animations", p => {
-            let panel = new LX.Panel({height: "calc(100% - 40px)"});
 
-            // let animations = this.app.keyframeApp.loadedAnimations;
-            // for (let animationName in animations) {
-            //     let animation = animations[animationName];
-            //     animation.record = animation.record === undefined ? true : animation.record;
-            //     panel.addCheckbox(animationName, animation.record, 
-            //         (v, e) => {animation.record = v;}
-            //         );
-            // }
             let assetData = [];
             let animations = this.app.keyframeApp.loadedAnimations;
             for (let animationName in animations) {
@@ -573,7 +564,10 @@ class AppGUI {
                 let animation = animations[item.id];
                 animation.record = item.selected;
             })
+
+            let panel = new LX.Panel({height: "calc(100% - 40px)"});
             panel.attach(assetView);
+            
             p.attach(panel);
             p.sameLine(2);
             p.addButton("", "Record", () => {
