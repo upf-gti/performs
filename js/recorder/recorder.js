@@ -22,7 +22,7 @@ function AnimationRecorder(numCameras) {
         this.renderers.push(offscreenRenderer);
 
         const stream = this.renderers[i].domElement.captureStream(60);
-        const options = { mimeType: 'video/webm; codecs=vp9', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+        const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
         const mediaRecorder = new MediaRecorder(stream, options);
         mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
