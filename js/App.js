@@ -175,15 +175,29 @@ class App {
             this.loadedCharacters[avatarName] ={
                 model, skeleton, 
             }
-            fetch( configFilePath ).then(response => response.text()).then( (text) =>{
-                let config = JSON.parse( text ); 
+
+            if(typeof(configFilePath) == 'string') {
+
+                fetch( configFilePath ).then(response => response.text()).then( (text) =>{
+                    let config = JSON.parse( text );
+                    this.loadedCharacters[avatarName].config = config;
+                    this.bmlApp.onLoadAvatar(model, config);
+                    this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                    if (callback) {
+                        callback();
+                    }
+                })
+            }
+            else {
+                let config = configFilePath;
                 this.loadedCharacters[avatarName].config = config;
                 this.bmlApp.onLoadAvatar(model, config);
                 this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                
                 if (callback) {
                     callback();
                 }
-            })
+            }
         });
     }
 

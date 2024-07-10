@@ -59,7 +59,8 @@ AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp)
 }
 
 AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit = null) {
-    if (window.global.app.mode == App.Modes.BML){
+    if (window.global.app.mode == App.Modes.SCRIPT){
+        this.animationsCount = 1;
         if (this.isRecording) { this.stopCapture(); }
         else { this.startCapture("BML"); }
     }
@@ -83,7 +84,6 @@ AnimationRecorder.prototype.startCapture = function (animationName) {
     this.recordedChunks.forEach((chunk, i, arr) => arr[i] = []); // reset chuncks
     this.mediaRecorders.forEach(recorder => { recorder.start() });
     this.currentAnimationName = animationName; // Store the animation name
-
 }
     
 AnimationRecorder.prototype.stopCapture = function () {
@@ -99,8 +99,13 @@ AnimationRecorder.prototype.handleDataAvailable = function (event, idx) {
 
 AnimationRecorder.prototype.handleStart = function (idx) {
     if (idx === 0) {
-        window.global.app.keyframeApp.changePlayState(true); // start animation
-        window.global.app.gui.keyframeGui.refresh();
+        if (window.global.app.mode == App.Modes.SCRIPT){
+            window.global.app.bmlApp.replay();
+        }
+        else if (window.global.app.mode == App.Modes.KEYFRAME) {
+            window.global.app.keyframeApp.changePlayState(true); // start animation
+            window.global.app.gui.keyframeGui.refresh();
+        }
     }
     this.clock.start();
 }
@@ -144,8 +149,15 @@ AnimationRecorder.prototype.handleStop = function (idx) {
         }
     });
 
-    if (idx === 0 && window.global.app.mode == App.Modes.KEYFRAME) {
-        window.global.app.gui.keyframeGui.refresh();
+    // refresh gui
+    if (idx === 0) {
+        if (window.global.app.mode == App.Modes.KEYFRAME) window.global.app.gui.keyframeGui.refresh();
+        else if (window.global.app.mode == App.Modes.SCRIPT) {
+            // reset avatar pose / stop animation
+            window.global.app.gui.bmlGui.setValue( "Mood", "Neutral" ); 
+            window.global.app.bmlApp.ECAcontroller.reset();
+            window.global.app.gui.bmlGui.refresh();
+        }
     }
 
     // reset clock to 0

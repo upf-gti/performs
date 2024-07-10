@@ -209,7 +209,7 @@ class AppGUI {
                 p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        if ( !this.app.animationRecorder.isRecording ) this.app.bmlApp.replay();
+                        this.app.bmlApp.ECAcontroller.reset();
                         this.app.animationRecorder.manageCapture();
                         this.refresh();
                     }
@@ -561,23 +561,36 @@ class AppGUI {
         let rotation = 0;
 
         this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
-
-            panel.addText("Name Your Avatar", undefined, (v, e) => {
+            let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
                 if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
                 name = v;
             });
 
-            panel.addFile("Avatar File", (v, e) => {
-                let extension = panel.widgets["Avatar File"].domEl.children[1].files[0].name.split(".")[1];
-                if (extension == "glb" || extension == "gltf") { model = v; }
+            let avatarFile = panel.addFile("Avatar File", (v, e) => {
+                let files = panel.widgets["Avatar File"].domEl.children[1].files;
+                if(!files.length) {
+                    return;
+                }
+                const path = files[0].name.split(".");
+                const filename = path[0];
+                const extension = path[1];
+                if (extension == "glb" || extension == "gltf") { 
+                    model = v;
+                    if(!name) {
+                        name = filename;
+                        nameWidget.set(name)
+                    }
+                }
                 else { LX.popup("Only accepts GLB and GLTF formats!"); }
+                
             }, {type: "url"});
             
-            panel.addFile("Config File", (v) => {
+            let configFile = panel.addFile("Config File", (v, e) => {
+               
                 let extension = panel.widgets["Config File"].domEl.children[1].files[0].name.split(".")[1];
-                if (extension == "json") { config = v; }
+                if (extension == "json") { config = JSON.parse(v); }
                 else { LX.popup("Config file must be a JSON!"); }
-            }, {type: "url"});
+            }, {type: "text"});
             
             panel.addNumber("Apply Rotation", 0, (v) => {
                 rotation = v * Math.PI / 180;
@@ -600,6 +613,47 @@ class AppGUI {
                     LX.popup("Complete all fields!", null, { position: ["45%", "20%"]});
                 }
             });
+
+            panel.root.addEventListener("drop", (v, e) => {
+
+                let files = v.dataTransfer.files;
+                if(!files.length) {
+                    return;
+                }
+                for(let i = 0; i < files.length; i++) {
+
+                    const path = files[i].name.split(".");
+                    const filename = path[0];
+                    const extension = path[1];
+                    if (extension == "glb" || extension == "gltf") { 
+                        // Create a data transfer object
+                        const dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(files[i]);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        avatarFile.domEl.children[1].files = fileList;
+                        avatarFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                        model = v;
+                        if(!name) {
+                            name = filename;
+                            nameWidget.set(name)
+                        }
+                    }
+                    else if (extension == "json") { 
+                        // Create a data transfer object
+                        const dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(files[i]);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        configFile.domEl.children[1].files = fileList;
+                        configFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+
+                        //config = JSON.parse(files[i]); 
+                    }
+                }
+            })
 
         }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar File", this.app.currentCharacter.model.name)} });
 
