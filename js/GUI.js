@@ -124,45 +124,22 @@ class AppGUI {
                         this.bmlGui.setValue( "Mood", "Neutral" );  
                     }
                     
-                    // upload model
-                    if (value == "Upload Avatar") {
-                        this.uploadAvatar((value) => {
-                            
-                            if ( !this.app.loadedCharacters[value] ) {
-                                $('#loading').fadeIn(); //hide();
-                                let modelFilePath = this.avatarOptions[value][0]; 
-                                let configFilePath = this.avatarOptions[value][1]; 
-                                let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                                this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                                    this.app.changeAvatar(value);
-                                    $('#loading').fadeOut();
-                                } );
-                                return;
-                            } 
-
-                            // use controller if it has been already loaded in the past
+                    // load desired model
+                    if ( !this.app.loadedCharacters[value] ) {
+                        $('#loading').fadeIn(); //hide();
+                        let modelFilePath = this.avatarOptions[value][0]; 
+                        let configFilePath = this.avatarOptions[value][1]; 
+                        let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                        this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                             this.app.changeAvatar(value);
+                            $('#loading').fadeOut();
+                        } );
+                        return;
+                    } 
 
-                        });
-                    }
-                    else {
-                        // load desired model
-                        if ( !this.app.loadedCharacters[value] ) {
-                            $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; 
-                            let configFilePath = this.avatarOptions[value][1]; 
-                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                            this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                                this.app.changeAvatar(value);
-                                $('#loading').fadeOut();
-                            } );
-                            return;
-                        } 
-
-                        // use controller if it has been already loaded in the past
-                        this.app.changeAvatar(value);
-                    }
-                });
+                    // use controller if it has been already loaded in the past
+                    this.app.changeAvatar(value);
+                    });
 
                 p.addButton( null, "Upload Avatar", (v) => {
                     this.uploadAvatar((value) => {
@@ -577,7 +554,6 @@ class AppGUI {
             p.addButton(null, "Cancel", () => { dialog.close(); })
         }, {size: ["40%", "60%"], resizable: true, draggable: true, scroll: false });
 
-        
     }
     
     uploadAvatar(callback = null) {
@@ -599,9 +575,9 @@ class AppGUI {
             
             panel.addFile("Config File", (v) => {
                 let extension = panel.widgets["Config File"].domEl.children[1].files[0].name.split(".")[1];
-                if (extension == "json") { config = JSON.parse(v); }
+                if (extension == "json") { config = v; }
                 else { LX.popup("Config file must be a JSON!"); }
-            }, {type: "text"});
+            }, {type: "url"});
             
             panel.addNumber("Apply Rotation", 0, (v) => {
                 rotation = v * Math.PI / 180;

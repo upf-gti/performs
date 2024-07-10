@@ -144,9 +144,7 @@ AnimationRecorder.prototype.handleStop = function (idx) {
         }
     });
 
-    // stop animation
     if (idx === 0 && window.global.app.mode == App.Modes.KEYFRAME) {
-        window.global.app.keyframeApp.changePlayState(false);
         window.global.app.gui.keyframeGui.refresh();
     }
 
@@ -170,6 +168,7 @@ AnimationRecorder.prototype.update = function (scene, cameras) {
     }
 
     if (this.timeLimit && this.clock.getElapsedTime() > this.timeLimit ) {
+        window.global.app.keyframeApp.changePlayState(false);  // stop animation
         this.stopCapture();
         window.global.app.gui.refresh(); // change state of capture button
     }
