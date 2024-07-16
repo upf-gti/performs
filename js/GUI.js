@@ -525,11 +525,22 @@ class AppGUI {
                 let data = {
                     id: animationName,
                     type: "animation",
-                    selected: true
+                    selected: animation.record
                 };
                 assetData.push(data);
             }
-                
+            
+            let panel = new LX.Panel({height: "calc(100% - 40px)"});
+            let selectAllCheckbox = panel.addCheckbox("Select All", true, (v, e) => {
+                for (let asset in assetData) {
+                    assetData[asset].selected = v;
+                    animations[assetData[asset].id].record = v;
+                }
+                assetView._refreshContent();
+            });
+
+            selectAllCheckbox.onSetValue(false, false);
+
             let assetView = new LX.AssetView({ 
                 skip_browser: true,
                 skip_preview: true,
@@ -540,9 +551,8 @@ class AppGUI {
                 const item = event.item;
                 let animation = animations[item.id];
                 animation.record = item.selected;
-            })
-
-            let panel = new LX.Panel({height: "calc(100% - 40px)"});
+            });            
+            
             panel.attach(assetView);
             
             p.attach(panel);
