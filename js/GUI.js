@@ -709,7 +709,7 @@ class AppGUI {
                     resultSpeechtext += strSplit[j]; // everything before are phonemes
                     j++;
                     if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                        resultSpeechtext += this.app.wordsToArpa( strSplit[j], "NGT" );
+                        resultSpeechtext += this.app.bmlApp.wordsToArpa( strSplit[j], "NGT" );
                     }
                     j++;
                 }
