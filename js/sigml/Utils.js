@@ -140,7 +140,8 @@ function forceBindPoseQuats( skeleton, skipRoot = false ){
     let bones = skeleton.bones;
     let inverses = skeleton.boneInverses;
     if ( inverses.length < 1 ){ return; }
-    let boneMat = inverses[0].clone(); // to avoid including ThreeJS and new THREE.Matrix4()
+    let boneMat = inverses[0].clone(); 
+    let _ignoreVec3 = skeleton.bones[0].position.clone();
     for( let i = 0; i < bones.length; ++i ){
         boneMat.copy( inverses[i] ); // World to Local
         boneMat.invert(); // Local to World
@@ -152,7 +153,8 @@ function forceBindPoseQuats( skeleton, skipRoot = false ){
             if ( skipRoot ){ continue; }
         }
        
-        bones[i].quaternion.setFromRotationMatrix( boneMat );
+        boneMat.decompose( _ignoreVec3, bones[i].quaternion, _ignoreVec3 );
+        // bones[i].quaternion.setFromRotationMatrix( boneMat );
         bones[i].quaternion.normalize(); 
     }
 }

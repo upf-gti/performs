@@ -125,7 +125,7 @@ class HandShape {
         
         this.thumbIKMaxIter = 30;
 
-        this.fingerAxes = this._computeFingerAxesOfHand( );
+        this.fingerAxes = this._computeFingerAxesOfHand( ); // axes in after-bind space
         this._computeLookUpTables();
         
         this.curG = new HandInfo();
@@ -244,27 +244,27 @@ class HandShape {
     
                 let joint = chain[i];
                 
-                let endEffectorLocalPos = joint.worldToLocal( tempV3_0.copy( endEffectorWorldPos ) ).normalize();
-                let targetLocalPos = joint.worldToLocal( tempV3_1.copy( targetWorldPos ) ).normalize();
+                let endEffectorLocalPos = joint.worldToLocal( tempV3_0.copy( endEffectorWorldPos ) ).normalize().applyQuaternion( joint.quaternion );
+                let targetLocalPos = joint.worldToLocal( tempV3_1.copy( targetWorldPos ) ).normalize().applyQuaternion( joint.quaternion );
     
                 tempQ_0.setFromUnitVectors( endEffectorLocalPos, targetLocalPos );
     
                 if( i != 0 ){ 
                     // apply hinge constraint to upper bones, except base joint
-                    let bendAxis = bendAxes[ i ];
+                    let bendAxis = bendAxes[ i ]; // after bind space
                     tempQ_1.setFromUnitVectors( tempV3_0.copy( bendAxis ).applyQuaternion( tempQ_0 ), bendAxis );
                     tempQ_0.premultiply( tempQ_1 );
     
-                    joint.quaternion.multiply( tempQ_0 );
+                    joint.quaternion.premultiply( tempQ_0 );
                 
-                    // if bone is bent to forbidden (negative) angles, restore bind. Except base joint
+                    // if bone is bent to forbidden (negative == 180º+ angles) angles, restore bind. Except base joint
                     tempQ_1.copy( bindQuats[ i ] ).invert();
-                    tempQ_1.multiply( joint.quaternion );
+                    tempQ_1.premultiply( joint.quaternion );
                     let dot = tempQ_1.x * bendAxis.x + tempQ_1.y * bendAxis.y +tempQ_1.z * bendAxis.z; // kind of a twist decomposition
                     if ( dot < 0 ){ tempQ_1.w *= -1;}
                     if ( tempQ_1.w < 0 ) { joint.quaternion.copy( bindQuats[ i ] ); }
                 }else{
-                    joint.quaternion.multiply( tempQ_0 );
+                    joint.quaternion.premultiply( tempQ_0 );
                 }
     
                 joint.updateWorldMatrix();
@@ -293,17 +293,21 @@ class HandShape {
             splay = Math.max(0, Math.min( 1, lateralSplay + outSplay ) );
         }
         
+        // splay must be applied after bind and bending is applied
         splay = this.angleRanges[0][0][0] * (1-splay) + this.angleRanges[0][0][1] * splay; // user specified angle range
         splay *= ( this.isLeftHand ? 1 : -1 );
         endEffector.getWorldPosition( tempV3_0 );
-        bones[ thumbBase ].worldToLocal( tempV3_0 );
+        bones[ thumbBase ].worldToLocal( tempV3_0 ).applyQuaternion( bones[ thumbBase ].quaternion );
         tempQ_0.setFromAxisAngle( tempV3_0.normalize(), splay );
-        bones[ thumbBase ].quaternion.multiply( tempQ_0 );
+        bones[ thumbBase ].quaternion.premultiply( tempQ_0 );
     }
 
+    /**
+     * Assumes character is in tpose and bind pose
+     * @returns object with bendAxes, splayAxes and bindQuats. BindQuats might differ from real skeleton bind quaternions. Axes are after-bindQuats space (i.e quat(axis, angle) must be premultiplied to bindQuat)
+     */
     _computeFingerAxesOfHand( ){
 
-        // assumes character is in tpose
         let isLeftHand = this.isLeftHand;
         let bones = this.skeleton.bones;
         let fingers = this.fingerIdxs;
@@ -841,7 +845,15 @@ class HandShape {
                     let relocationThumbshape = shapeName.includes("PINCH_") ? this.handshapes.PINCH_ALL.thumbOptions : this.handshapes.CEE_ALL.thumbOptions;
                     relocationThumbshape = relocationThumbshape[ specFing[0] - 1 ]; // relocate to first specialFinger
                     outHand.thumb = relocationThumbshape;
-                }        
+                }       
+                if ( shapeName == "FINGER_2" || shapeName == "FINGER_23" || shapeName == "FINGER_23_SPREAD" ){
+                    let relocationFinger = 0; 
+                    for( let i = 1; i < selectedFingers.length; ++i ){
+                        if ( !selectedFingers[i] ){ relocationFinger = i; break; }
+                    }
+                    if ( relocationFinger ){ outHand.thumb = this.handshapes[ "FINGER_2" ].thumbOptions[ relocationFinger -1 ]; }
+                    else { outHand.thumb = this.thumbshapes.DEFAULT; }
+                }       
             }    
         } // end of special fingers
 

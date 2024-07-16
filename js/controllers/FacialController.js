@@ -132,8 +132,8 @@ FacialController.prototype.reset = function ( keepEmotion = false ) {
     
     this.resetFace(); // blendshapes to 0
     
-    if (this.textToLip) { this.textToLip.cleanQueueSentences(); }
-    if (this.lipsyncModule) { this.lipsyncModule.stop(); }
+    if ( this.textToLip ) { this.textToLip.cleanQueueSentences( true ); }
+    if ( this.lipsyncModule ) { this.lipsyncModule.stop(); }
 
     this._FacialLexemes.length = 0;
     if ( !keepEmotion ){ this.FA.reset(); } 

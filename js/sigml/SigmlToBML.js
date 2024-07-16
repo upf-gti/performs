@@ -637,11 +637,12 @@ function locationBodyArmParser( xml, start, attackPeak, hand, symmetry, signGene
     let locationHand = null;
     if ( xml.children.length > 0 && xml.children[0].tagName == "location_hand" ){
         locationHand = locationHandInfoExtract( xml.children[0], false );
-        if ( locationHand.location ){ result.srcLocation = locationHand.location; }
-        if ( locationHand.side ){ result.srcSide = locationHand.side; }
-        if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
-
         if ( !( locationHand.finger || locationHand.side || locationHand.location ) ){ locationHand = null; } // go to default settings, as if no location hand was present
+        else{
+            if ( locationHand.location ){ result.srcLocation = locationHand.location; }
+            if ( locationHand.side ){ result.srcSide = locationHand.side; }
+            if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+        }
     }
 
     if ( !locationHand ){
@@ -679,137 +680,115 @@ function locationHandInfoExtract( xml, parseChildren = true ){
 
     let result = {};
 
-    let digit = attributes.digits;
-    digit = ( digit != 1 && digit != 2 && digit != 3 && digit != 4 && digit != 5 ) ? null : parseInt( attributes.digits ); // it needs to be exactly those numbers "2asdfasd" is not valid but parseInt will return 2
+    let isSecond = false;
+    let digit, location, side;
+    
+    for( let i = 0; i < 2; ++i ){
+        isSecond = i == 1;
+        digit = isSecond ? attributes.second_digits : attributes.digits; 
+        digit = ( digit != 1 && digit != 2 && digit != 3 && digit != 4 && digit != 5 ) ? null : parseInt( digit ); // it needs to be exactly those numbers "2asdfasd" is not valid but parseInt will return 2
+        location = isSecond ? attributes.second_location : attributes.location;
+        side = isSecond ? attributes.second_side : attributes.side;
+        
+        // some fingerpart specified
+        if ( digit ){
+            switch( side ){
+                case "right_at": 
+                case "right_beside": 
+                    side = "RIGHT"; 
+                    break; 
+                case "left_at": 
+                case "left_beside": 
+                    side = "LEFT"; 
+                    break; 
+                case "front": side = "PALMAR"; break; 
+                case "dorsal": side = "BACK"; break;
+                case "palmar":
+                case "back":
+                case "radial":
+                case "ulnar": 
+                    side = side.toUpperCase(); 
+                    break;
+                default: side = "PALMAR"; break;
+            }
 
-    // some fingerpart specified
-    if ( digit ){
-        // default values tip of finger
-        result.finger = digit; 
-        result.location = "TIP"; 
+            switch( location ){
+                case "nail": location = "PAD"; break;
+                case "pad": location = "PAD"; break;
+                case "midjoint": location = "MID"; break;
+                case "side": location ="MID"; side = "ULNAR"; break;
+                case "base": location = "BASE"; break;
+                // case "tip":
+                default: location = "TIP"; side = null; break;
+            }
+        }
+        else {
+            // default values
+            
+            switch( side ){
+                case "right_at": 
+                case "right_beside": 
+                    side = "RIGHT"; // realizer will automatically compute wheter it is the ulna or the radius
+                    break; 
+                case "left_at": 
+                case "left_beside": 
+                    side = "LEFT"; // realizer will automatically compute wheter it is the ulna or the radius
+                    break;
+                case "front": side = "PALMAR"; break; 
+                case "dorsal": side = "BACK"; break;
+                case "palmar":
+                case "back":
+                case "radial":
+                case "ulnar": 
+                    side = side.toUpperCase(); 
+                    break;
+                default: 
+                    side = "PALMAR"; 
+                    break;
+            }
 
-        let side = "PALMAR";
-        switch( attributes.side ){
-            case "right_at": 
-            case "right_beside": 
-                side = "RIGHT"; 
-                break; 
-            case "left_at": 
-            case "left_beside": 
-                side = "LEFT"; 
-                break; 
-            case "front": side = "PALMAR"; break; 
-            case "dorsal": side = "BACK"; break;
-            case "palmar":
-            case "back":
-            case "radial":
-            case "ulnar": 
-                side = attributes.side.toUpperCase(); 
+            switch( location ){
+                case "wristback": location = "WRIST"; break;
+                case "thumbball": location = "THUMB_BALL"; break;
+                case "palm": location = "HAND"; side = "PALMAR"; break;
+                case "handback": location ="HAND"; side = "BACK"; break;
+                case "thumbside": digit = "2"; location = "BASE"; side = "RADIAL"; break;
+                case "pinkyside": digit = "5"; location = "BASE"; side = "ULNAR"; break;    
+
+                // arm
+                case "upperarm": 
+                    location = "UPPER_ARM";
+                    side = side == "PALMAR" ? "FRONT" : side;
+                    break;
+                case "elbow":
+                    location = "ELBOW";
+                    side = side == "PALMAR" ? "FRONT" : side;
+                    break;
+                case "elbowinside": 
+                    location = "ELBOW";
+                    side = "FRONT";
+                    break;
+                case "lowerarm":
+                    location ="FOREARM";
+                    side = side == "FRONT" ? "PALMAR" : side;
+                    break;
+
+                default: 
+                    location = null;
+                    side = null;
                 break;
-            default: break;
+            }
         }
 
-        switch( attributes.location ){
-            case "nail": 
-                result.location = "PAD";
-                result.side = side;  
-                break;
-            case "pad":
-                result.location = "PAD";
-                result.side = side;
-                break;
-            case "midjoint": 
-                result.location = "MID";
-                result.side = side;
-                break;
-            case "side":
-                result.location ="MID";
-                result.side = "UNLA";
-                break;
-            case "base":
-                result.location = "BASE";
-                result.side = side;
-                break;
-            case "tip":
-                result.location = "TIP";
-                // result.side = null;
-                break;
-            default: break;
+        if ( isSecond ){
+            if ( digit ){ result.secondFinger = digit; }
+            if ( location ){ result.secondLocation = location; }
+            if ( side ){ result.secondSide = side; }
         }
-    }
-    else {
-         // default values
-        // result.location = "HAND"; 
-        // result.side = "PALMAR";
-
-        let side = "PALMAR";
-        switch( attributes.side ){
-            case "right_at": 
-            case "right_beside": 
-                side = "RIGHT"; // realizer will automatically compute wheter it is the ulna or the radius
-                break; 
-            case "left_at": 
-            case "left_beside": 
-                side = "LEFT"; // realizer will automatically compute wheter it is the ulna or the radius
-                break;
-            case "front": side = "PALMAR"; break; 
-            case "dorsal": side = "BACK"; break;
-            case "palmar":
-            case "back":
-            case "radial":
-            case "ulnar": 
-                side = attributes.side.toUpperCase(); 
-                break;
-            default: break;
-        }
-
-        switch( attributes.location ){
-            case "wristback": 
-                result.location = "WRIST";
-                result.side = side;
-                break;
-            case "thumbball":
-                result.location = "THUMB_BALL";
-                result.side = side;
-                break;
-            case "palm": 
-                result.location = "HAND";
-                result.side = "PALMAR";
-                break;
-            case "handback":
-                result.location ="HAND";
-                result.side = "BACK";
-                break;
-            case "thumbside":
-                result.finger = "2"
-                result.location = "BASE";
-                result.side = "RADIAL";
-                break;
-            case "pinkyside":
-                result.finger = "5"
-                result.location = "BASE";
-                result.side = "ULNAR";
-                break;    
-
-            // arm
-            case "upperarm": 
-                result.location = "UPPER_ARM";
-                result.side = side == "PALMAR" ? "FRONT" : side;
-                break;
-            case "elbow":
-                result.location = "ELBOW";
-                result.side = side == "PALMAR" ? "FRONT" : side;
-                break;
-            case "elbowinside": 
-                result.location = "ELBOW";
-                result.side = "FRONT";
-                break;
-            case "lowerarm":
-                result.location ="FOREARM";
-                result.side = side == "FRONT" ? "PALMAR" : side;
-                break;
-
-            default: break;
+        else{
+            if ( digit ){ result.finger = digit; }
+            if ( location ){ result.location = location; }
+            if ( side ){ result.side = side; }
         }
     }
 
@@ -838,10 +817,16 @@ function locationHandAsHandConstellationParser( xml, start, attackPeak, hand, si
     if ( locationHand.location ){ result.dstLocation = locationHand.location; }
     if ( locationHand.side ){ result.dstSide = locationHand.side; }
     if ( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+    if ( locationHand.secondLocation ){ result.secondDstLocation = locationHand.secondLocation; }
+    if ( locationHand.secondSide ){ result.secondDstSide = locationHand.secondSide; }
+    if ( locationHand.secondFinger ){ result.secondDstFinger = locationHand.secondFinger; }
     if ( locationHand.child ){
         if ( locationHand.child.location ){ result.srcLocation = locationHand.child.location; }
         if ( locationHand.child.side ){ result.srcSide = locationHand.child.side; }
         if ( locationHand.child.finger ){ result.srcFinger = locationHand.child.finger; }
+        if ( locationHand.child.secondLocation ){ result.secondSrcLocation = locationHand.child.secondLocation; }
+        if ( locationHand.child.secondSide ){ result.secondSrcSide = locationHand.child.secondSide; }
+        if ( locationHand.child.secondFinger ){ result.secondSrcFinger = locationHand.child.secondFinger; }
     }else{
         result.srcLocation = "tip";
         result.srcFinger = "1";
@@ -877,14 +862,20 @@ function handConstellationParser( xml, start, attackPeak, hand, signGeneralInfo,
         }else if ( child.tagName == "location_hand" ){
             let locationHand = locationHandInfoExtract( child, false );
             if ( i == 0 ){
-                if( locationHand.location ){ result.dstLocation = locationHand.location; }
-                if( locationHand.side ){ result.dstSide = locationHand.side; }
-                if( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+                if ( locationHand.location ){ result.dstLocation = locationHand.location; }
+                if ( locationHand.side ){ result.dstSide = locationHand.side; }
+                if ( locationHand.finger ){ result.dstFinger = locationHand.finger; }
+                if ( locationHand.secondLocation ){ result.secondDstLocation = locationHand.secondLocation; }
+                if ( locationHand.secondSide ){ result.secondDstSide = locationHand.secondSide; }
+                if ( locationHand.secondFinger ){ result.secondDstFinger = locationHand.secondFinger; }
                 locationHandCount++;
             }else{
-                if( locationHand.location ){ result.srcLocation = locationHand.location; }
-                if( locationHand.side ){ result.srcSide = locationHand.side; }
-                if( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+                if ( locationHand.location ){ result.srcLocation = locationHand.location; }
+                if ( locationHand.side ){ result.srcSide = locationHand.side; }
+                if ( locationHand.finger ){ result.srcFinger = locationHand.finger; }
+                if ( locationHand.secondLocation ){ result.secondSrcLocation = locationHand.secondLocation; }
+                if ( locationHand.secondSide ){ result.secondSrcSide = locationHand.secondSide; }
+                if ( locationHand.secondFinger ){ result.secondSrcFinger = locationHand.secondFinger; }
                 locationHandCount++;
             }
             continue;
@@ -955,6 +946,9 @@ function motionParser( xml, start, hand, symmetry, signSpeed, signGeneralInfo, c
     if ( attributes.fast == "true" ){ signSpeed *= 1.5; }
     if ( attributes.slow == "true" ){ signSpeed *= 0.5; }
     if ( attributes.tense == "true" ){ signSpeed *= 0.5; }
+    
+    let attrSignSpeed = parseFloat( attributes.speed ); 
+    signSpeed *= ( isNaN( attrSignSpeed ) ) ? 1 : attrSignSpeed;
     
 
     if ( simpleMotionAvailable.includes( tagName ) ){
@@ -1286,7 +1280,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         }
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ 
-            result.zigzag = "l"; result.zigzagSpeed = 5; 
+            result.zigzag = "l"; result.zigzagSpeed = 5 * signSpeed; 
             if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; } // "small" == default value
             else { result.zigzagSize = 0.1; } // "small" == default value
         }
@@ -1321,7 +1315,14 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
             result.endAngle = Math.atan2( endDirection[1], endDirection[0] ) * 180 / Math.PI; 
             result.endAngle = result.endAngle < 0 ? ( 360 + result.endAngle ) : result.endAngle;
         }
-        if ( attributes.clockplus || attributes.second_clockplus ){ result.endAngle = result.startAngle + 2 * ( result.endAngle - result.startAngle );} 
+
+        let clockplus = 0;
+        if ( attributes.clockplus == "true" ){ clockplus++; }
+        if ( attributes.second_clockplus == "true" ){ clockplus++; }
+        if ( clockplus ){ 
+            let sign = ( result.endAngle - result.startAngle ) < -0.0001 ? -1 : 1;
+            result.endAngle = result.endAngle + 360 * clockplus * sign;
+        } 
         if ( typeof( result.direction ) == "string" && result.direction.includes( "i" ) ){
                 result.endAngle = (result.endAngle - result.startAngle) + ( result.startAngle * (-1) ); // new_start + old_deltaAngle
                 result.startAngle *= -1; // new_start
@@ -1329,19 +1330,26 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
 
         if ( attributes.zigzag_style == "wavy" || attributes.zigzag_style == "zigzag" ){ 
             result.zigzag = "o"; 
-            if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.3; }
-            else { result.zigzagSize = 0.1; }
+            result.zigzagSpeed = 8 * signSpeed; 
+            if ( attributes.zigzag_size == "big" ){ result.zigzagSize = 0.1; }
+            else { result.zigzagSize = 0.05; }
         }
 
+        let ellipseRatio = 0.5;
+        switch( attributes.ellipse_size ){
+            case "big" : ellipseRatio = 0.25; break;
+            case "small" : ellipseRatio = 0.75; break;
+            default: ellipseRatio = 0.5; break;
+        }
         switch( attributes.ellipse_direction ){
-            case "h": result.ellipseAxisDirection = "l"; result.ellipseAxisRatio = 0.5; break;
-            case "ur": result.ellipseAxisDirection = "ur"; result.ellipseAxisRatio = 0.5; break;
-            case "v": result.ellipseAxisDirection = "u"; result.ellipseAxisRatio = 0.5; break;
-            case "ul": result.ellipseAxisDirection = "ul"; result.ellipseAxisRatio = 0.5; break;
+            case "h": result.ellipseAxisDirection = "l"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "ur": result.ellipseAxisDirection = "ur"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "v": result.ellipseAxisDirection = "u"; result.ellipseAxisRatio = ellipseRatio; break;
+            case "ul": result.ellipseAxisDirection = "ul"; result.ellipseAxisRatio = ellipseRatio; break;
             default: break; // defaults to ellipseAxisRatio = 0.5
         }
 
-        duration = TIMESLOT.MOTIONCIRC / signSpeed;
+        duration = (1+clockplus) * TIMESLOT.MOTIONCIRC / signSpeed;
         result.start = start;
         result.attackPeak = start + duration;
         resultArray.push( result );
@@ -1364,7 +1372,10 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         if ( attributes.size == "big" ){ result.intensity = 0.3; } 
         else { result.intensity = 0.1; }
         result.mode = attributes.motion.toUpperCase().replace("STIR", "STIR_");
-        result.speed = 4;
+        result.speed = 4 * signSpeed;
+
+        // non dominant hand always shows symmetry except on nodding
+        if ( result.mode != "nodding" && result.mode != "nod" ){ result.lrSym = true; }
 
         duration = TIMESLOT.MOTIONWRIST / signSpeed;
         result.end = start + duration;
@@ -1374,7 +1385,7 @@ function simpleMotionParser( xml, start, hand, symmetry, signSpeed, signGeneralI
         let result = {};
         result.motion = "FINGERPLAY";
         result.intensity = 0.5;
-        result.speed = 4;
+        result.speed = 4 * signSpeed;
         duration = TIMESLOT.MOTIONFINGERPLAY / signSpeed;
         result.end = start + duration;
         if ( attributes.digits ){ result.fingers = attributes.digits; }
@@ -1563,17 +1574,17 @@ function baseNMFActionToJSON( xml, startTime, signSpeed ){
 
 let shoulderMovementTable = {
     // keeps that position until it changes or the sign ends
-    UL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT"  }, //_left_shoulder_raised                
-    UR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT" }, //_right_shoulder_raised               
-    UB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH"  }, //_both_shoulders_raised               
+    UL: { type: "gesture", shoulderRaise: 0.55, hand: "LEFT"  }, //_left_shoulder_raised                
+    UR: { type: "gesture", shoulderRaise: 0.55, hand: "RIGHT" }, //_right_shoulder_raised               
+    UB: { type: "gesture", shoulderRaise: 0.55, hand: "BOTH"  }, //_both_shoulders_raised               
     HL: { type: "gesture", shoulderHunch: 0.8, hand: "LEFT"  }, //_left_shoulder_hunched_forward       
     HR: { type: "gesture", shoulderHunch: 0.8, hand: "RIGHT" }, //_right_shoulder_hunched_forward      
     HB: { type: "gesture", shoulderHunch: 0.8, hand: "BOTH"  }, //_both_shoulders_hunched_forward     
     
     // up and down once
-    SL: { type: "gesture", shoulderRaise: 0.8, hand: "LEFT", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
-    SR: { type: "gesture", shoulderRaise: 0.8, hand: "RIGHT", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
-    SB: { type: "gesture", shoulderRaise: 0.8, hand: "BOTH", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
+    SL: { type: "gesture", shoulderRaise: 0.55, hand: "LEFT", _durationUntilEnd: true }, //_left_shoulder_shrugging_up_and_down 
+    SR: { type: "gesture", shoulderRaise: 0.55, hand: "RIGHT", _durationUntilEnd: true }, //_right_shoulder_shrugging_up_and_down
+    SB: { type: "gesture", shoulderRaise: 0.55, hand: "BOTH", _durationUntilEnd: true }, //_both_shoulders_shrugging_up_and_down
 };
 
 let bodyMovementTable = {
@@ -1592,8 +1603,8 @@ let bodyMovementTable = {
 let headMovementTable = {
     NO: { type: "head", lexeme: "NOD", repetition: 1 }, //_nodding_up_and_down     
     SH: { type: "head", lexeme: "SHAKE", repetition: 3 }, //_shaking_left_and_right  
-    SR: { type: "gaze", influence: "HEAD", target: "RIGHT", headOnly: true }, //_turned_right            
-    SL: { type: "gaze", influence: "HEAD", target: "LEFT", headOnly: true }, //_turned_left             
+    SR: { type: "head", lexeme: "ROTATE_RIGHT", repetition: 0 }, //_turned_right            
+    SL: { type: "head", lexeme: "ROTATE_LEFT", repetition: 0 }, //_turned_left             
     TR: { type: "head", lexeme: "TILT_RIGHT", repetition: 0 }, //_tilted_right            
     TL: { type: "head", lexeme: "TILT_LEFT", repetition: 0 }, //_tilted_left             
     NF: { type: "head", lexeme: "TILT_FORWARD", repetition: 0 }, //_tilted_forward          
