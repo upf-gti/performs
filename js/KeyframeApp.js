@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BVHLoader } from './extendedBVHLoader.js';
-import { AnimationRetargeting, forceBindPoseQuats } from './retargeting/retargeting.js'
+import { AnimationRetargeting } from './retargeting/retargeting.js'
 
 class KeyframeApp {
 
@@ -185,10 +185,10 @@ class KeyframeApp {
                 let skeleton = animation.skeleton;
                 // Retarget NN animation              
                 //forceBindPoseQuats(this.currentCharacter.skeletonHelper.skeleton); // TO DO: Fix bind pose of Eva
-                forceBindPoseQuats(skeleton); 
+                //forceBindPoseQuats(skeleton); 
                 // trgUseCurrentPose: use current Bone obj quats,pos, and scale
                 // trgEmbedWorldTransform: take into account external rotations like bones[0].parent.quaternion and model.quaternion
-                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { trgUseCurrentPose: true, trgEmbedWorldTransforms: true } ); // TO DO: change trgUseCurrentPose param
+                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { trgUseCurrentPose: true, trgEmbedWorldTransforms: true, srcPoseMode: AnimationRetargeting.BindPoseModes.TPOSE, trgPoseMode: AnimationRetargeting.BindPoseModes.TPOSE } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);

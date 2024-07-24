@@ -181,7 +181,7 @@ class App {
                 fetch( configFilePath ).then(response => response.text()).then( (text) =>{
                     let config = JSON.parse( text );
                     this.loadedCharacters[avatarName].config = config;
-                    this.bmlApp.onLoadAvatar(model, config);
+                    this.bmlApp.onLoadAvatar(model, config, skeleton);
                     this.keyframeApp.onLoadAvatar(model, config, skeleton);
                     if (callback) {
                         callback();
@@ -191,7 +191,7 @@ class App {
             else {
                 let config = configFilePath;
                 this.loadedCharacters[avatarName].config = config;
-                this.bmlApp.onLoadAvatar(model, config);
+                this.bmlApp.onLoadAvatar(model, config, skeleton);
                 this.keyframeApp.onLoadAvatar(model, config, skeleton);
                 
                 if (callback) {
@@ -328,7 +328,7 @@ class App {
         if(urlParams.has('controls')) {
             showControls = !(urlParams.get('controls') === "false");
         }
-        let modelToLoad = ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ) ];
+        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ) ];
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], "Eva", ()=>{
             this.changeAvatar( "Eva" );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }

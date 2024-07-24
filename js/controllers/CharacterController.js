@@ -19,12 +19,17 @@ function CharacterController(o) {
     this.character = o.character;
     this.characterConfig = o.characterConfig;
     
-    // get skeleton
-    this.skeleton = null;
-    this.character.traverse( ob => {
-        if ( ob.isSkinnedMesh ) { this.skeleton = ob.skeleton; }
-    } );
-    o.skeleton = this.skeleton;
+   // get skeleton
+   this.skeleton = null;
+   if(o.skeleton) {
+       this.skeleton = o.skeleton;
+   }
+   else {
+       this.character.traverse( ob => {
+           if ( ob.isSkinnedMesh ) { this.skeleton = ob.skeleton; }
+       } );
+   }
+   o.skeleton = this.skeleton;
 
     /** BoneMap */
     // config has a generic name to bone name map. Transform it into a mapping of generic name to bone index (in skeleton). 

@@ -10,11 +10,11 @@ class AppGUI {
         
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
-            "Eva": ['/3Dcharacters/Eva/Eva.glb', '/3Dcharacters/Eva/Eva.json', 0, '/3Dcharacters/Eva/Eva.png'],
-            "EvaLow": ['/3Dcharacters/Eva_Low/Eva_Low.glb', '/3Dcharacters/Eva_Low/Eva_Low.json', 0, '/3Dcharacters/Eva_Low/Eva_Low.png'],
-            "Witch": ['/3Dcharacters/Eva_Witch/Eva_Witch.glb', '/3Dcharacters/Eva_Witch/Eva_Witch.json', 0, '/3Dcharacters/Eva_Witch/Eva_Witch.png'],
-            "Kevin": ['/3Dcharacters/Kevin/Kevin.glb', '/3Dcharacters/Kevin/Kevin.json', 0, '/3Dcharacters/Kevin/Kevin.png'],
-            "Ada": ['/3Dcharacters/Ada/Ada.glb', '/3Dcharacters/Ada/Ada.json',0, '/3Dcharacters/Ada/Ada.png']
+            "Eva": ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', 0, 'https://webglstudio.org/3Dcharacters/Eva/Eva.png'],
+            "EvaLow": ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.png'],
+            "Witch": ['https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.glb', 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.png'],
+            "Kevin": ['https://webglstudio.org/3Dcharacters/Kevin/Kevin.glb', 'https://webglstudio.org/3Dcharacters/Kevin/Kevin.json', 0, 'https://webglstudio.org/3Dcharacters/Kevin/Kevin.png'],
+            "Ada": ['https://webglstudio.org/3Dcharacters/Ada/Ada.glb', 'https://webglstudio.org/3Dcharacters/Ada/Ada.json',0, 'https://webglstudio.org/3Dcharacters/Ada/Ada.png']
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -471,14 +471,9 @@ class AppGUI {
                 p.refresh();
             }, { closable: true } );
         
-        });
-        
-        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], "Neutral", (value, event) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
-            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
-        });
+        });    
 
-        //this.bmlGui.branch( "Random signs" );
+        this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
         this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"fa-solid fa-dice" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
@@ -493,9 +488,28 @@ class AppGUI {
             this.app.bmlApp.processMessageRawBlocks( m );
         }, { width: "40px", icon: "fa-solid fa-share"} );
         this.bmlGui.endLine();
+
+        this.bmlGui.addSeparator();
+        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], "Neutral", (value, event) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
+            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+        });
+
+        this.bmlGui.addCheckbox("Apply idle animation", this.app.bmlApp.applyIdle, (v) => {
+            this.app.bmlApp.applyIdle = v;
+            this.gui.refresh();
+        })        
+        if(this.app.bmlApp.applyIdle) {
+   
+            this.bmlGui.addDropdown("Animations", Object.keys(this.app.bmlApp.loadedIdleAnimations), this.app.bmlApp.currentIdle, (v) => {
+                this.app.bmlApp.bindAnimationToCharacter(v, this.app.currentCharacter.model.name);
+            })
+            this.bmlGui.addNumber("Intensity", this.app.bmlApp.intensity, (v) => {
+                this.app.bmlApp.setIntensity(v);
+            }, {min: 0.1, max: 1.0, step: 0.01})
+        }
         this.bmlGui.merge(); // random signs
-        
-              
+             
     }
 
     createKeyframePanel(panel) {
