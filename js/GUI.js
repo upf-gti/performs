@@ -247,7 +247,11 @@ class AppGUI {
                     // this.app.speed = Math.pow( Math.E, (value - 1) );
                     this.app.speed = value;
                 }, { min: 0, max: 2, step: 0.01});
-                
+
+                // JALI               
+                p.addVector2("JALI", [this.app.bmlApp.ECAcontroller.facialController._jali[0], this.app.bmlApp.ECAcontroller.facialController._jali[1]], (value, event) => {
+                    this.app.bmlApp.ECAcontroller.facialController._jali = value;
+                }, { min: 0, max: 2, step: 0.01 });
 
                 if(this.app.mode == App.Modes.SCRIPT) {
                     this.createBMLPanel(p);

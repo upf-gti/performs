@@ -1910,7 +1910,6 @@ Text2Lip.prototype.getCoarts = function ( phoneme ) {
 Text2Lip.prototype.getCoarticulatedViseme = function ( phoneme, phonemeAfter, outResult = null ) {
     let rawTarget = this.getViseme( phoneme );
     let coartsW = this.getCoarts( phoneme ); // coarticulation weights of target phoneme
-    coartsW.fill(0);
     
     //let visemePrev = this.currV; // phoneme before target
     let visemeAfter = this.getViseme( phonemeAfter ); // phoneme after target
@@ -1919,7 +1918,7 @@ Text2Lip.prototype.getCoarticulatedViseme = function ( phoneme, phonemeAfter, ou
 
     for ( let i = 0; i < this.numShapes.length; ++i ) {
         for ( let j = 0; j < this.numShapes[i]; ++j ) {
-            result[ i ][ j ] = ( 1.0 - coartsW[ j ] ) * rawTarget[ i ][ j ] + coartsW[ j ] * visemeAfter[ i ][ j ]//(0.2 * visemePrev[i] + 0.8 * visemeAfter[i]);
+            result[ i ][ j ] = ( 1.0 - coartsW[i][j] ) * rawTarget[ i ][ j ] + coartsW[i][j] * visemeAfter[ i ][ j ]//(0.2 * visemePrev[i] + 0.8 * visemeAfter[i]);
         }
     }
 
@@ -2096,15 +2095,15 @@ Text2Lip.prototype.cleanQueueSentences = function ( clearVisemes = false ) {
     this.sentenceQueue.fill( null );
     
     if ( clearVisemes ){
-        this.BSW.fill( 0 );
-        this.currV.fill( 0 );
-        this.targV.fill( 0 );
+        this.BSW[0].fill( 0 ); this.BSW[1].fill( 0 );
+        this.currV[0].fill( 0 ); this.currV[1].fill( 0 );
+        this.targV[0].fill( 0 ); this.targV[1].fill( 0 );
     }
 }
 
 /**
 * sets all necessary parameters for the sentence indicated by queueIdx (if any).  
-* @param {Bool} advanceIndex before setting paramters, index of sentence is incremented and amoun of sentences reduced, discarding the previous sentence
+* @param {Bool} advanceIndex before setting paramters, index of sentence is incremented and amount of sentences reduced, discarding the previous sentence
 * @returns 
 */
 Text2Lip.prototype.changeCurrentSentence = function ( advanceIndex = true ) {
@@ -2302,59 +2301,52 @@ Text2Lip.prototype.getSentenceDuration = function ( text, options ) {
 
 // TABLES ------------------------------
 
+// [ Chin Raiser, Jaw Drop, Mouth Stretch, Tongue Show, Tongue Up ]
+const jawVisemes2Au = [
+    [0.4, 0.0, 0.0, 0.0, 0.0], // MMM
+    [0.2, 0.2, 0.0, 1.0, 0.0], // TTH
+    [0.2, 0.0, 0.1, 0.0, 0.0], // FFF
+    [0.0, 0.3, 0.0, 0.0, 0.8], // RRR
+    [0.4, 0.0, 0.4, 0.0, 0.0], // SSS
+    [0.2, 0.4, 0.2, 0.6, 0.0], // SSH -- TODO
+    [0.4, 0.9, 0.6, 0.0, 0.7], // AAA
+    [0.0, 0.6, 0.0, 0.0, 0.6], // EEE
+    [0.3, 0.5, 0.0, 0.0, 0.4], // III
+    [0.2, 0.4, 0.0, 0.0, 0.0], // OOO
+    [0.4, 0.2, 0.0, 0.4, 0.0], // UUU
+    [0.0, 0.0, 0.0, 0.0, 0.0]  // ._
+  ];
 
-// [ Chin_Raiser, Mouth_Stretch, Tongue_Up, Tongue_Show ]
-let jawVisemes2Au = [
-    [ 1.0,   0.2,  0,    0   ], // MMM - 0
-    [ 0.2,   0.4,  0,    0.2 ], // TTH
-    [ 1.0,   0.2,    0,    0   ], // FFF
-    [ 0,     0,    0,    0   ], // RRR
-    [ 0,     0,    0,    0   ], // SSS
-    [ 0,     0,    0,    0   ], // SSH - 5
-    [ 0,     1.0,  0,    0   ], // AAA
-    [ 0,     0,    0,    0   ], // EEE
-    [ 0,     0,    0,    0   ], // III
-    [ 0,     0,    0,    0   ], // OOO
-    [ 0,     0,    0,    0   ], // UUU
-    [ 0,     0,    0,    0   ], // ._  - 11
-];
-
-// [ Upper_Lip_Raiser_Left, Upper_Lip_Raiser_Right, Lip_Corner_Puller_Left, Lip_Corner_Puller_Right, Lower_Lip_Depressor_Left, Lower_Lip_Depressor_Right, Lip_Puckerer_Left, Lip_Puckerer_Right, Lip_Funneler ]
-let lipVisemes2Au = [
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // MMM - 0
-    [ 0.6,  0.6,   0,     0,    0,    0,    0,     0.8 ], // TTH
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // FFF
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // RRR
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // SSS
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // SSH - 5
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // AAA
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // EEE
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // III
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // OOO
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // UUU
-    [ 0,    0,     0,     0,    0,    0,    0,     0   ], // ._  - 11
-];
-
-
-// coarticulation weights for each phoneme. 0= no modification to phoneme, 1=use phonemes arround to build viseme
+  // [ Upper Lip Raiser (Left, Right), Lip Puckerer (Left, Right), Lip Funneler, Lip Pressor (Left, Right), Lips Part, Lip_Corner_Puller_Left, Lip_Corner_Puller_Right ]
+  const lipVisemes2Au = [
+    [0.0, 0.0,   0.2, 0.2,   0.0,   1.0, 1.0,   0.0,   0.0, 0.0], // MMM
+    [0.1, 0.1,   0.0, 0.0,   0.0,   0.0, 0.0,   0.7,   0.4, 0.4], // TTH
+    [0.1, 0.1,   0.0, 0.0,   0.4,   0.4, 0.4,   0.6,   0.0, 0.0], // FFF
+    [0.0, 0.0,   0.6, 0.6,   0.0,   0.0, 0.0,   0.2,   0.0, 0.0], // RRR
+    [0.0, 0.0,   0.4, 0.4,   0.0,   0.0, 0.0,   1.0,   0.0, 0.0], // SSS
+    [0.3, 0.3,   0.4, 0.4,   0.8,   0.0, 0.0,   0.6,   0.0, 0.0], // SSH
+    [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   0.8,   0.0, 0.0], // AAA
+    [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   1.0,   0.0, 0.0], // EEE
+    [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   0.6,   0.4, 0.4], // III
+    [-0.2, -0.2, 0.8, 0.8,   0.4,   0.0, 0.0,   0.0,   0.0, 0.0], // OOO
+    [0.0, 0.0,   0.8, 0.8,   1.0,   0.0, 0.0,   0.8,   0.0, 0.0], // UUU
+    [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   0.0,   0.0, 0.0]  // ._
+  ];
+  
+// Coarticulation weights for each phoneme. 0 = no modification to phoneme, 1 = use phonemes around to build viseme [[jaw], [lip]]
 let t2lCoarts = [
-  [ 0,     0,     0,     0,     0,     0,     0   ], // 0
-  [ 0.6,   0.6,   0.6,   0.6,   0.6,   0.6,   0.6 ],
-  [ 0.2,   0.3,   0.3,   0.3,   0.1,   0.3,   0.5 ],
-  [ 0.0,   0.3,   0.3,   0.3,   0.1,   0.3,   0.5 ],
-  [ 0.1,   0.3,   0.3,   0.3,   0,     0,     0.5 ], // 4
-  [ 0.2,   0.3,   0.3,   0.3,   0.3,   0.3,   0.5 ],
-  [ 0.2,   0.3,   0.3,   0.3,   0.3,   0.3,   0.5 ],
-  [ 1,     0.4,   0.4,   0.9,   0,     0.5,   0.5 ],
-  [ 1,     0,     0,     0.0,   1,     0.8,   0.5 ], //8 
-  [ 1,     0,     0,     0.2,   1,     0.5,   0.5 ],
-  [ 1,     0.6,   0.6,   0.6,   0,     0.5,   0.5 ],
-  [ 1,     1,     1,     0.7,   0.5,   0.5,   0.5 ],
-  [ 0.7,   0.5,   0.5,   0.9,   0.6,   0,     0.5 ], //12
-  [ 1,     1,     1,     0.5,   0,     0,     0.5 ],
-  [ 1,     0.3,   0.3,   0.3,   0,     0.6,   0   ], 
-  [ 0.5,   0.3,   0.3,   0.5,   0,     0,     0    ],
-
+    [ [0.0, 0.0, 0.0, 0.0, 0.0], [0.1, 0.1, 0.1, 0.0, 0.1, 0.0, 0.1, 0.0, 0.0, 0.0] ], // MMM - lips closed
+    [ [0.0, 0.0, 0.0, 0.0, 0.0], [0.2, 0.2, 0.2, 0.0, 0.0, 0.0, 0.2, 0.0, 0.0, 0.0] ], // TTH
+    [ [0.0, 0.0, 0.0, 0.0, 0.0], [0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0] ], // FFF - touch bottom-lip to top-teeth
+    [ [0.0, 0.1, 0.1, 0.0, 0.1], [0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.2, 0.0, 0.0, 0.1] ], // RRR
+    [ [0.0, 0.5, 0.5, 0.0, 0.0], [0.3, 0.3, 0.3, 0.0, 0.0, 0.0, 0.3, 0.0, 0.0, 0.3] ], // SSS
+    [ [0.0, 0.5, 0.5, 0.0, 0.0], [0.3, 0.3, 0.3, 0.1, 0.0, 0.1, 0.3, 0.0, 0.0, 0.3] ], // SSH
+    [ [0.0, 0.3, 0.3, 0.0, 0.1], [0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.3, 0.0, 0.0, 0.3] ], // AAA
+    [ [0.0, 0.3, 0.3, 0.0, 0.1], [0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.3, 0.0, 0.0, 0.3] ], // EEE
+    [ [0.0, 0.3, 0.3, 0.0, 0.1], [0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.3, 0.0, 0.0, 0.3] ], // III
+    [ [0.0, 0.3, 0.3, 0.0, 0.1], [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.5, 0.0, 0.0, 0.5] ], // OOO
+    [ [0.0, 0.3, 0.3, 0.0, 0.1], [0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.5, 0.0, 0.0, 0.5] ], // UUU
+    [ [0.0, 0.0, 0.0, 0.0, 0.0], [0.1, 0.1, 0.1, 0.0, 0.0, 0.0, 0.1, 0.0, 0.0, 0.0] ]  // ._
 ];
 
 let t2lPh2v = {
@@ -2362,7 +2354,7 @@ let t2lPh2v = {
     "a": 6,   // "AA"	 
     "@": 6,   // "AE"	 
     "A": 6,   // "AH"	 
-    "c": 6,   // "AO"	 
+    "c": 9,   // "AO"	 
     "W": 6,   // "AW"	 
     "x": 6,   // "AX"	 
     "Y": 6,   // "AY"	 
@@ -2410,8 +2402,8 @@ let t2lPh2v = {
 };
 
 let T2LTABLES = {
-    BlendshapeMapping: [ { "Chin_Raiser": 0, "Mouth_Stretch": 1, "Tongue_Up": 2, "Tongue_Show": 3 }, // jaw
-                         { "Upper_Lip_Raiser_Left": 0, "Upper_Lip_Raiser_Right": 1, "Lip_Corner_Puller_Left": 2, "Lip_Corner_Puller_Right": 3, "Lower_Lip_Depressor_Left": 4, "Lower_Lip_Depressor_Right": 5, "Lip_Puckerer_Left": 6, "Lip_Puckerer_Right": 7, "Lip_Funneler": 8 } ], // lip
+    BlendshapeMapping: [ { "Chin_Raiser": 0, "Jaw_Drop": 1, "Mouth_Stretch": 2, "Tongue_Show": 3, "Tongue_Up": 4 }, // jaw
+                         { "Upper_Lip_Raiser_Left": 0, "Upper_Lip_Raiser_Right": 1, "Lip_Puckerer_Left": 2, "Lip_Puckerer_Right": 3, "Lip_Funneler": 4, "Lip_Pressor_Left": 5, "Lip_Pressor_Right": 6, "Lips_Part": 7, "Lip_Corner_Puller_Left": 8, "Lip_Corner_Puller_Right": 9 } ], // lip
     Visemes2Au: [ jawVisemes2Au, lipVisemes2Au ], // [ jaw, lip ]
     Coarticulations: t2lCoarts,
     PhonemeToViseme : t2lPh2v,

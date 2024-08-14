@@ -36,7 +36,7 @@ function FacialController(config = null) {
     this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
     // t2l
-    this._jali = [1, 1]; // [jaw, lip]
+    this._jali = [0.66, 1.0]; // [jaw, lip]
 
     // TODO: update a2l names ?
     this.lipsPressedBSName = "Jaw_Up";
