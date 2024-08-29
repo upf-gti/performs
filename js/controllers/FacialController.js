@@ -36,7 +36,15 @@ function FacialController(config = null) {
     this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
     // t2l
-    this._jali = [0.66, 1.0]; // [jaw, lip]
+    this.jali = [0.66, 1.0]; // [jaw, lip]
+    this.speakingStyle = null;
+    this.speakingStyles = {
+        "Whispering": [0.2, 1.2],
+        "Normal Conversation": [0.66, 1.0],
+        "Enunciating": [1.0, 2.0],
+        "Screaming": [2.0, 2.0],
+    }
+
 
     // TODO: update a2l names ?
     this.lipsPressedBSName = "Jaw_Up";
@@ -260,7 +268,7 @@ FacialController.prototype.faceUpdate = function (dt) {
         for (let i = 0; i < this.textToLipBSMapping.length; i++) { // jaw or lip
             for (let j = 0; j < this.textToLipBSMapping[i].length; j++) {
                 let mapping = this.textToLipBSMapping[i][j]; // [ MeshBSIndex, T2Lindex ]
-                let value = this._jali[i] * Math.min(1, Math.max(-1, t2lBSW[i][mapping[1]]));
+                let value = this.jali[i] * Math.min(1, Math.max(-1, t2lBSW[i][mapping[1]]));
                 let index = mapping[0];
                 // for this model, some blendshapes need to be negative
                 this._facialAUAcc[index] += Math.abs(value); // denominator of biased average

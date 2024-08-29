@@ -249,9 +249,17 @@ class AppGUI {
                 }, { min: 0, max: 2, step: 0.01});
 
                 // JALI               
-                p.addVector2("JALI", [this.app.bmlApp.ECAcontroller.facialController._jali[0], this.app.bmlApp.ECAcontroller.facialController._jali[1]], (value, event) => {
-                    this.app.bmlApp.ECAcontroller.facialController._jali = value;
+                p.addVector2("JALI", [this.app.bmlApp.ECAcontroller.facialController.jali[0], this.app.bmlApp.ECAcontroller.facialController.jali[1]], (value, event) => {
+                    this.app.bmlApp.ECAcontroller.facialController.jali = value;
+                    this.app.bmlApp.ECAcontroller.facialController.speakingStyle = null;
+                    this.refresh();
                 }, { min: 0, max: 2, step: 0.01 });
+                
+                p.addDropdown("Speaking Style", Object.keys(this.app.bmlApp.ECAcontroller.facialController.speakingStyles), this.app.bmlApp.ECAcontroller.facialController.speakingStyle, (value, event) => {
+                    this.app.bmlApp.ECAcontroller.facialController.speakingStyle = value;
+                    this.app.bmlApp.ECAcontroller.facialController.jali = this.app.bmlApp.ECAcontroller.facialController.speakingStyles[value];
+                    this.refresh();
+                });
 
                 if(this.app.mode == App.Modes.SCRIPT) {
                     this.createBMLPanel(p);
