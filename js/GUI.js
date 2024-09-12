@@ -25,8 +25,8 @@ class AppGUI {
         main_area.root.ondrop = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-
-			this.app.loadFiles(e.dataTransfer.files, () => this.gui.refresh());      
+            $("#loading").fadeIn();
+			this.app.loadFiles(e.dataTransfer.files, () => {this.gui.refresh(); $("#loading").fadeOut();});      
         };
 
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };

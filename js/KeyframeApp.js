@@ -10,7 +10,8 @@ class KeyframeApp {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
-        this.loaderBVH = new GLTFLoader();
+        this.GLTFLoader = new GLTFLoader();
+        this.BVHLoader = new BVHLoader();
         
         this.currentCharacter = "";
         this.loadedCharacters = {}; // store avatar loadedCharacters
@@ -83,22 +84,63 @@ class KeyframeApp {
     */
      async processMessageFiles( files = []) {
         let parsedFiles = {};
-        let loader = new BVHLoader();
         let promises = [];
+
+        let loader = null;
+        let type = 'bvh';
 
         for(let i = 0; i < files.length; i++) {
             const file = files[i];
-            let filePromise = new Promise(resolve => {
-                const reader = new FileReader();
-                reader.onload = () => {                                    
-                    const data = loader.parseExtended(reader.result);
-                    this.loadBVHAnimation( file.name, data );
+            const extension = file.name.substr(file.name.lastIndexOf(".") + 1);;
+            if(extension == 'bvh' || extension == 'bvhe') {
+                loader = this.BVHLoader;
+                type = 'bvh';
+            }
+            else {
+                loader = this.GLTFLoader;
+                type = 'glb';
+            }
+            let filePromise = null;
+            if(type == 'bvh') {
+                filePromise = new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => {         
+                        let data = null;
+                            data = loader.parseExtended(reader.result);
+                            this.loadBVHAnimation( file.name, data );
 
-                    resolve( file.name ); // this is what is returned by promise.all.then
-                }
-                let data = file.data ?? file;
-                reader.readAsText(data);
-            });
+                        resolve( file.name ); // this is what is returned by promise.all.then
+                    }
+                    let data = file.data ?? file;
+                    reader.readAsText(data);
+                });
+            }
+            else {
+                filePromise = new Promise(resolve => {
+                    const reader = new FileReader();
+                    reader.onload = () => {  
+                        loader.load( reader.result, (glb) => {
+                            let skeleton = null;
+                            glb.scene.traverse( o => {                                    
+                                if ( o.skeleton ){ 
+                                    skeleton = o.skeleton;
+                                    return;
+                                }                                                
+                            } );
+                            let animationsNames = [];
+                            for(let i = 0; i < glb.animations.length; i++) {
+                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i], skeleton );
+                                animationsNames.push(glb.animations[i].name);
+                            }
+                            resolve( animationsNames ); // this is what is returned by promise.all.then
+                        }); 
+                    }
+                    
+                    let data = file.data ?? file;
+                    reader.readAsDataURL(data);
+                });
+            }   
+
             promises.push(filePromise);           
         }
        
@@ -134,6 +176,15 @@ class KeyframeApp {
             faceAnimation: faceAnimation ?? new THREE.AnimationClip( "faceAnimation", -1, [] ),
             skeleton,
             type: "bvhe"
+        };
+    }
+
+    loadGLTFAnimation(name, animationData, skeleton) {
+        this.loadedAnimations[name] = {
+            name: name,
+            bodyAnimation: animationData ?? new THREE.AnimationClip( "bodyAnimation", -1, [] ),
+            skeleton,
+            type: "glb"
         };
     }
 
