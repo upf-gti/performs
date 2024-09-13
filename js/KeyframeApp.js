@@ -22,6 +22,13 @@ class KeyframeApp {
 
         this.mixer = null;
         this.playing = false;
+
+        // For retargeting
+        this.srcPoseMode = AnimationRetargeting.BindPoseModes.TPOSE; // TPOSE
+        this.trgPoseMode = AnimationRetargeting.BindPoseModes.TPOSE; // TPOSE
+   
+        this.srcEmbedWorldTransforms = false;
+        this.trgEmbedWorldTransforms = true;
     }
 
     update( deltaTime ) {
@@ -128,8 +135,13 @@ class KeyframeApp {
                                 }                                                
                             } );
                             let animationsNames = [];
+                            let model = skeleton.bones[0];
+                            while(model.parent && model.parent.type != "Scene") {
+                                model = model.parent;
+                            }
+                            model.skeleton = skeleton;
                             for(let i = 0; i < glb.animations.length; i++) {
-                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i], skeleton );
+                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i],  model);
                                 animationsNames.push(glb.animations[i].name);
                             }
                             resolve( animationsNames ); // this is what is returned by promise.all.then
@@ -239,7 +251,7 @@ class KeyframeApp {
                 //forceBindPoseQuats(skeleton); 
                 // trgUseCurrentPose: use current Bone obj quats,pos, and scale
                 // trgEmbedWorldTransform: take into account external rotations like bones[0].parent.quaternion and model.quaternion
-                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { trgUseCurrentPose: true, trgEmbedWorldTransforms: true, srcPoseMode: AnimationRetargeting.BindPoseModes.TPOSE, trgPoseMode: AnimationRetargeting.BindPoseModes.TPOSE } ); // TO DO: change trgUseCurrentPose param
+                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode: this.srcPoseMode, trgPoseMode: this.trgPoseMode } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);

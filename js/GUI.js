@@ -26,7 +26,15 @@ class AppGUI {
 			e.preventDefault();
 			e.stopPropagation();
             $("#loading").fadeIn();
-			this.app.loadFiles(e.dataTransfer.files, () => {this.gui.refresh(); $("#loading").fadeOut();});      
+			this.app.loadFiles(e.dataTransfer.files, (files) => {
+                $("#loading").fadeOut();
+                if(files.length) {
+                    this.gui.refresh(); 
+                }
+                else {
+                    LX.popup("This file doesn't contain any animation!");
+                }
+            });      
         };
 
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
@@ -34,7 +42,7 @@ class AppGUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
-
+        this.branchesOpened = {"Customization" : true, "Transformations": false, "Recording": false, "Animation": true};
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
         if ( window.sessionStorage ){
@@ -89,9 +97,16 @@ class AppGUI {
             this.gui = p;
 
             this.gui.refresh = () =>{
+                if(p.branches.length)                 {
+                    this.branchesOpened["Customization"] = !p.getBranch("Customization").content.parentElement.classList.contains("closed");
+                    this.branchesOpened["Transformations"] = !p.getBranch("Transformations").content.parentElement.classList.contains("closed");
+                    this.branchesOpened["Recording"] = !p.getBranch("Recording").content.parentElement.classList.contains("closed");
+                    this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
+                }
+                                
                 this.gui.clear();
                 // // --------- Customization ---------
-                p.branch( "Customization", { icon: "fa-solid fa-palette"} );
+                p.branch( "Customization", { icon: "fa-solid fa-palette", closed: !this.branchesOpened["Customization"]} );
                 // get color set on the actual objects and set them as default values to the colorpicker
                 let color = new THREE.Color();
 
@@ -164,7 +179,20 @@ class AppGUI {
                 
                 p.endLine();
 
-                p.branch( "Recording", { icon: "fa-solid fa-video"} );
+                p.branch( "Transformations", { icon: "fa-solid fa-up-down-left-right", closed: !this.branchesOpened["Transformations"]} );
+
+                const model = this.app.currentCharacter.model;
+                p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
+                    model.position.set(value[0], value[1], value[2]);
+                }, {step:0.01});
+                p.addVector3("Rotation", [THREE.MathUtils.radToDeg(model.rotation.x), THREE.MathUtils.radToDeg(model.rotation.y), THREE.MathUtils.radToDeg(model.rotation.z)], (value, event) => {
+                    model.rotation.set(THREE.MathUtils.degToRad(value[0]), THREE.MathUtils.degToRad(value[1]), THREE.MathUtils.degToRad(value[2]));
+                }, {step:0.01});
+                p.addNumber("Scale", model.scale.x, (value, event) => {
+                    model.scale.set(value, value, value);
+                }, {step:0.01});        
+
+                p.branch( "Recording", { icon: "fa-solid fa-video", closed: !this.branchesOpened["Recording"]} );
 
                 let cameras = [];
                 for (let i = 0; i < this.app.cameras.length; i++) {
@@ -224,7 +252,7 @@ class AppGUI {
                 }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
                 p.merge(); // random signs
 
-                p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting"});
+                p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
                 p.addComboButtons("Animation from", [
                     {
                         value: "BML",
@@ -526,6 +554,29 @@ class AppGUI {
             this.keyframeGui.refresh();
         }, { width: "40px"});
         this.keyframeGui.endLine(); 
+
+        this.keyframeGui.addTitle("Retargeting")
+           
+        this.keyframeGui.addCheckbox("Source embedded transforms", this.app.keyframeApp.srcEmbedWorldTransforms, (v) => {
+            this.app.keyframeApp.srcEmbedWorldTransforms = v;
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+        },{nameWidth: "auto"})
+            
+        this.keyframeGui.addCheckbox("Target embedded transforms", this.app.keyframeApp.trgEmbedWorldTransforms, (v) => {
+            this.app.keyframeApp.trgEmbedWorldTransforms = v;
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+        }, {nameWidth: "auto"})
+        
+        const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
+        this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.app.keyframeApp.srcPoseMode], (v) => {
+            this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+        });
+
+        this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
+            this.app.keyframeApp.tgtPoseMode = poseModes.indexOf(v);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+        });
     }
 
     showRecordingDialog(callback) {

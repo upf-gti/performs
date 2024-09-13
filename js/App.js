@@ -478,12 +478,14 @@ class App {
             }
         }
 
-        this.changeMode(App.Modes.KEYFRAME);
-
+        
         this.keyframeApp.processMessageFiles(files).then((data) => {
-            this.keyframeApp.onChangeAnimation(data[0]);
+            if(data[0].length) {
+                this.changeMode(App.Modes.KEYFRAME);
+                this.keyframeApp.onChangeAnimation(data[0]);
+            }
             if(callback) {
-                callback();
+                callback(data[0]);
             }
         });
     }
