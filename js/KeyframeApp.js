@@ -141,7 +141,7 @@ class KeyframeApp {
                             }
                             model.skeleton = skeleton;
                             for(let i = 0; i < glb.animations.length; i++) {
-                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i],  model);
+                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i],  model.skeleton);
                                 animationsNames.push(glb.animations[i].name);
                             }
                             resolve( animationsNames ); // this is what is returned by promise.all.then
@@ -226,9 +226,11 @@ class KeyframeApp {
             mixer.uncacheClip(mixer._actions[0]._clip); // removes action
         }
 
+        let srcPoseMode = this.srcPoseMode;
+        let trgPoseMode = this.trgPoseMode;
         if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
             currentCharacter.skeleton = applyTPose(currentCharacter.skeleton);
-            this.trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+            trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
         } 
         else {
             currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
@@ -252,10 +254,10 @@ class KeyframeApp {
 
                 //tracks.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
                 bodyAnimation.tracks = tracks;            
-                let skeleton = animation.skeleton.skeleton;
+                let skeleton = animation.skeleton;
                 if(this.srcPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.srcPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
                     skeleton = applyTPose(skeleton);
-                    this.srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+                    srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
                 }
                 
                 // Retarget NN animation              
@@ -263,7 +265,7 @@ class KeyframeApp {
                 //forceBindPoseQuats(skeleton); 
                 // trgUseCurrentPose: use current Bone obj quats,pos, and scale
                 // trgEmbedWorldTransform: take into account external rotations like bones[0].parent.quaternion and model.quaternion
-                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode: this.srcPoseMode, trgPoseMode: this.trgPoseMode } ); // TO DO: change trgUseCurrentPose param
+                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode, trgPoseMode } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);
