@@ -257,7 +257,12 @@ class AppGUI {
                     {
                         value: "BML",
                         callback: (v, e) => {
-                            this.app.changeMode(App.Modes.SCRIPT);
+                            if (this.app.currentCharacter.config) {
+                                this.app.changeMode(App.Modes.SCRIPT);
+                            }
+                            else {
+                                this.app.changeMode(App.Modes.KEYFRAME);
+                            }
                             this.refresh();
                         }
                     },
@@ -636,31 +641,80 @@ class AppGUI {
     uploadAvatar(callback = null) {
         let name, model, config;
         let rotation = 0;
-
+        
+        let fromFile = true;
         this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
-            let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
-                if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
-                name = v;
-            });
 
-            let avatarFile = panel.addFile("Avatar File", (v, e) => {
-                let files = panel.widgets["Avatar File"].domEl.children[1].files;
-                if(!files.length) {
-                    return;
-                }
-                const path = files[0].name.split(".");
-                const filename = path[0];
-                const extension = path[1];
-                if (extension == "glb" || extension == "gltf") { 
-                    model = v;
-                    if(!name) {
-                        name = filename;
-                        nameWidget.set(name)
-                    }
-                }
-                else { LX.popup("Only accepts GLB and GLTF formats!"); }
+            panel.refresh = () => {
+                panel.clear();
                 
-            }, {type: "url"});
+                let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
+                    if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
+                    name = v;
+                });
+
+                panel.sameLine();
+                let avatarFile = panel.addFile("Avatar File", (v, e) => {
+                    let files = panel.widgets["Avatar File"].domEl.children[1].files;
+                    if(!files.length) {
+                        return;
+                    }
+                    const path = files[0].name.split(".");
+                    const filename = path[0];
+                    const extension = path[1];
+                    if (extension == "glb" || extension == "gltf") { 
+                        model = v;
+                        if(!name) {
+                            name = filename;
+                            nameWidget.set(name)
+                        }
+                    }
+                    else { LX.popup("Only accepts GLB and GLTF formats!"); }
+                }, {type: "url"});
+
+                let avatarURL = panel.addText("Avatar URL", "", (v, e) => {
+                    
+                    const path = v.split(".");
+                    const filename = path[path.length-2];
+                    const extension = path[path.length-1];
+                    if (extension == "glb" || extension == "gltf") { 
+                        let url = v;
+                        url += url.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
+                        model = url;     
+                        
+                        if(!name) {
+                            name = filename;
+                            nameWidget.set(name)
+                        }
+                    }
+                    else { LX.popup("Only accepts GLB and GLTF formats!"); }
+                }, {type: "url"});
+                avatarURL.domEl.classList.add('hidden');
+
+                panel.addComboButtons(null, [
+                    {
+                        value: "From File",
+                        callback: (v, e) => {                            
+                            fromFile = true;
+                            if(!avatarURL.domEl.classList.contains('hidden')) {
+                                avatarURL.domEl.classList.add('hidden');          
+                            }
+                            avatarFile.domEl.classList.remove('hidden');                                                          
+                            panel.refresh();
+                        }
+                    },
+                    {
+                        value: "From URL",
+                        callback: (v, e) => {
+                            fromFile = false;
+                            if(!avatarFile.domEl.classList.contains('hidden')) {
+                                avatarFile.domEl.classList.add('hidden');           
+                            }                                               
+                            avatarURL.domEl.classList.remove('hidden');          
+                        }
+                    }
+                ], {selected: fromFile ? "From File" : "From URL"});
+                panel.endLine();
             
             let configFile = panel.addFile("Config File", (v, e) => {
                
@@ -678,13 +732,26 @@ class AppGUI {
                 window.open("https://webglstudio.org/projects/signon/performs-atelier", '_blank').focus();
             })
             panel.addButton(null, "Upload", () => {
-                if (name && model && config) {
+                if (name && model) {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
-                    this.avatarOptions[name] = [model, config, rotation, "data/imgs/monster.png"];
-                    
-                    panel.clear();
-                    this.avatarDialog.root.remove();
-                    if (callback) callback(name);
+                
+                    if (config) {
+                        this.avatarOptions[name] = [model, config, rotation, "data/imgs/monster.png"];
+                        
+                        panel.clear();
+                        this.avatarDialog.root.remove();
+                        if (callback) callback(name);
+                    }
+                    else {
+                        LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
+                            this.avatarOptions[name] = [model, null, rotation, "data/imgs/monster.png"];
+                            
+                            panel.clear();
+                            this.avatarDialog.root.remove();
+                            if (callback) callback(name);
+                        }, {input: false, on_cancel: () => {}});
+                        
+                    }
                 }
                 else {
                     LX.popup("Complete all fields!", null, { position: ["45%", "20%"]});
@@ -731,6 +798,9 @@ class AppGUI {
                     }
                 }
             })
+            
+        }
+        panel.refresh();
 
         }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar File", this.app.currentCharacter.model.name)} });
 

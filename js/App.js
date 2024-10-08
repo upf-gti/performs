@@ -90,12 +90,19 @@ class App {
         this.bmlApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
         
-        this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
-        this.controls.forEach((control) => {
-            control.target.copy(this.controls[this.camera].target); 
-            control.saveState();
-            control.update();
-        });
+        if (this.currentCharacter.config) {
+            this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
+            this.controls.forEach((control) => {
+                control.target.copy(this.controls[this.camera].target); 
+                control.saveState();
+                control.update();
+            });
+        }
+        else {
+            this.changeMode(App.Modes.KEYFRAME);
+        }
+
+
         if ( this.gui ){ this.gui.refresh(); }
     }
 
@@ -173,27 +180,35 @@ class App {
             model.name = avatarName;
 
             this.loadedCharacters[avatarName] ={
-                model, skeleton, 
+                model, skeleton, config: null
             }
 
-            if(typeof(configFilePath) == 'string') {
+            if (configFilePath) {
+                if(typeof(configFilePath) == 'string') {
 
-                fetch( configFilePath ).then(response => response.text()).then( (text) =>{
-                    let config = JSON.parse( text );
+                    fetch( configFilePath ).then(response => response.text()).then( (text) =>{
+                        let config = JSON.parse( text );
+                        this.loadedCharacters[avatarName].config = config;
+                        this.bmlApp.onLoadAvatar(model, config, skeleton);
+                        this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                        if (callback) {
+                            callback();
+                        }
+                    })
+                }
+                else {
+                    let config = configFilePath;
                     this.loadedCharacters[avatarName].config = config;
                     this.bmlApp.onLoadAvatar(model, config, skeleton);
                     this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                    
                     if (callback) {
                         callback();
                     }
-                })
+                }
             }
             else {
-                let config = configFilePath;
-                this.loadedCharacters[avatarName].config = config;
-                this.bmlApp.onLoadAvatar(model, config, skeleton);
-                this.keyframeApp.onLoadAvatar(model, config, skeleton);
-                
+                this.keyframeApp.onLoadAvatar(model, null, skeleton);
                 if (callback) {
                     callback();
                 }
