@@ -32,7 +32,7 @@ class AppGUI {
                     this.gui.refresh(); 
                 }
                 else {
-                    LX.popup("This file doesn't contain any animation!");
+                    LX.popup("This file doesn't contain any animation or a valid source avatar!");
                 }
             });      
         };

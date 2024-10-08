@@ -135,13 +135,21 @@ class KeyframeApp {
                                 }                                                
                             } );
                             let animationsNames = [];
-                            let model = skeleton.bones[0];
-                            while(model.parent && model.parent.type != "Scene") {
-                                model = model.parent;
+                            if ( skeleton ){
+                                let model = skeleton.bones[0];
+                                while(model.parent && model.parent.type != "Scene") {
+                                    model = model.parent;
+                                }
+                                model.skeleton = skeleton;
+                            }else if ( this.loadedAnimations[this.currentAnimation] ){
+                                skeleton = this.loadedAnimations[this.currentAnimation].skeleton;
+                            }else{
+                                resolve( animationsNames ); // this is what is returned by promise.all.then
+                                return;
                             }
-                            model.skeleton = skeleton;
+
                             for(let i = 0; i < glb.animations.length; i++) {
-                                this.loadGLTFAnimation( glb.animations[i].name, glb.animations[i],  model.skeleton);
+                                this.loadGLTFAnimation(glb.animations[i].name, glb.animations[i], skeleton);
                                 animationsNames.push(glb.animations[i].name);
                             }
                             resolve( animationsNames ); // this is what is returned by promise.all.then
