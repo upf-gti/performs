@@ -569,12 +569,14 @@ class AppGUI {
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.app.keyframeApp.srcPoseMode], (v) => {
+    
             this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
         });
 
         this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
-            this.app.keyframeApp.tgtPoseMode = poseModes.indexOf(v);
+            
+            this.app.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
         });
     }

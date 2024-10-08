@@ -2,7 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { BVHLoader } from './extendedBVHLoader.js';
-import { AnimationRetargeting } from './retargeting/retargeting.js'
+import { AnimationRetargeting, applyTPose } from './retargeting/retargeting.js'
 
 class KeyframeApp {
 
@@ -24,8 +24,8 @@ class KeyframeApp {
         this.playing = false;
 
         // For retargeting
-        this.srcPoseMode = AnimationRetargeting.BindPoseModes.TPOSE; // TPOSE
-        this.trgPoseMode = AnimationRetargeting.BindPoseModes.TPOSE; // TPOSE
+        this.srcPoseMode = AnimationRetargeting.BindPoseModes.DEFAULT; 
+        this.trgPoseMode = AnimationRetargeting.BindPoseModes.DEFAULT; 
    
         this.srcEmbedWorldTransforms = false;
         this.trgEmbedWorldTransforms = true;
@@ -225,8 +225,15 @@ class KeyframeApp {
         while(mixer._actions.length){
             mixer.uncacheClip(mixer._actions[0]._clip); // removes action
         }
-        currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
 
+        if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
+            currentCharacter.skeleton = applyTPose(currentCharacter.skeleton);
+            this.trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+        } 
+        else {
+            currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
+        }
+        
         // if not yet binded, create it. Otherwise just change to the existing animation
         if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][currentCharacter.name] ) {
             let bodyAnimation = animation.bodyAnimation;        
@@ -245,7 +252,12 @@ class KeyframeApp {
 
                 //tracks.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
                 bodyAnimation.tracks = tracks;            
-                let skeleton = animation.skeleton;
+                let skeleton = animation.skeleton.skeleton;
+                if(this.srcPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.srcPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
+                    skeleton = applyTPose(skeleton);
+                    this.srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+                }
+                
                 // Retarget NN animation              
                 //forceBindPoseQuats(this.currentCharacter.skeletonHelper.skeleton); // TO DO: Fix bind pose of Eva
                 //forceBindPoseQuats(skeleton); 
