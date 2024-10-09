@@ -670,13 +670,16 @@ class AppGUI {
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
-                }, {type: "url"});
+                }, {type: "url", nameWidth: "41%"});
 
                 let avatarURL = panel.addText("Avatar URL", "", (v, e) => {
                     
                     const path = v.split(".");
-                    const filename = path[path.length-2];
-                    const extension = path[path.length-1];
+                    let filename = path[path.length-2];
+                    filename = filename.split("/");
+                    filename = filename.pop();
+                    let extension = path[path.length-1];
+                    extension = extension.split("?")[0];
                     if (extension == "glb" || extension == "gltf") { 
                         let url = v;
                         url += url.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
@@ -688,7 +691,7 @@ class AppGUI {
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
-                }, {type: "url"});
+                }, {nameWidth: "43%"});
                 avatarURL.domEl.classList.add('hidden');
 
                 panel.addComboButtons(null, [
@@ -713,7 +716,7 @@ class AppGUI {
                             avatarURL.domEl.classList.remove('hidden');          
                         }
                     }
-                ], {selected: fromFile ? "From File" : "From URL"});
+                ], {selected: fromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
                 panel.endLine();
             
             let configFile = panel.addFile("Config File", (v, e) => {

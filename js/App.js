@@ -343,9 +343,18 @@ class App {
         if(urlParams.has('controls')) {
             showControls = !(urlParams.get('controls') === "false");
         }
-        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ) ];
-        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], "Eva", ()=>{
-            this.changeAvatar( "Eva" );
+
+        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "Eva" ];
+        if(urlParams.has('avatar')) {
+            const avatar = urlParams.get('avatar');
+            const path = avatar.split(".");
+            let filename = path[path.length-2];
+            filename = filename.split("/");
+            filename = filename.pop();
+            modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];
+        }
+        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], ()=>{
+            this.changeAvatar( modelToLoad[3] );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             this.animate();
             $('#loading').fadeOut(); //hide();
