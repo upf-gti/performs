@@ -188,6 +188,7 @@ class App {
 
                     fetch( configFilePath ).then(response => response.text()).then( (text) =>{
                         let config = JSON.parse( text );
+                        config._filename = configFilePath;
                         this.loadedCharacters[avatarName].config = config;
                         this.bmlApp.onLoadAvatar(model, config, skeleton);
                         this.keyframeApp.onLoadAvatar(model, config, skeleton);

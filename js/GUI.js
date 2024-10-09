@@ -156,6 +156,21 @@ class AppGUI {
                     this.app.changeAvatar(value);
                     });
 
+                p.addButton( null, "Edit Avatar", (v) => {
+                    const name = this.app.currentCharacter.model.name;
+                    this.editAvatar(name, {callback: (value) => {
+                    
+                    this.app.currentCharacter.config = this.avatarOptions[name][1];
+     
+                    const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[name][2] ); 
+                    this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
+                    if(this.app.currentCharacter.config) {
+                        this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                        this.app.bmlApp.ECAcontroller.reset();
+                    }
+
+                    }, name, modelFilePath: this.avatarOptions[name][0], modelConfigPath: this.avatarOptions[name][1]});
+                } ,{ width: "40px", icon: "fa-solid fa-user-pen" } );
                 p.addButton( null, "Upload Avatar", (v) => {
                     this.uploadAvatar((value) => {
                             
@@ -581,13 +596,13 @@ class AppGUI {
     
             this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
-        });
+        }, {nameWidth: "150px"});
 
         this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
             
             this.app.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
-        });
+        }, {nameWidth: "150px"});
     }
 
     showRecordingDialog(callback) {
@@ -725,8 +740,13 @@ class AppGUI {
             
             let configFile = panel.addFile("Config File", (v, e) => {
                
-                let extension = panel.widgets["Config File"].domEl.children[1].files[0].name.split(".")[1];
-                if (extension == "json") { config = JSON.parse(v); }
+                const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
+                let extension = filename.split(".");
+                extension = extension.pop();
+                if (extension == "json") { 
+                    config = JSON.parse(v); 
+                    config._filename = filename; 
+                }
                 else { LX.popup("Config file must be a JSON!"); }
             }, {type: "text"});
             
@@ -809,7 +829,170 @@ class AppGUI {
         }
         panel.refresh();
 
-        }, { size: ["40%"], closable: true, onclose: (root) => { root.remove(); this.gui.setValue("Avatar File", this.app.currentCharacter.model.name)} });
+        }, { size: ["40%"], closable: true, onclose: (root) => {  root.remove(); }});
+
+        return name;
+    }
+
+    editAvatar(name, options = {}) {
+        const data = this.app.currentCharacter;
+        const callback = options.callback;
+        let config = data.config;
+        let rotation = 0;
+        
+        let fromFile = !config ?? false;
+        this.avatarDialog = new LX.Dialog("Edit Avatar", panel => {
+          
+            panel.refresh = () => {
+                panel.clear();                
+                let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
+                    if (this.avatarOptions[v]) LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
+                    name = v;
+                });
+
+                panel.sameLine();
+
+            let configFile = panel.addFile("Config File", (v, e) => {
+                if(!v) {
+                    return;
+                }
+                const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
+                let extension = filename.split(".");
+                extension = extension.pop();
+                if (extension == "json") { 
+                    config = JSON.parse(v); 
+                    config._filename = filename; 
+                }
+                else { LX.popup("Config file must be a JSON!"); }
+            }, {type: "text"});
+
+            let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
+                    
+                const path = v.split(".");
+                let filename = path[path.length-2];
+                filename = filename.split("/");
+                filename = filename.pop();
+                let extension = path[path.length-1];
+                extension = extension.split("?")[0];
+                if (extension == "json") { 
+                    const response = await fetch(v);
+                    config = await response.json();                        
+                    config._filename = filename; 
+                }
+                else { LX.popup("Config file must be a JSON!"); }
+            }, {nameWidth: "43%"});
+
+            if(fromFile) {
+                configURL.domEl.classList.add('hidden');
+            }else {
+                configFile.domEl.classList.add('hidden');
+            }
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {                            
+                        fromFile = true;
+                        // panel.refresh();
+                        if(!configURL.domEl.classList.contains('hidden')) {
+                            configURL.domEl.classList.add('hidden');          
+                        }
+                        configFile.domEl.classList.remove('hidden');                                                          
+                        
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        fromFile = false;
+                        // panel.refresh();
+                        if(!configFile.domEl.classList.contains('hidden')) {
+                            configFile.domEl.classList.add('hidden');           
+                        }                                               
+                        configURL.domEl.classList.remove('hidden');  
+                    }
+                }
+            ], {selected: fromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+            panel.endLine();
+
+            panel.addNumber("Apply Rotation", 0, (v) => {
+                rotation = v * Math.PI / 180;
+            }, { min: -180, max: 180, step: 1 } );
+            
+            panel.sameLine(2);
+            panel.addButton(null, "Create Config File", () => {
+                window.open("https://webglstudio.org/projects/signon/performs-atelier", '_blank').focus();
+            })
+            panel.addButton(null, "Update", () => {
+                if (name) {
+                
+                    if (config) {
+                        this.avatarOptions[name][1] = config;
+                        this.avatarOptions[name][2] = rotation;
+                        
+                        panel.clear();
+                        this.avatarDialog.root.remove();
+                        if (callback) callback(name);
+                    }
+                    else {
+                        LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
+                            this.avatarOptions[name][2] = rotation;
+                            panel.clear();
+                            this.avatarDialog.root.remove();
+                            if (callback) callback(name);
+                        }, {input: false, on_cancel: () => {}});
+                        
+                    }
+                }
+                else {
+                    LX.popup("Complete all fields!", null, { position: ["45%", "20%"]});
+                }
+            });
+
+            panel.root.addEventListener("drop", (v, e) => {
+
+                let files = v.dataTransfer.files;
+                if(!files.length) {
+                    return;
+                }
+                for(let i = 0; i < files.length; i++) {
+
+                    const path = files[i].name.split(".");
+                    const filename = path[0];
+                    const extension = path[1];
+                    if (extension == "glb" || extension == "gltf") { 
+                        // Create a data transfer object
+                        const dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(files[i]);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        avatarFile.domEl.children[1].files = fileList;
+                        avatarFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                        model = v;
+                        if(!name) {
+                            name = filename;
+                            nameWidget.set(name)
+                        }
+                    }
+                    else if (extension == "json") { 
+                        // Create a data transfer object
+                        const dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(files[i]);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        configFile.domEl.children[1].files = fileList;
+                        configFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+
+                        //config = JSON.parse(files[i]); 
+                    }
+                }
+            })
+            
+        }
+        panel.refresh();
+
+        }, { size: ["40%"], closable: true, onclose: (root) => {  root.remove(); }});
 
         return name;
     }
