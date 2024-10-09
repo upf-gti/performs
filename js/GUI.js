@@ -166,6 +166,7 @@ class AppGUI {
                     this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
                     if(this.app.currentCharacter.config) {
                         this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                        this.app.currentCharacter.skeleton.pose();
                         this.app.bmlApp.ECAcontroller.reset();
                     }
 
