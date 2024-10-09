@@ -253,17 +253,21 @@ class AppGUI {
                 p.merge(); // random signs
 
                 p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
-                p.addComboButtons("Animation from", [
+                const combo = p.addComboButtons("Animation from", [
                     {
                         value: "BML",
                         callback: (v, e) => {
                             if (this.app.currentCharacter.config) {
                                 this.app.changeMode(App.Modes.SCRIPT);
+                                this.refresh();
                             }
                             else {
-                                this.app.changeMode(App.Modes.KEYFRAME);
+                                console.log(combo)
+                                const el = combo.domEl.getElementsByClassName('lexcombobuttons')[0];
+                                el.children[0].classList.remove('selected');
+                                el.children[1].classList.add('selected');
+                                //this.app.changeMode(App.Modes.KEYFRAME);                                
                             }
-                            this.refresh();
                         }
                     },
                     {
