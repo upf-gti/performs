@@ -237,7 +237,7 @@ class KeyframeApp {
         let srcPoseMode = this.srcPoseMode;
         let trgPoseMode = this.trgPoseMode;
         if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
-            currentCharacter.skeleton = applyTPose(currentCharacter.skeleton);
+            currentCharacter.skeleton = applyTPose(currentCharacter.skeleton).skeleton;
             trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
         } 
         else {
@@ -264,15 +264,11 @@ class KeyframeApp {
                 bodyAnimation.tracks = tracks;            
                 let skeleton = animation.skeleton;
                 if(this.srcPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.srcPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
-                    skeleton = applyTPose(skeleton);
+                    skeleton = applyTPose(skeleton).skeleton;
                     srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
                 }
                 
-                // Retarget NN animation              
-                //forceBindPoseQuats(this.currentCharacter.skeletonHelper.skeleton); // TO DO: Fix bind pose of Eva
-                //forceBindPoseQuats(skeleton); 
-                // trgUseCurrentPose: use current Bone obj quats,pos, and scale
-                // trgEmbedWorldTransform: take into account external rotations like bones[0].parent.quaternion and model.quaternion
+             
                 let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode, trgPoseMode } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
@@ -282,16 +278,7 @@ class KeyframeApp {
             }
                 
             let faceAnimation = animation.faceAnimation;        
-            // if(faceAnimation) { // TO DO: Check if it's if-else or if-if
-                
-            //     // Get the formated animation
-            //     if(animation.type == "video") {
-            //         faceAnimation = currentCharacter.blendshapesManager.createBlendShapesAnimation(animation.blendshapes);
-            //     }
 
-            //     faceAnimation.name = "faceAnimation";   // mixer
-            // }
-            
             if(!this.bindedAnimations[animationName]) {
                 this.bindedAnimations[animationName] = {};
             }
@@ -301,7 +288,6 @@ class KeyframeApp {
         }
 
         let bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
-        // mixer.clipAction(bindedAnim.mixerFaceAnimation).setEffectiveWeight(1.0).play(); // already handles nulls and undefines
         mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
         mixer.update(0);
         this.duration = bindedAnim.mixerBodyAnimation.duration;
