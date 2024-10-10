@@ -43,6 +43,9 @@ class App {
         
         this.isAppReady = false;
         this.pendingMessageReceived = null;
+
+        this.sceneColor = 0x46c219;
+        this.logo = "./data/imgs/performs2.png";
     }
 
     setSpeed( value ){ this.speed = value; }
@@ -65,8 +68,16 @@ class App {
     }
     // value (hex colour) in sRGB space 
     setBackPlaneColour( value ){
-        if ( !this.backPlane ){ return false; }
-        this.backPlane.material.color.set( value );   
+        this.sceneColor = value;
+        this.scene.background.set(value);
+
+        if ( this.backPlane ){ 
+            this.backPlane.material.color.set( value );   
+        }                
+
+        if(this.ground) {
+            this.ground.material.color.set( value ); 
+        }
         return true;
     }
     
@@ -246,9 +257,8 @@ class App {
 
     init() {        
         this.scene = new THREE.Scene();
-        let sceneColor = 0x303030;
+        const sceneColor = this.sceneColor = window.debugMode ? 0x4f4f9c : 0x46c219;
         this.scene.background = new THREE.Color( sceneColor );
-        this.scene.fog = new THREE.Fog( sceneColor, 5, 50 );
 
         // renderer
         this.renderer = new THREE.WebGLRenderer( { antialias: true } );
@@ -257,7 +267,7 @@ class App {
 
         this.renderer.toneMapping = THREE.LinearToneMapping;
         this.renderer.toneMappingExposure = 1;
-        // this.renderer.shadowMap.enabled = false;
+        this.renderer.shadowMap.enabled = true;
         document.body.appendChild( this.renderer.domElement );
         
         this.newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
@@ -302,34 +312,41 @@ class App {
         this.scene.add( fillSpotlight.target );
         this.scene.add( fillSpotlight );
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+        let dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
         dirLight.position.set( 1.5, 5, 2 );
-        // dirLight.shadow.mapSize.width = 1024;
-        // dirLight.shadow.mapSize.height = 1024;
-        // dirLight.shadow.camera.left= -1;
-        // dirLight.shadow.camera.right= 1;
-        // dirLight.shadow.camera.bottom= -1;
-        // dirLight.shadow.camera.top= 1;
-        // dirLight.shadow.bias = 0.00001;
-        // dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.left= -1;
+        dirLight.shadow.camera.right= 1;
+        dirLight.shadow.camera.bottom= -1;
+        dirLight.shadow.camera.top= 1;
+        dirLight.shadow.bias = 0.00001;
+        dirLight.castShadow = true;
         this.scene.add( dirLight );
 
         // add entities
-        let ground = new THREE.Mesh( new THREE.PlaneGeometry( 300, 300 ), new THREE.MeshStandardMaterial( { color: 0x4f4f4f, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        const ground = this.ground = new THREE.Mesh( new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial( { color: sceneColor, opacity: 0.1, transparent:true, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        ground.name = 'Ground'
         ground.rotation.x = -Math.PI / 2;
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        const texture = new THREE.TextureLoader().load( "./data/imgs/performs.png");
-        let logo = new THREE.Mesh( new THREE.PlaneGeometry(1, 0.3 ), new THREE.MeshStandardMaterial( {roughness: 1, metalness: 0, map: texture,  transparent: true, side: THREE.DoubleSide, depthWrite: false } ) );
-        logo.position.set(2.6,0.3, -0.95);
-        logo.receiveShadow = true;
+        const texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
+           image.repeat.set(20, 20);
+        });
+        texture.format = THREE.RGBAFormat;
+        texture.wrapT = THREE.RepeatWrapping;
+        texture.wrapS = THREE.RepeatWrapping;
+        let logo = new THREE.Mesh( new THREE.PlaneGeometry(0.5, 0.15 ), new THREE.MeshBasicMaterial( {color: new THREE.Color(0x323232), needsUpdate:true, map: texture, transparent: true, depthWrite: false, alphaTest: 0.9} ) );
+        logo.position.set(2.6,0.15, -0.98);
         this.scene.add( logo );
-        
-        let backPlane = this.backPlane = new THREE.Mesh( new THREE.PlaneGeometry( 7, 7 ), new THREE.MeshStandardMaterial( {color: window.debugMode ? 0x4f4f9c : 0x175e36, side: THREE.DoubleSide, roughness: 1, metalness: 0} ) );
+       
+        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} ) );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
+        backPlane.castShadow = true;
+        backPlane.visible=false;
         this.scene.add( backPlane );
 
         // so the screen is not black while loading
@@ -482,9 +499,9 @@ class App {
             this.controls[this.camera].maxAzimuthAngle = 2;
             this.controls[this.camera].minPolarAngle = 0.6;
             this.controls[this.camera].maxPolarAngle = 2.1;
-            this.setBackPlaneColour( 0x175e36 );
+            this.setBackPlaneColour( 0x46c219 );
 
-            if ( this.currentCharacter ){
+            if ( this.currentCharacter && this.currentCharacter.config ){
                 this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
             }
         }
@@ -514,6 +531,30 @@ class App {
             }
         });
     }
+}
+
+// Function to create a curved backdrop geometry
+function createBackdropGeometry(width = 5, height = 5, segments = 32) {
+    // Create a geometry object
+    const geometry = new THREE.PlaneGeometry(width, height, segments, segments);
+    const position = geometry.attributes.position;
+    // Modify vertices to create a curved transition from floor to background
+    let vertices = [];
+    for (let i = 0; i < position.count; i++) {
+        let vertex = new THREE.Vector3();
+        vertex.fromBufferAttribute( position, i );
+       
+        if( vertex.y < 0) {
+            vertex.y = 0;
+            vertex.z = (height - vertex.y); // Apply curve on Z axis
+        }
+        vertices.push(vertex.x);
+        vertices.push(vertex.y);
+        vertices.push(vertex.z);
+    }
+    vertices = new Float32Array(vertices);
+    geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
+    return geometry;
 }
 
 

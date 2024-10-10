@@ -108,17 +108,39 @@ class AppGUI {
                 // // --------- Customization ---------
                 p.branch( "Customization", { icon: "fa-solid fa-palette", closed: !this.branchesOpened["Customization"]} );
                 // get color set on the actual objects and set them as default values to the colorpicker
-                let color = new THREE.Color();
+                let color = new THREE.Color(this.app.sceneColor);
 
-                let chroma = this.app.scene.getObjectByName("Chroma");
-                if ( chroma ){
-                    color.copy(chroma.material.color);
-                    let backPlaneColor = "#" + color.getHexString();
-                    p.addColor("Color Chroma", backPlaneColor, (value, event) => {
-                        this.app.scene.getObjectByName("Chroma").material.color.set(value); // css works in sRGB
-                    });
-                }
-            
+                p.addColor("Color Chroma", "#" + color.getHexString(), (value, event) => {
+                    this.app.setBackPlaneColour(value);
+                });
+                
+                p.addDropdown("Background", ["Open", "Studio", "Photocall"], "Open", (v) => {
+                    switch(v) {
+                        case "Open":
+                            this.app.backPlane.visible = false;
+                            this.app.ground.visible = true;
+                            break;
+                        case "Studio":
+                            this.app.backPlane.visible = true;
+                            this.app.backPlane.material.map = null;                            
+                            this.app.backPlane.material.needsUpdate = true;
+                            this.app.ground.visible = false;
+                            break;
+                        case "Photocall":
+                            this.app.backPlane.visible = true;
+                            this.app.ground.visible = false;
+                            const texture = new THREE.TextureLoader().load( this.app.logo, (image) =>{            
+                                image.repeat.set(20, 20);
+                            });
+                            
+                            texture.format = THREE.RGBAFormat;
+                            texture.wrapT = THREE.RepeatWrapping;
+                            texture.wrapS = THREE.RepeatWrapping;
+                            this.app.backPlane.material.map =  texture;
+                            this.app.backPlane.material.needsUpdate = true;
+                            break;
+                    }
+                });
                 let modelShirt = this.app.currentCharacter.model.getObjectByName("Tops");
                 if ( modelShirt ){
                     color.copy(this.app.currentCharacter.model.getObjectByName("Tops").material.color);
