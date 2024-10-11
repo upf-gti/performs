@@ -17,6 +17,8 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 
 class App {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
+    static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
+
     constructor() {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
@@ -45,6 +47,8 @@ class App {
         this.pendingMessageReceived = null;
 
         this.sceneColor = 0x46c219;
+        this.background = App.Backgrounds.OPEN;
+
         this.logo = "./data/imgs/performs2.png";
     }
 
@@ -81,6 +85,35 @@ class App {
         return true;
     }
     
+    setBackground( type ) {
+        this.background = type;
+
+        switch(type) {
+            case App.Backgrounds.OPEN:
+                this.backPlane.visible = false;
+                this.ground.visible = true;
+                break;
+            case App.Backgrounds.STUDIO:
+                this.backPlane.visible = true;
+                this.backPlane.material.map = null;                            
+                this.backPlane.material.needsUpdate = true;
+                this.ground.visible = false;
+                break;
+            case App.Backgrounds.PHOTOCALL:
+                this.backPlane.visible = true;
+                this.ground.visible = false;
+                const texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
+                    image.repeat.set(20, 20);
+                });
+                
+                texture.format = THREE.RGBAFormat;
+                texture.wrapT = THREE.RepeatWrapping;
+                texture.wrapS = THREE.RepeatWrapping;
+                this.backPlane.material.map =  texture;
+                this.backPlane.material.needsUpdate = true;
+                break;
+        }
+    }
     // returns value (hex) with the colour in sRGB space
     getClothesColour(){
         if ( !this.avatarShirt ){ return 0; }   
@@ -268,7 +301,7 @@ class App {
         this.renderer.toneMapping = THREE.LinearToneMapping;
         this.renderer.toneMappingExposure = 1;
         this.renderer.shadowMap.enabled = true;
-        document.body.appendChild( this.renderer.domElement );
+        // document.body.appendChild( this.renderer.domElement );
         
         this.newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
         this.newCameraFrom({azimuthAngle: 25});
@@ -349,6 +382,7 @@ class App {
         backPlane.visible=false;
         this.scene.add( backPlane );
 
+        this.setBackground(this.background);
         // so the screen is not black while loading
         this.changeCameraMode( false ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.cameras[this.camera] );
@@ -364,11 +398,14 @@ class App {
 
         let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "Eva" ];
         if(urlParams.has('avatar')) {
-            const avatar = urlParams.get('avatar');
+            let avatar = urlParams.get('avatar');
             const path = avatar.split(".");
             let filename = path[path.length-2];
             filename = filename.split("/");
             filename = filename.pop();
+            
+            avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
+
             modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];          
         }
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
@@ -404,7 +441,7 @@ class App {
 
         this.controls[this.camera].update(); // needed because of this.controls.enableDamping = true
         let delta = this.clock.getDelta()         
-        delta *= this.speed;
+        // delta *= this.speed;
         this.elapsedTime += delta;
         
         switch( this.mode ){

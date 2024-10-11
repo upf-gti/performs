@@ -38,6 +38,7 @@ class BMLApp {
         this.applyIdle = false;
 
         this.intensity = 0.8;
+        this.speed = 1;
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -329,6 +330,7 @@ class BMLApp {
     }
         
     update( deltaTime ) {
+        deltaTime*=this.speed;
         this.elapsedTime += deltaTime;
         
         if ( this.ECAcontroller ){ this.ECAcontroller.update( deltaTime, this.elapsedTime ); }
@@ -338,7 +340,7 @@ class BMLApp {
         // Apply additive blending animation to the bml animation
         if(this.applyIdle && this.baseSkeleton && this.mixer) {
             if(this.mixer) {
-                this.mixer.update(deltaTime);           
+                this.mixer.update(deltaTime/this.speed);           
             }
 
             const anim = this.bindedIdleAnimations[this.currentIdle][this.ECAcontroller.character.name];

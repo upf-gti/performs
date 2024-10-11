@@ -22,6 +22,7 @@ class KeyframeApp {
 
         this.mixer = null;
         this.playing = false;
+        this.speed = 1;
 
         // For retargeting
         this.srcPoseMode = AnimationRetargeting.BindPoseModes.DEFAULT; 
@@ -32,6 +33,7 @@ class KeyframeApp {
     }
 
     update( deltaTime ) {
+        deltaTime*= this.speed;
         this.elapsedTime += deltaTime;
         if (this.playing && this.mixer) { 
             this.mixer.update( deltaTime ); 
@@ -113,7 +115,7 @@ class KeyframeApp {
                     const reader = new FileReader();
                     reader.onload = () => {         
                         let data = null;
-                            data = loader.parseExtended(reader.result);
+                            data = this.BVHLoader.parseExtended(reader.result);
                             this.loadBVHAnimation( file.name, data );
 
                         resolve( file.name ); // this is what is returned by promise.all.then
@@ -126,7 +128,7 @@ class KeyframeApp {
                 filePromise = new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = () => {  
-                        loader.load( reader.result, (glb) => {
+                        this.GLTFLoader.load( reader.result, (glb) => {
                             let skeleton = null;
                             glb.scene.traverse( o => {                                    
                                 if ( o.skeleton ){ 
@@ -237,8 +239,15 @@ class KeyframeApp {
         let srcPoseMode = this.srcPoseMode;
         let trgPoseMode = this.trgPoseMode;
         if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
-            currentCharacter.skeleton = applyTPose(currentCharacter.skeleton).skeleton;
-            trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+            const skeleton = applyTPose(currentCharacter.skeleton).skeleton;
+            if(skeleton)
+            {
+                currentCharacter.skeleton = skeleton;
+                trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+            }
+            else {
+                console.warn("T-pose can't be applyied to the TARGET. Automap falied.")
+            }
         } 
         else {
             currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
@@ -262,14 +271,21 @@ class KeyframeApp {
 
                 //tracks.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
                 bodyAnimation.tracks = tracks;            
-                let skeleton = animation.skeleton;
+                
                 if(this.srcPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.srcPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
-                    skeleton = applyTPose(skeleton).skeleton;
-                    srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+                    const skeleton = applyTPose(animation.skeleton).skeleton;
+                    if(skeleton)
+                    {
+                        animation.skeleton = skeleton;
+                        srcPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+                    }
+                    else {
+                        console.warn("T-pose can't be applyied to the SOURCE. Automap falied.")
+                    }
                 }
                 
              
-                let retargeting = new AnimationRetargeting(skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode, trgPoseMode } ); // TO DO: change trgUseCurrentPose param
+                let retargeting = new AnimationRetargeting(animation.skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode, trgPoseMode } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);

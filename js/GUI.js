@@ -21,10 +21,8 @@ class AppGUI {
 
         // take canvas from dom, detach from dom, attach to lexgui 
         this.app.renderer.domElement.remove(); // removes from dom
-        let main_area = LX.init();
-        main_area.attach( this.app.renderer.domElement );
-
-        main_area.root.ondrop = (e) => {
+        this.mainArea = LX.init();
+        this.mainArea.root.ondrop = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
             $("#loading").fadeIn();
@@ -32,6 +30,7 @@ class AppGUI {
                 $("#loading").fadeOut();
                 if(files.length) {
                     this.gui.refresh(); 
+                    this.createSettingsPanel();
                 }
                 else {
                     LX.popup("This file doesn't contain any animation or a valid source avatar!");
@@ -44,7 +43,27 @@ class AppGUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         this.gui = null;
-        this.branchesOpened = {"Customization" : true, "Transformations": false, "Recording": false, "Animation": true};
+        
+        const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["90%", "10%"], minimizable: true});
+        canvasArea.attach( this.app.renderer.domElement );
+        canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
+        canvasArea.root.appendChild(app.renderer.domElement);
+
+        this.panel = panelArea.addPanel({height: "100%"});
+        panelArea.addOverlayButtons([{
+            icon: "fa fa-xmark",
+            callback: () => {
+                if(this.settingsActive || this.cameraActive) {
+                    this.mainArea._moveSplit(-100);
+                }
+                this.mainArea.extend();
+                this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
+            }
+        }], {float: "rt"});
+
+        this.mainArea.extend();
+
+        this.branchesOpened = {"Customization" : true, "Transformations": true, "Recording": true, "Animation": true};
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
         if ( window.sessionStorage ){
@@ -86,11 +105,556 @@ class AppGUI {
             });
         }
 
+        this.createIcons(canvasArea);
         this.createPanel();
+        this.gui.root.classList.add('hidden');
+
+        this.playing = false;
+    }
+
+    resize(width, height) {
+        
+        const aspect = width / height;
+        for(let i = 0; i < this.app.cameras.length; i++) {
+            this.app.cameras[i].aspect = aspect;
+            this.app.cameras[i].updateProjectionMatrix();
+        }
+        this.app.renderer.setSize(width, height);
     }
 
     refresh(){
         this.gui.refresh();
+    }
+
+    createSettingsPanel(force = false) {
+        const p = this.panel;
+        p.clear();
+
+        if(p.getBranch("Animation")) {
+            this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
+        }
+
+        p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
+        // p.sameLine();
+        // p.addButton
+        // p.endLine();
+        p.addText(null,"Animation mode options", null, {disabled: true});
+        p.sameLine();
+
+        let btn = p.addButton(null, "Script animation", (v, e) => {
+            if (this.app.currentCharacter.config) {
+                this.app.changeMode(App.Modes.SCRIPT);
+                this.refresh();
+                this.createSettingsPanel();
+            }
+            else {
+                // alert("Config file is needed for this mode!")
+                // const el = combo.domEl.getElementsByClassName('lexcombobuttons')[0];
+                // el.children[0].classList.remove('selected');
+                // el.children[1].classList.add('selected');
+                this.app.changeMode(-1);   
+                this.refresh();
+                this.createSettingsPanel();   
+         
+            }
+        }, {icon: "fa fa-code"} );
+
+        if(this.app.mode == App.Modes.SCRIPT || this.app.mode == -1) {
+            btn.children[0].classList.add("selected");
+        }
+        btn = p.addButton(null, "Keyframing animation",  (v, e) => {
+            this.app.changeMode(App.Modes.KEYFRAME);
+            this.refresh(); 
+            this.createSettingsPanel();       
+        }, {icon: "fa fa-film"} );
+        
+        if(this.app.mode == App.Modes.KEYFRAME) {
+            btn.children[0].classList.add("selected");
+        }
+
+        p.endLine();
+        p.sameLine();
+        p.addText(null, "Script animation", null, {disabled: true});
+        p.addText(null, "Clip animation", null, {disabled: true});
+        p.endLine();
+        // const combo = p.addComboButtons(null, [
+        //     {
+        //         value: "BML",
+        //         icon: "fa fa-code",
+        //         callback: (v, e) => {
+        //             if (this.app.currentCharacter.config) {
+        //                 this.app.changeMode(App.Modes.SCRIPT);
+        //                 this.refresh();
+        //             }
+        //             else {
+        //                 alert("Config file is needed for this mode!")
+        //                 const el = combo.domEl.getElementsByClassName('lexcombobuttons')[0];
+        //                 el.children[0].classList.remove('selected');
+        //                 el.children[1].classList.add('selected');
+        //                 //this.app.changeMode(App.Modes.KEYFRAME);                                
+        //             }
+        //         },
+        //         width: "100px"
+        //     },
+        //     {
+        //         value: "File",
+        //         icon: "fa fa-film",
+        //         callback: (v, e) => {
+        //             this.app.changeMode(App.Modes.KEYFRAME);
+        //             this.refresh();
+        //         },
+        //         width: "100px"
+        //     }
+        // ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"});
+
+        p.addSeparator();
+
+        if(!force) {
+            if(this.app.mode == App.Modes.SCRIPT || this.app.mode == -1) {
+                this.createBMLPanel(p, this.createSettingsPanel.bind(this));
+            }
+            else {
+                this.createKeyframePanel(p, this.createSettingsPanel.bind(this));
+            }
+        }
+
+        p.branch( "Transformations", { icon: "fa-solid fa-up-down-left-right", closed: !this.branchesOpened["Transformations"]} );
+
+        const model = this.app.currentCharacter.model;
+        p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
+            model.position.set(value[0], value[1], value[2]);
+        }, {step:0.01});
+        p.addVector3("Rotation", [THREE.MathUtils.radToDeg(model.rotation.x), THREE.MathUtils.radToDeg(model.rotation.y), THREE.MathUtils.radToDeg(model.rotation.z)], (value, event) => {
+            model.rotation.set(THREE.MathUtils.degToRad(value[0]), THREE.MathUtils.degToRad(value[1]), THREE.MathUtils.degToRad(value[2]));
+        }, {step:0.01});
+        p.addNumber("Scale", model.scale.x, (value, event) => {
+            model.scale.set(value, value, value);
+        }, {step:0.01});      
+    }
+
+    createBackgroundsPanel() {
+
+        const p = this.panel;
+        if(p.getBranch("Backgrounds")) {
+            this.branchesOpened["Backgrounds"] = !p.getBranch("Backgrounds").content.parentElement.classList.contains("closed");
+        }
+        p.clear();
+        p.branch("Backgrounds");
+        let color = new THREE.Color(this.app.sceneColor);
+
+        p.addColor("Color", "#" + color.getHexString(), (value, event) => {
+            this.app.setBackPlaneColour(value);
+        });
+        
+        // Open space
+        let btn = p.addButton(null, "Open space", (value)=> {
+            this.app.setBackground( App.Backgrounds.OPEN);
+            this.createBackgroundsPanel();
+        }, {img: "./data/imgs/open-space.png", className: "centered"});
+        btn.children[0].classList.add("roundedbtn");
+        if(this.app.background == App.Backgrounds.OPEN) {
+            btn.children[0].classList.add('selected');
+        }
+
+        // Studio background
+        btn = p.addButton(null, "Studio", (value)=> {
+            this.app.setBackground( App.Backgrounds.STUDIO);
+            this.createBackgroundsPanel();
+        }, {img: "./data/imgs/studio-space.png", className: "centered"});
+        btn.children[0].classList.add("roundedbtn");
+        if(this.app.background == App.Backgrounds.STUDIO) {
+            btn.children[0].classList.add('selected');
+        }
+        // Photocall background
+        btn = p.addButton(null, "Photocall", (value)=> {
+            this.app.setBackground( App.Backgrounds.PHOTOCALL);
+            this.createBackgroundsPanel();
+        }, {img: "./data/imgs/photocall-space.png", className: "centered"});
+        btn.children[0].classList.add("roundedbtn");
+        if(this.app.background == App.Backgrounds.PHOTOCALL) {
+            btn.children[0].classList.add('selected');
+        }
+    }
+
+    createAvatarsPanel() {
+        const p = this.panel;
+        if(p.getBranch("Avatars")) {
+            this.branchesOpened["Avatars"] = !p.getBranch("Avatars").content.parentElement.classList.contains("closed");
+        }
+        p.clear();
+        p.branch('Avatars');
+
+        p.addButton( "Upload yours", "Upload Avatar", (v) => {
+            this.uploadAvatar((value) => {
+                    
+                if ( !this.app.loadedCharacters[value] ) {
+                    $('#loading').fadeIn(); //hide();
+                    let modelFilePath = this.avatarOptions[value][0]; 
+                    let configFilePath = this.avatarOptions[value][1]; 
+                    let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                    this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                        this.app.changeAvatar(value);
+                        $('#loading').fadeOut();
+                    } );
+                    return;
+                } 
+
+                // use controller if it has been already loaded in the past
+                this.app.changeAvatar(value);
+
+            });
+        } ,{ nameWidth: "100px", icon: "fa-solid fa-cloud-arrow-up" } );        
+      
+        p.addSeparator();
+
+        let modelShirt = null;
+        this.app.currentCharacter.model.traverse((object) => {
+            if(object.isSkinnedMesh && object.name.includes("Top")) {
+                modelShirt = object;
+            }
+        })
+        
+        let color = new THREE.Color(this.app.sceneColor);
+
+        if ( modelShirt ){
+            color.copy(modelShirt.material.color);
+            let topsColor = "#" + color.getHexString();
+
+            p.addColor("Clothes", topsColor, (value, event) => {
+                modelShirt.material.color.set(value); // css works in sRGB
+            });
+        }
+
+        // p.sameLine();
+        let avatars = [];
+        for(let avatar in this.avatarOptions) {
+            // p.sameLine();
+            const btn = p.addButton(null, avatar, (value)=> {
+                // if(this.app.mode == App.Modes.SCRIPT) {
+                //     this.bmlGui.setValue( "Mood", "Neutral" );  
+                // }
+                
+                // load desired model
+                if ( !this.app.loadedCharacters[value] ) {
+                    $('#loading').fadeIn(); //hide();
+                    let modelFilePath = this.avatarOptions[value][0]; 
+                    let configFilePath = this.avatarOptions[value][1]; 
+                    let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                    this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                        this.app.changeAvatar(value);
+                        this.createAvatarsPanel(); 
+                        $('#loading').fadeOut();
+                    } );
+                    return;
+                } 
+    
+                // use controller if it has been already loaded in the past
+                this.app.changeAvatar(value);
+            }, {img: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL, className: "centered"});
+
+            btn.children[0].classList.add("roundedbtn");
+            if(avatar == this.app.currentCharacter.model.name) {
+                btn.children[0].classList.add("selected");
+
+                let ebtn = p.addButton( null, "Edit Avatar", (v) => {
+                    let name = this.app.currentCharacter.model.name;
+                    this.editAvatar(name, {
+                        callback: (newName, rotation, config) => {
+                            if(name != newName) {
+                                this.avatarOptions[newName] = [ this.avatarOptions[name][0], this.avatarOptions[name][1], this.avatarOptions[name][2], this.avatarOptions[name][3]]
+                                delete this.avatarOptions[name];
+                                name = newName;
+                                this.app.currentCharacter.model.name = name;
+                                this.refresh();
+                            }
+                            this.avatarOptions[name][2] = rotation;
+                            
+                            const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation ); 
+                            this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
+                            if(this.app.currentCharacter.config && this.app.currentCharacter.config == config) {
+                                return;
+                            }
+                            this.app.currentCharacter.config = config;
+                            if(config) {
+                                this.avatarOptions[name][1] = config._filename;
+                                this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                                this.app.currentCharacter.skeleton.pose();
+                                this.app.bmlApp.ECAcontroller.reset();                        
+                            }
+
+                        }, 
+                        name, modelFilePath: this.avatarOptions[name][0], modelConfigPath: this.avatarOptions[name][1]
+                    });
+                } ,{ icon: "fa-solid fa-user-pen", className: "centered" } );
+                ebtn.children[0].style.width = "40px";
+            }
+            avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL});
+                // p.endLine();
+        }
+    }
+
+    createCameraPanel() {
+        const p = this.panel;
+        if(p.getBranch("Recording")) {
+            this.branchesOpened["Recording"] = !p.getBranch("Recording").content.parentElement.classList.contains("closed");
+        }
+        
+        p.clear();
+        p.branch( "Recording", { icon: "fa-solid fa-video", closed: !this.branchesOpened["Recording"]} );
+
+        let cameras = [];
+        for (let i = 0; i < this.app.cameras.length; i++) {
+            const camera = {
+                value: (i + 1).toString(),
+                callback: (v,e) => {
+                    this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
+                    this.app.camera = v - 1; // update active camera
+                    this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
+                }
+            }
+
+            cameras.push(camera);                  
+        }
+
+        p.sameLine();
+        p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "55%"});    
+        p.addButton(null, "Reset", (V) => {
+            this.app.controls[this.app.camera].reset();
+
+        }, { width: "30px", icon: "fa-solid fa-rotate-left"} ) 
+        p.addComboButtons(null, [
+            {
+                value: "Restricted View",
+                icon: "fa-solid fa-camera",
+                callback: (v, e) => {
+                    this.app.toggleCameraMode(); 
+                    this.createCameraPanel();
+                }
+            },
+            {
+                value: "Free View",
+                icon: "fa-solid fa-up-down-left-right",
+                callback: (v, e) => {
+                    this.app.toggleCameraMode(); 
+                    this.createCameraPanel();
+                }
+            }
+        ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
+        p.endLine("left");
+
+        p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
+            // Replay animation - dont replay if stopping the capture
+            if(this.app.mode == App.Modes.SCRIPT) {
+                this.app.bmlApp.ECAcontroller.reset();
+                this.app.animationRecorder.manageCapture();
+                this.createCameraPanel();
+            }
+            else { 
+                this.showRecordingDialog(() => {
+                    this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+                    this.createCameraPanel();
+                });
+            }
+
+
+        }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
+    }
+
+    createIcons(area) {
+        this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
+        const buttons = [
+            {
+                name: "Settings",
+                selectable: false,
+                icon: "fa fa-gear",
+                callback: (b) => {
+                    if(this.settingsActive) {
+                        this.mainArea._moveSplit(-100);
+                        this.mainArea.extend();
+                        this.settingsActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(!this.cameraActive) {
+                        this.mainArea._moveSplit(100);
+                    }
+                    this.settingsActive = true;
+                    this.cameraActive = this.backgroundsActive = this.avatarsActive = false;
+                    this.createSettingsPanel();                    
+                }
+            },
+            {
+                name: "Backgrounds",
+                selectable: false,
+                icon: "fa fa-images",
+                callback: (b) => {
+                    if(this.backgroundsActive) {
+                        this.mainArea.extend();
+                        this.backgroundsActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(this.settingsActive || this.cameraActive) {
+                        this.mainArea._moveSplit(-100);
+                    }
+                    this.backgroundsActive = true;
+                    this.cameraActive = this.settingsActive = this.avatarsActive = false;
+                    this.createBackgroundsPanel();                    
+                }
+            },
+            {
+                name: "Avatars",
+                selectable: false,
+                icon: "fa fa-person",
+                callback: () => {
+                    if(this.avatarsActive) {
+                        this.mainArea.extend();
+                        this.avatarsActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(this.settingsActive || this.cameraActive) {
+                        this.mainArea._moveSplit(-100);
+                    }
+                    this.avatarsActive = true;
+                    this.cameraActive = this.settingsActive = this.backgroundsActive = false;
+                    this.createAvatarsPanel();
+                }
+            },
+            {
+                name: "Camera",
+                selectable: false,
+                icon: "fa fa-video",
+                callback: (b) => {
+                    if(this.cameraActive) {
+                        this.mainArea._moveSplit(-100);
+                        this.mainArea.extend();
+                        this.cameraActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(!this.settingsActive) {
+                        this.mainArea._moveSplit(100);
+                    }
+                    this.cameraActive = true;
+                    this.settingsActive = this.backgroundsActive = this.avatarsActive = false;
+                    this.createCameraPanel();                    
+                }
+            }
+        ]
+        area.addOverlayButtons(buttons, {float: "vr"});
+        this.createPlayButtons()
+        // const buttonsContainer = document.createElement('div');
+        // buttonsContainer.id ="buttons-container";
+        // buttonsContainer.className = "flex-vertical left-container";
+        // area.root.appendChild(buttonsContainer);
+
+        // let backgrounds = document.createElement("i");
+        // backgrounds.className = "fa fa-images button";
+        // let title = document.createElement("span");
+        // title.innerText ="Show backgrounds";
+        // backgrounds.appendChild(title);
+        
+        // backgrounds.addEventListener("click", (v) => {
+        //     if(!this.backgroundsDialog.visible) {
+        //         v.target.classList.add("active")
+        //         // this.backgroundsDialog.fadeIn(200);
+        //         // this.backgroundsDialog.root.classList.remove("hidden");
+        //         this.backgroundsDialog.display();
+        //         this.backgroundsDialog.root.classList.remove("fade-out");
+        //         this.backgroundsDialog.root.classList.add("fade-in");
+        //     }
+        //     else {
+        //         v.target.classList.remove("active");
+        //         // this.backgroundsDialog.root.classList.add("hidden");
+        //         this.backgroundsDialog.root.classList.remove("fade-in");
+        //         this.backgroundsDialog.root.classList.add("fade-out");
+        //         setTimeout(() => {this.backgroundsDialog.hide()}, 480);
+        //     }
+          
+        // })
+
+        // buttonsContainer.appendChild(backgrounds);
+
+        // let avatars = document.createElement("i");
+        // avatars.className = "fa fa-person button";
+        // title = document.createElement("span");
+        // title.innerText ="Show avatars";
+        // title.style.top = "40px";
+        // avatars.appendChild(title);
+        
+        // avatars.addEventListener("click", (v) => {
+        //     if(!this.avatarsDialog.visible) {
+        //         v.target.classList.add("active")               
+        //         this.avatarsDialog.display();
+        //         this.avatarsDialog.root.classList.remove("fade-out");
+        //         this.avatarsDialog.root.classList.add("fade-in");
+        //         this.showBSavatars = true;
+        //     }
+        //     else {
+        //         v.target.classList.remove("active");
+        //         // this.backgroundsDialog.root.classList.add("hidden");
+        //         this.avatarsDialog.root.classList.remove("fade-in");
+        //         this.avatarsDialog.root.classList.add("fade-out");
+        //         this.showBSavatars = false;
+        //         setTimeout(() => {this.avatarsDialog.hide()}, 470);
+        //     }
+        // })
+
+        // buttonsContainer.appendChild(avatars);
+    }
+
+    createPlayButtons() {
+        // const area = this.mainArea.sections[0];
+        // // area.panels[1].clear();
+        // let buttons = [
+        //     {
+        //         name: "Play",
+        //         icon: "fa fa-play",
+        //         callback: () => {
+        //             if(this.app.mode == App.Modes.SCRIPT) {
+        //                 this.app.bmlApp.replay();
+        //             }
+        //             else if(this.app.mode == App.Modes.KEYFRAME) {
+        //                 this.app.keyframeApp.changePlayState(true);
+        //             }
+        //             const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
+        //             btn.classList.remove("hidden");
+        //             const btn2 = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Play']");
+        //             btn2.classList.add("hidden");
+        //         }
+        //     },
+        //     {
+        //         name: "Stop",
+        //         icon: "fa fa-stop",
+        //         callback: () => {
+        //             if(this.app.mode == App.Modes.SCRIPT) {
+        //                 // this.bmlGui.setValue( "Mood", "Neutral" ); 
+        //                 this.app.bmlApp.ECAcontroller.reset();
+        //             }
+        //             else if(this.app.mode == App.Modes.KEYFRAME) {
+        //                 this.app.keyframeApp.changePlayState(false);
+        //             }
+        //             const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Play']");
+        //             btn.classList.remove("hidden");
+        //             const btn2 = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
+        //             btn2.classList.add("hidden");
+        //         }
+        //     }
+        // ];
+        // const b = area.addOverlayButtons(buttons, {float: "br"});
+
+        // const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
+        // btn.classList.remove("hidden");
+        
     }
 
     createPanel(){
@@ -331,10 +895,10 @@ class AppGUI {
                 ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"});
                 
                 
-                p.addNumber("Signing Speed", this.app.speed, (value, event) => {
-                    // this.app.speed = Math.pow( Math.E, (value - 1) );
-                    this.app.speed = value;
-                }, { min: 0, max: 2, step: 0.01});
+                // p.addNumber("Signing Speed", this.app.speed, (value, event) => {
+                //     // this.app.speed = Math.pow( Math.E, (value - 1) );
+                //     this.app.speed = value;
+                // }, { min: 0, max: 2, step: 0.01});
                 
 
                 if(this.app.mode == App.Modes.SCRIPT) {
@@ -354,12 +918,52 @@ class AppGUI {
         if ( window.innerWidth < window.innerHeight || pocketDialog.title.offsetWidth > (0.21*window.innerWidth) ){
             pocketDialog.title.click();
         }
+        pocketDialog.destroy()
 
     }
 
-    createBMLPanel(panel) {
+    createBMLPanel(panel, refresh) {
         
         this.bmlGui = panel;
+
+        if (!this.app.currentCharacter.config) {
+            this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true});
+            this.bmlGui.addButton(null, "Edit avatar", () => { 
+                let name = this.app.currentCharacter.model.name;
+                this.editAvatar(name, {callback: (newName, rotation, config) => {
+                    if(name != newName) {
+                        this.avatarOptions[newName] = [ this.avatarOptions[name][0], this.avatarOptions[name][1], this.avatarOptions[name][2], this.avatarOptions[name][3]]
+                        delete this.avatarOptions[name];
+                        name = newName;
+                        this.app.currentCharacter.model.name = name;
+                        this.refresh();
+                    }
+                    this.avatarOptions[name][2] = rotation;
+                    
+                    const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation ); 
+                    this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
+                    if(this.app.currentCharacter.config && this.app.currentCharacter.config == config) {
+                        return;
+                    }
+                    this.app.currentCharacter.config = config;
+                    if(config) {
+                        this.avatarOptions[name][1] = config._filename;
+                        this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                        this.app.currentCharacter.skeleton.pose();
+                        this.app.bmlApp.ECAcontroller.reset();                        
+                        this.app.changeMode(App.Modes.SCRIPT);
+                        this.createSettingsPanel();
+                    }
+
+                }})
+            }, {icon: "fa fa-edit"})  
+            return;
+        }
+                
+        this.bmlGui.addNumber("Speed", this.app.bmlApp.speed, (value, event) => {
+            // this.app.speed = Math.pow( Math.E, (value - 1) );
+            this.app.bmlApp.speed = value;
+        }, { min: 0.1, max: 2, step: 0.01});
 
         this.bmlGui.sameLine();
         this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
@@ -585,7 +1189,9 @@ class AppGUI {
 
         this.bmlGui.addCheckbox("Apply idle animation", this.app.bmlApp.applyIdle, (v) => {
             this.app.bmlApp.applyIdle = v;
-            this.gui.refresh();
+            if(refresh) {
+                refresh();
+            }
         })        
         if(this.app.bmlApp.applyIdle) {
    
@@ -600,22 +1206,48 @@ class AppGUI {
              
     }
 
-    createKeyframePanel(panel) {
+    createKeyframePanel(panel, refresh) {
       
         this.keyframeGui = panel;
   
+        this.keyframeGui.addNumber("Speed", this.app.keyframeApp.speed, (value, event) => {
+            // this.app.speed = Math.pow( Math.E, (value - 1) );
+            this.app.keyframeApp.speed = value;
+        }, { min: -2, max: 2, step: 0.01});
+
         this.keyframeGui.sameLine();
         this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
             this.app.keyframeApp.onChangeAnimation(v);
-        });
+        }, {nameWidth:"70px"});
 
-        this.keyframeGui.addButton("", "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
+        const fileinput = this.keyframeGui.addFile("Animation File", (v, e) => {
+            let files = panel.widgets["Animation File"].domEl.children[1].files;
+            if(!files.length) {
+                return;
+            }
+            this.app.loadFiles(files, ()=> {
+                if(refresh) {
+                    refresh();
+                }
+            })
+        }, {type: "url", multiple: "multiple"});
+
+        fileinput.domEl.classList.add('hidden');
+        fileinput.domEl.children[1].setAttribute("multiple", "multiple");
+
+        this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
+            fileinput.domEl.children[1].click();
+        }, { icon: "fa fa-upload", width: "40px", className:"no-padding"});
+
+        this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
             this.app.keyframeApp.changePlayState();
-            this.keyframeGui.refresh();
-        }, { width: "40px"});
+            if(refresh) {
+                refresh();
+            }
+        }, { width: "40px", className:"no-padding"});
         this.keyframeGui.endLine(); 
 
-        this.keyframeGui.addTitle("Retargeting")
+        this.keyframeGui.branch("Retargeting")
            
         this.keyframeGui.addCheckbox("Source embedded transforms", this.app.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.app.keyframeApp.srcEmbedWorldTransforms = v;
@@ -632,13 +1264,13 @@ class AppGUI {
     
             this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
-        }, {nameWidth: "150px"});
+        }, {nameWidth: "200px"});
 
         this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
             
             this.app.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
-        }, {nameWidth: "150px"});
+        }, {nameWidth: "200px"});
     }
 
     showRecordingDialog(callback) {
