@@ -4,6 +4,8 @@ import 'lexgui/components/codeeditor.js';
 import { App } from './App.js'
 
 class AppGUI {
+
+    static THUMBNAIL = "data/imgs/monster.png";
     constructor( app ){
         this.app = app;
         this.randomSignAmount = 0;
@@ -154,7 +156,7 @@ class AppGUI {
                 p.sameLine();
                 let avatars = [];
                 for(let avatar in this.avatarOptions) {
-                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? "data/imgs/monster.png"});
+                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL});
                 }
                 p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
                     if(this.app.mode == App.Modes.SCRIPT) {
@@ -179,17 +181,29 @@ class AppGUI {
                     });
 
                 p.addButton( null, "Edit Avatar", (v) => {
-                    const name = this.app.currentCharacter.model.name;
-                    this.editAvatar(name, {callback: (value, config) => {
-                        const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[name][2] ); 
+                    let name = this.app.currentCharacter.model.name;
+                    this.editAvatar(name, {callback: (newName, rotation, config) => {
+                        if(name != newName) {
+                            this.avatarOptions[newName] = [ this.avatarOptions[name][0], this.avatarOptions[name][1], this.avatarOptions[name][2], this.avatarOptions[name][3]]
+                            delete this.avatarOptions[name];
+                            name = newName;
+                            this.app.currentCharacter.model.name = name;
+                            this.refresh();
+                        }
+                        this.avatarOptions[name][2] = rotation;
+                        
+                        const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation ); 
                         this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
                         if(this.app.currentCharacter.config && this.app.currentCharacter.config == config) {
                             return;
                         }
                         this.app.currentCharacter.config = config;
-                        this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
-                        this.app.currentCharacter.skeleton.pose();
-                        this.app.bmlApp.ECAcontroller.reset();                        
+                        if(config) {
+                            this.avatarOptions[name][1] = config._filename;
+                            this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                            this.app.currentCharacter.skeleton.pose();
+                            this.app.bmlApp.ECAcontroller.reset();                        
+                        }
 
                     }, name, modelFilePath: this.avatarOptions[name][0], modelConfigPath: this.avatarOptions[name][1]});
                 } ,{ width: "40px", icon: "fa-solid fa-user-pen" } );
@@ -785,7 +799,7 @@ class AppGUI {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
                 
                     if (config) {
-                        this.avatarOptions[name] = [model, config, rotation, "data/imgs/monster.png"];
+                        this.avatarOptions[name] = [model, config, rotation, AppGUI.THUMBNAIL];
                         
                         panel.clear();
                         this.avatarDialog.root.remove();
@@ -793,7 +807,7 @@ class AppGUI {
                     }
                     else {
                         LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
-                            this.avatarOptions[name] = [model, null, rotation, "data/imgs/monster.png"];
+                            this.avatarOptions[name] = [model, null, rotation, AppGUI.THUMBNAIL];
                             
                             panel.clear();
                             this.avatarDialog.root.remove();
@@ -948,19 +962,19 @@ class AppGUI {
                 if (name) {
                 
                     if (config) {
-                        this.avatarOptions[name][1] = config._filename;
-                        this.avatarOptions[name][2] = rotation;
+                        // this.avatarOptions[name][1] = config._filename;
+                        // this.avatarOptions[name][2] = rotation;
                         
                         panel.clear();
                         this.avatarDialog.root.remove();
-                        if (callback) callback(name, config);
+                        if (callback) callback(name, rotation, config);
                     }
                     else {
                         LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
-                            this.avatarOptions[name][2] = rotation;
+                            // this.avatarOptions[name][2] = rotation;
                             panel.clear();
                             this.avatarDialog.root.remove();
-                            if (callback) callback(name);
+                            if (callback) callback(name, rotation);
                         }, {input: false, on_cancel: () => {}});
                         
                     }

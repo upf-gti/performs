@@ -375,7 +375,10 @@ class App {
             this.changeAvatar( modelToLoad[3] );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                this.gui.avatarOptions[modelToLoad[3]] = modelToLoad;
+                const name = modelToLoad[3];
+                modelToLoad[3] = AppGUI.THUMBNAIL;
+                this.gui.avatarOptions[name] = modelToLoad;
+                this.gui.refresh();
             }
             this.animate();
             $('#loading').fadeOut(); //hide();
