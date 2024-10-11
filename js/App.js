@@ -369,11 +369,14 @@ class App {
             let filename = path[path.length-2];
             filename = filename.split("/");
             filename = filename.pop();
-            modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];
+            modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];          
         }
-        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], ()=>{
+        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
+            if(!this.gui.avatarOptions[modelToLoad[3]]) {
+                this.gui.avatarOptions[modelToLoad[3]] = modelToLoad;
+            }
             this.animate();
             $('#loading').fadeOut(); //hide();
             this.isAppReady = true;

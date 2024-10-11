@@ -180,17 +180,16 @@ class AppGUI {
 
                 p.addButton( null, "Edit Avatar", (v) => {
                     const name = this.app.currentCharacter.model.name;
-                    this.editAvatar(name, {callback: (value) => {
-                    
-                    this.app.currentCharacter.config = this.avatarOptions[name][1];
-     
-                    const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[name][2] ); 
-                    this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
-                    if(this.app.currentCharacter.config) {
+                    this.editAvatar(name, {callback: (value, config) => {
+                        const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[name][2] ); 
+                        this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
+                        if(this.app.currentCharacter.config && this.app.currentCharacter.config == config) {
+                            return;
+                        }
+                        this.app.currentCharacter.config = config;
                         this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
                         this.app.currentCharacter.skeleton.pose();
-                        this.app.bmlApp.ECAcontroller.reset();
-                    }
+                        this.app.bmlApp.ECAcontroller.reset();                        
 
                     }, name, modelFilePath: this.avatarOptions[name][0], modelConfigPath: this.avatarOptions[name][1]});
                 } ,{ width: "40px", icon: "fa-solid fa-user-pen" } );
@@ -949,12 +948,12 @@ class AppGUI {
                 if (name) {
                 
                     if (config) {
-                        this.avatarOptions[name][1] = config;
+                        this.avatarOptions[name][1] = config._filename;
                         this.avatarOptions[name][2] = rotation;
                         
                         panel.clear();
                         this.avatarDialog.root.remove();
-                        if (callback) callback(name);
+                        if (callback) callback(name, config);
                     }
                     else {
                         LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
