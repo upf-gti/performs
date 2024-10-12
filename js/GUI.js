@@ -294,7 +294,11 @@ class AppGUI {
                     let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                     this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                         this.app.changeAvatar(value);
+                        this.createAvatarsPanel();
                         $('#loading').fadeOut();
+                    }, (err) => {
+                        $('#loading').fadeOut();
+                        LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
                     } );
                     return;
                 } 
@@ -344,6 +348,9 @@ class AppGUI {
                         this.app.changeAvatar(value);
                         this.createAvatarsPanel(); 
                         $('#loading').fadeOut();
+                    }, (err) => {
+                        $('#loading').fadeOut();
+                        LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
                     } );
                     return;
                 } 
@@ -455,8 +462,6 @@ class AppGUI {
                     this.createCameraPanel();
                 });
             }
-
-
         }, {icon: "fa-solid fa-circle", buttonClass: "recording-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
     }
 
@@ -613,48 +618,84 @@ class AppGUI {
     }
 
     createPlayButtons() {
-        // const area = this.mainArea.sections[0];
-        // // area.panels[1].clear();
-        // let buttons = [
-        //     {
-        //         name: "Play",
-        //         icon: "fa fa-play",
-        //         callback: () => {
-        //             if(this.app.mode == App.Modes.SCRIPT) {
-        //                 this.app.bmlApp.replay();
-        //             }
-        //             else if(this.app.mode == App.Modes.KEYFRAME) {
-        //                 this.app.keyframeApp.changePlayState(true);
-        //             }
-        //             const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
-        //             btn.classList.remove("hidden");
-        //             const btn2 = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Play']");
-        //             btn2.classList.add("hidden");
-        //         }
-        //     },
-        //     {
-        //         name: "Stop",
-        //         icon: "fa fa-stop",
-        //         callback: () => {
-        //             if(this.app.mode == App.Modes.SCRIPT) {
-        //                 // this.bmlGui.setValue( "Mood", "Neutral" ); 
-        //                 this.app.bmlApp.ECAcontroller.reset();
-        //             }
-        //             else if(this.app.mode == App.Modes.KEYFRAME) {
-        //                 this.app.keyframeApp.changePlayState(false);
-        //             }
-        //             const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Play']");
-        //             btn.classList.remove("hidden");
-        //             const btn2 = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
-        //             btn2.classList.add("hidden");
-        //         }
-        //     }
-        // ];
-        // const b = area.addOverlayButtons(buttons, {float: "br"});
+        const area = this.mainArea.sections[0];
+        // area.panels[1].clear();
+        let buttons = [
+            {
+                name: "Play",
+                icon: "fa fa-play",
+                class: "big",
+                callback: () => {
+                    if(this.app.mode == App.Modes.SCRIPT) {
+                        this.app.bmlApp.replay();
+                    }
+                    else if(this.app.mode == App.Modes.KEYFRAME) {
+                        this.app.keyframeApp.changePlayState(true);
+                    }
+                    const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
+                    btn.classList.remove("hidden");
+                    const btn2 = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Play']");
+                    btn2.classList.add("hidden");
+                }
+            },
+            {
+                name: "Stop",
+                icon: "fa fa-stop",
+                class: "big",
+                callback: () => {
+                    if(this.app.mode == App.Modes.SCRIPT) {
+                        // this.bmlGui.setValue( "Mood", "Neutral" ); 
+                        this.app.bmlApp.ECAcontroller.reset();
+                    }
+                    else if(this.app.mode == App.Modes.KEYFRAME) {
+                        this.app.keyframeApp.changePlayState(false);
+                    }
+                    const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Play']");
+                    btn.classList.remove("hidden");
+                    const btn2 = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
+                    btn2.classList.add("hidden");
+                }
+            }
+        ];
+        area.addOverlayButtons(buttons, {float: "br"});
 
-        // const btn = this.mainArea.sections[1].panels[1].root.querySelector("['title'='Stop']");
-        // btn.classList.remove("hidden");
+        const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
+        if(btn) {
+            btn.classList.add("hidden");
+        }
         
+        area.addOverlayButtons([
+            {
+                name: "Record video",
+                icon: "fa fa-circle",
+                class: "bottom-relative",
+                callback: (value, event) => {
+                    // Replay animation - dont replay if stopping the capture
+                    if(this.app.mode == App.Modes.SCRIPT) {
+                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.animationRecorder.manageCapture();
+                        this.createCameraPanel();
+                    }
+                    else { 
+                        this.showRecordingDialog(() => {
+                            this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+                            this.createCameraPanel();
+                        });
+                    }
+                    const recordBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Record video']");
+                    if(recordBtn) {
+                        if(this.app.animationRecorder.isRecording) {
+                            recordBtn.classList.remove("recording-button");
+                            recordBtn.classList.add("recording-button-playing");
+                        }
+                        else {
+                            recordBtn.classList.remove("recording-button-playing");
+                            recordBtn.classList.add("recording-button");
+                        }
+                    }
+                }
+            }
+        ], {float: "br"});
     }
 
     createPanel(){
@@ -736,7 +777,10 @@ class AppGUI {
                         this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                             this.app.changeAvatar(value);
                             $('#loading').fadeOut();
-                        } );
+                        }, (err) => {
+                            $('#loading').fadeOut();
+                            LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
+                        }  );
                         return;
                     } 
 
@@ -782,6 +826,9 @@ class AppGUI {
                             this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                                 this.app.changeAvatar(value);
                                 $('#loading').fadeOut();
+                            }, (err) => {
+                                $('#loading').fadeOut();
+                                LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
                             } );
                             return;
                         } 
@@ -856,7 +903,7 @@ class AppGUI {
                         this.app.animationRecorder.manageCapture();
                         this.refresh();
                     }
-                    else { 
+                    else if (this.app.mode == App.Modes.KEYFRAME) { 
                         this.showRecordingDialog(() => {
                             this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
                             this.refresh();
@@ -1289,17 +1336,6 @@ class AppGUI {
                 assetData.push(data);
             }
             
-            let panel = new LX.Panel({height: "calc(100% - 40px)"});
-            let selectAllCheckbox = panel.addCheckbox("Select All", true, (v, e) => {
-                for (let asset in assetData) {
-                    assetData[asset].selected = v;
-                    animations[assetData[asset].id].record = v;
-                }
-                assetView._refreshContent();
-            });
-
-            selectAllCheckbox.onSetValue(false, false);
-
             let assetView = new LX.AssetView({ 
                 skip_browser: true,
                 skip_preview: true,
@@ -1310,7 +1346,18 @@ class AppGUI {
                 const item = event.item;
                 let animation = animations[item.id];
                 animation.record = item.selected;
-            });            
+            }); 
+
+            let panel = new LX.Panel({height: "calc(100% - 40px)"});
+            let selectAllCheckbox = panel.addCheckbox("Select All", true, (v, e) => {
+                for (let asset in assetData) {
+                    assetData[asset].selected = v;
+                    animations[assetData[asset].id].record = v;
+                }
+                assetView._refreshContent();
+            });
+
+            selectAllCheckbox.onSetValue(false, false);                       
             
             panel.attach(assetView);
             
@@ -1329,7 +1376,8 @@ class AppGUI {
         let name, model, config;
         let rotation = 0;
         
-        let fromFile = true;
+        let afromFile = true;
+        let cfromFile = true;
         this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
 
             panel.refresh = () => {
@@ -1360,7 +1408,9 @@ class AppGUI {
                 }, {type: "url", nameWidth: "41%"});
 
                 let avatarURL = panel.addText("Avatar URL", "", (v, e) => {
-                    
+                    if(!v) {
+                        return;
+                    }
                     const path = v.split(".");
                     let filename = path[path.length-2];
                     filename = filename.split("/");
@@ -1385,7 +1435,7 @@ class AppGUI {
                     {
                         value: "From File",
                         callback: (v, e) => {                            
-                            fromFile = true;
+                            afromFile = true;
                             if(!avatarURL.domEl.classList.contains('hidden')) {
                                 avatarURL.domEl.classList.add('hidden');          
                             }
@@ -1396,28 +1446,79 @@ class AppGUI {
                     {
                         value: "From URL",
                         callback: (v, e) => {
-                            fromFile = false;
+                            afromFile = false;
                             if(!avatarFile.domEl.classList.contains('hidden')) {
                                 avatarFile.domEl.classList.add('hidden');           
                             }                                               
                             avatarURL.domEl.classList.remove('hidden');          
                         }
                     }
-                ], {selected: fromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+                ], {selected: afromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
                 panel.endLine();
             
-            let configFile = panel.addFile("Config File", (v, e) => {
-               
-                const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
-                let extension = filename.split(".");
-                extension = extension.pop();
-                if (extension == "json") { 
-                    config = JSON.parse(v); 
-                    config._filename = filename; 
+                panel.sameLine();
+                let configFile = panel.addFile("Config File", (v, e) => {
+                
+                    const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
+                    let extension = filename.split(".");
+                    extension = extension.pop();
+                    if (extension == "json") { 
+                        config = JSON.parse(v); 
+                        config._filename = filename; 
+                    }
+                    else { LX.popup("Config file must be a JSON!"); }
+                }, {type: "text", nameWidth: "41%"});
+                
+                let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
+                    if(!v) {
+                        return;
+                    }
+                    const path = v.split(".");
+                    let filename = path[path.length-2];
+                    filename = filename.split("/");
+                    filename = filename.pop();
+                    let extension = path[path.length-1];
+                    extension = extension.split("?")[0];
+                    if (extension == "json") { 
+                        const response = await fetch(v);
+                        config = await response.json();                        
+                        config._filename = filename; 
+                    }
+                    else { LX.popup("Config file must be a JSON!"); }
+                }, {nameWidth: "43%"});
+
+                if(cfromFile) {
+                    configURL.domEl.classList.add('hidden');
+                }else {
+                    configFile.domEl.classList.add('hidden');
                 }
-                else { LX.popup("Config file must be a JSON!"); }
-            }, {type: "text"});
-            
+                panel.addComboButtons(null, [
+                    {
+                        value: "From File",
+                        callback: (v, e) => {                            
+                            cfromFile = true;
+                            // panel.refresh();
+                            if(!configURL.domEl.classList.contains('hidden')) {
+                                configURL.domEl.classList.add('hidden');          
+                            }
+                            configFile.domEl.classList.remove('hidden');                                                          
+                            
+                        }
+                    },
+                    {
+                        value: "From URL",
+                        callback: (v, e) => {
+                            cfromFile = false;
+                            // panel.refresh();
+                            if(!configFile.domEl.classList.contains('hidden')) {
+                                configFile.domEl.classList.add('hidden');           
+                            }                                               
+                            configURL.domEl.classList.remove('hidden');  
+                        }
+                    }
+                ], {selected: cfromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+                panel.endLine();
+
             panel.addNumber("Apply Rotation", 0, (v) => {
                 rotation = v * Math.PI / 180;
             }, { min: -180, max: 180, step: 1 } );
@@ -1429,17 +1530,19 @@ class AppGUI {
             panel.addButton(null, "Upload", () => {
                 if (name && model) {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
-                
+                    let thumbnail = AppGUI.THUMBNAIL;
+                    if( model.includes('models.readyplayer.me') ) {
+                        thumbnail =  "https://models.readyplayer.me/" + name + ".png?background=68,68,68";
+                    }
                     if (config) {
-                        this.avatarOptions[name] = [model, config, rotation, AppGUI.THUMBNAIL];
-                        
+                        this.avatarOptions[name] = [model, config, rotation,thumbnail ];               
                         panel.clear();
                         this.avatarDialog.root.remove();
                         if (callback) callback(name);
                     }
                     else {
                         LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
-                            this.avatarOptions[name] = [model, null, rotation, AppGUI.THUMBNAIL];
+                            this.avatarOptions[name] = [model, null, rotation, thumbnail];
                             
                             panel.clear();
                             this.avatarDialog.root.remove();
@@ -1536,6 +1639,9 @@ class AppGUI {
 
             let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
                     
+                if(!v) {
+                    return;
+                }
                 const path = v.split(".");
                 let filename = path[path.length-2];
                 filename = filename.split("/");

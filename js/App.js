@@ -150,7 +150,7 @@ class App {
         if ( this.gui ){ this.gui.refresh(); }
     }
 
-    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null ) {
+    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null, onerror = null ) {
         this.loaderGLB.load( modelFilePath, (glb) => {
             let model = glb.scene;
             model.quaternion.premultiply( modelRotation );
@@ -257,6 +257,10 @@ class App {
                 if (callback) {
                     callback();
                 }
+            }
+        }, null, (err) => {
+            if(onerror) {
+                onerror(err);
             }
         });
     }
@@ -413,7 +417,7 @@ class App {
             if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
             if(!this.gui.avatarOptions[modelToLoad[3]]) {
                 const name = modelToLoad[3];
-                modelToLoad[3] = AppGUI.THUMBNAIL;
+                modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
                 this.gui.avatarOptions[name] = modelToLoad;
                 this.gui.refresh();
             }
