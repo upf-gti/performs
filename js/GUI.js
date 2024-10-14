@@ -12,7 +12,6 @@ class AppGUI {
         
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
-            "Eva": ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', 0, 'https://webglstudio.org/3Dcharacters/Eva/Eva.png'],
             "EvaLow": ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.png'],
             "Witch": ['https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.glb', 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.png'],
             "Kevin": ['https://webglstudio.org/3Dcharacters/Kevin/Kevin.glb', 'https://webglstudio.org/3Dcharacters/Kevin/Kevin.json', 0, 'https://webglstudio.org/3Dcharacters/Kevin/Kevin.png'],
@@ -461,6 +460,8 @@ class AppGUI {
     
                 // use controller if it has been already loaded in the past
                 this.app.changeAvatar(value);
+                this.createAvatarsPanel();
+
             }, {img: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL, className: "centered"});
 
             btn.children[0].classList.add("roundedbtn");
@@ -1568,7 +1569,7 @@ class AppGUI {
                                 panel.refresh();
                                 panel.setValue("Config URL", "https://webglstudio.org/3Dcharacters/ReadyEva/ReadyEva.json");
                                 
-                            },{input: false, fitHeight: true})                            
+                            },{input: false,  fitHeight: true})                            
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
@@ -1648,6 +1649,31 @@ class AppGUI {
                 }else {
                     configFile.domEl.classList.add('hidden');
                 }
+
+                panel.addButton(null, "Create/Edit config file", () => {
+                    
+                    const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
+                    const atelier = window.open(atelierURL, "Atelier");
+                    let atelierApp = null
+                    atelier.onload = (e, d) => {
+                        atelierApp = e.currentTarget.global.app;
+                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
+                        atelierApp.gui.avatars[name] = {
+                            "filePath": model,
+                            "modelRotation": 0
+                        }
+                        atelierApp.gui.configFile = config;
+                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
+                        atelierApp.gui.initDialog.destroy();
+                        // atelierApp.gui.createPanel();
+                    }
+        
+                    atelier.addEventListener("beforeunload", () => {
+                        this.realizer = null
+                    });                    
+
+                }, {icon: "fa fa-user-gear", width: "40px"})
+
                 panel.addComboButtons(null, [
                     {
                         value: "From File",
@@ -1673,24 +1699,6 @@ class AppGUI {
                     }
                 ], {selected: cfromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
 
-                
-                panel.addButton(null, "Create/Edit config file", () => {
-
-                    
-                    const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
-                    const atelier = window.open(atelierURL, "Atelier");
-                    let atelierApp = null
-                    atelier.onload = (e, d) => {
-                        atelierApp = e.currentTarget.global.app;
-                        console.log(atelierApp)
-                    }
-        
-                    atelier.addEventListener("beforeunload", () => {
-                        this.realizer = null
-                    });                    
-
-                }, {icon: "fa fa-user-gear", width: "40px"})
-
                 panel.endLine();
 
             panel.addNumber("Apply Rotation", 0, (v) => {
@@ -1699,7 +1707,21 @@ class AppGUI {
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
-                window.open("https://webglstudio.org/projects/signon/performs-atelier", '_blank').focus();
+                const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
+                    const atelier = window.open(atelierURL, "Atelier");
+                    let atelierApp = null
+                    atelier.onload = (e, d) => {
+                        atelierApp = e.currentTarget.global.app;
+                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
+                        atelierApp.gui.avatars[name] = {
+                            "filePath": model,
+                            "modelRotation": 0
+                        }
+                        atelierApp.gui.configFile = config;
+                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
+                        atelierApp.gui.initDialog.destroy();
+                        atelierApp.gui.createPanel();
+                    }                 
             })
             panel.addButton(null, "Upload", () => {
                 if (name && model) {
@@ -1880,7 +1902,22 @@ class AppGUI {
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
-                window.open("https://webglstudio.org/projects/signon/performs-atelier", '_blank').focus();
+                const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
+                    const atelier = window.open(atelierURL, "Atelier");
+                    let atelierApp = null
+                    atelier.onload = (e, d) => {
+                        console.log(this.avatarOptions)
+                        atelierApp = e.currentTarget.global.app;
+                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
+                        atelierApp.gui.avatars[name] = {
+                            "filePath": data,
+                            "modelRotation": 0
+                        }
+                        atelierApp.gui.configFile = config;
+                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
+                        atelierApp.gui.initDialog.destroy();
+                    }
+                         
             })
             panel.addButton(null, "Update", () => {
                 if (name) {
