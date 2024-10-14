@@ -48,12 +48,13 @@
 }
 
 /* Extend lexgui css */
-.recording-button {
+.floating-button {
 	border-radius: 80px !important;
     width: 26px !important;
+    background-color: var(--global-selected)!important;
 }
 
-.recording-button-playing {
+.floating-button-playing {
 	border-radius: 80px !important;
     width: 22px !important;
 	animation: ease pulse 2s infinite;
@@ -96,57 +97,6 @@
     left: 0px;
 }
 
-i.button {
-    font-size: 17px;
-    color: #fff;
-    background: #fdfdfd2e;
-    border-radius: 17px;
-    padding: 6px;
-    cursor: pointer;
-    margin: 5px;
-	/* z-index: 100; */
-}
-
-i.big-button {
-    font-size: 40px;
-    color: #fff;
-    background: var(--global-color-primary);
-    border-radius: 40px;
-    padding: 10px 16px;
-    cursor: pointer;
-    margin: 5px;
-}
-
-i.float {
-    position: absolute;
-}
-i.button.active, i.big-button.active {
-    background: #fdfdfd8c!important;
-}
-
-i.button span, i.big-button span  {
-    display: none;
-}
-
-i.button:hover span, i.big-button:hover span {
-    /* border: #666 2px dotted; */
-    padding: 5px;
-    display: block;
-    z-index: 100;
-    background: #e3e3e3;
-
-    margin: 3px 40px;
-    width: 100px;
-    position: absolute;
-    top: 0;
-    /* top: 15px; */
-    text-decoration: none;
-    font: bold 12px 'Arial';
-    text-align: center;
-    border-radius: 5px;
-    color: var(--global-text-color);
-}
-
 .lexbutton.roundedbtn {
 	width: 100px !important;
     height: 100px !important;
@@ -168,20 +118,56 @@ i.button:hover span, i.big-button:hover span {
 	justify-content: center;
 }
 
+/* Overlay buttons*/
+
 .lexoverlaybuttons .lexwidget button {
-	/* color: #fff!important; */
-    /* background: #fdfdfd20!important;  */
 	border-radius: 80px!important;
-	width: 40px!important;
-	height: 40px!important;
-	max-width: 50px!important;
-	max-height: 50px!important;
+    height: auto!important;
 }
 
-.lexoverlaybuttons .lexwidget button a {
-	/* padding: 6px!important; */
-	font-size: 20px!important;
+.lexoverlaybuttons .lexwidget.larger button {
+
+	width: 40px!important;
+	height: 40px!important;	
+    max-height: 80px!important;
+	max-width: 80px!important;
+}
+
+.lexoverlaybuttons .lexwidget.larger button a {
+	font-size: 18px!important;
 }
 .no-padding{
 	padding: 5px!important;
+}
+
+.lexoverlaybuttons .lexwidget.large {
+    margin: 0 10px!important;
+}
+
+.lexoverlaybuttons .lexwidget.large button {
+	width: 60px!important;
+	height: 60px!important;
+    max-height: 80px!important;
+	max-width: 80px!important;
+}
+
+.lexoverlaybuttons .lexwidget.large button a {
+	font-size: 30px!important;
+}
+
+.lexoverlaybuttons .lexwidget.relative {    
+    margin: 0;
+    min-height: 32px;
+}
+.lexoverlaybuttons .lexwidget.relative button{    
+    height: 32px!important;
+}
+
+.lexoverlaybuttons .lexwidget.relative button a {
+    line-height: 19px;
+    font-size: var(--global-font-size);
+}
+
+.lexoverlaybuttons .lexwidget.relative.left {    
+    margin-right: 77px;
 }

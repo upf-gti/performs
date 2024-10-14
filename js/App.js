@@ -102,14 +102,30 @@ class App {
             case App.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
-                const texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
-                    image.repeat.set(20, 20);
-                });
-                
+                let texture = null;
+                if(typeof(this.logo) == 'string') {
+                    texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
+                        image.repeat.set(20, 20);
+                    });
+
+                }
+                else {
+                    texture = new THREE.Texture( this.logo );
+                    texture.colorSpace = THREE.SRGBColorSpace;
+                }
                 texture.format = THREE.RGBAFormat;
                 texture.wrapT = THREE.RepeatWrapping;
                 texture.wrapS = THREE.RepeatWrapping;
-                this.backPlane.material.map =  texture;
+                texture.repeat.set(20, 20);
+                texture.needsUpdate = true;
+                
+                if ( this.backPlane.material.map ) {
+
+					this.backPlane.material.map.dispose();
+				}
+
+				this.backPlane.material.map = texture;
+
                 this.backPlane.material.needsUpdate = true;
                 break;
         }

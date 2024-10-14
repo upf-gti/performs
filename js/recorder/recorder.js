@@ -154,9 +154,13 @@ AnimationRecorder.prototype.handleStop = function (idx) {
         if (window.global.app.mode == App.Modes.KEYFRAME) window.global.app.gui.keyframeGui.refresh();
         else if (window.global.app.mode == App.Modes.SCRIPT) {
             // reset avatar pose / stop animation
-            window.global.app.gui.bmlGui.setValue( "Mood", "Neutral" ); 
+            if(window.global.app.gui.bmlGui) {
+                window.global.app.gui.bmlGui.setValue( "Mood", "Neutral" ); 
+            }
             window.global.app.bmlApp.ECAcontroller.reset();
-            window.global.app.gui.bmlGui.refresh();
+            if(window.global.app.gui.bmlGui) {
+                window.global.app.gui.bmlGui.refresh();
+            }
         }
     }
 
