@@ -157,7 +157,9 @@ class AppGUI {
         let btn = p.addButton(null, "Script animation", (v, e) => {
             if (this.app.currentCharacter.config) {
                 this.app.changeMode(App.Modes.SCRIPT);
-                
+                if(this.app.bmlApp.currentIdle) {
+                    this.app.bmlApp.bindAnimationToCharacter(this.app.bmlApp.currentIdle, this.app.currentCharacter.model.name);
+                }
             }
             else {
                 this.app.changeMode(-1);   
@@ -1360,7 +1362,7 @@ class AppGUI {
         });
 
         this.bmlGui.addCheckbox("Apply idle animation", this.app.bmlApp.applyIdle, (v) => {
-            this.app.bmlApp.applyIdle = v;
+            this.app.bmlApp.applyIdle = v;            
             if(refresh) {
                 refresh();
             }
@@ -1532,10 +1534,19 @@ class AppGUI {
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
                 }, {type: "url", nameWidth: "41%"});
 
-                let avatarURL = panel.addText("Avatar URL", "", (v, e) => {
-                    if(!v) {
+                if(!afromFile) {
+                    avatarFile.domEl.classList.add('hidden');
+                }
+
+                let avatarURL = panel.addText("Avatar URL", model, (v, e) => {
+                    if(v == model) {
                         return;
                     }
+                    if(!v) {
+                        model = v;
+                        return;
+                    }
+
                     const path = v.split(".");
                     let filename = path[path.length-2];
                     filename = filename.split("/");
@@ -1543,18 +1554,28 @@ class AppGUI {
                     let extension = path[path.length-1];
                     extension = extension.split("?")[0];
                     if (extension == "glb" || extension == "gltf") { 
-                        let url = v;
-                        url += url.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
-                        model = url;     
                         
+                        model = v;                             
                         if(!name) {
                             name = filename;
                             nameWidget.set(name)
                         }
+                        if(model.includes('models.readyplayer.me')) {
+                           
+                            const promptD = LX.prompt("It looks like you’re importing an avatar from a Ready Player Me. Would you like to use the default configuration for this character?\nPlease note that the contact settings may vary. We recommend customizing the settings based on the default to better suit your avatar.", 
+                                                    "Ready Player Me detected!", (value, event)=> {
+                                cfromFile = false;
+                                panel.refresh();
+                                panel.setValue("Config URL", "https://webglstudio.org/3Dcharacters/ReadyEva/ReadyEva.json");
+                                
+                            },{input: false, fitHeight: true})                            
+                        }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
                 }, {nameWidth: "43%"});
-                avatarURL.domEl.classList.add('hidden');
+                if(afromFile) {
+                    avatarURL.domEl.classList.add('hidden');
+                }
 
                 panel.addComboButtons(null, [
                     {
@@ -1578,7 +1599,7 @@ class AppGUI {
                             avatarURL.domEl.classList.remove('hidden');          
                         }
                     }
-                ], {selected: afromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+                ], {selected: afromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});                
                 panel.endLine();
             
                 panel.sameLine();
@@ -1651,6 +1672,25 @@ class AppGUI {
                         }
                     }
                 ], {selected: cfromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+
+                
+                panel.addButton(null, "Create/Edit config file", () => {
+
+                    
+                    const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
+                    const atelier = window.open(atelierURL, "Atelier");
+                    let atelierApp = null
+                    atelier.onload = (e, d) => {
+                        atelierApp = e.currentTarget.global.app;
+                        console.log(atelierApp)
+                    }
+        
+                    atelier.addEventListener("beforeunload", () => {
+                        this.realizer = null
+                    });                    
+
+                }, {icon: "fa fa-user-gear", width: "40px"})
+
                 panel.endLine();
 
             panel.addNumber("Apply Rotation", 0, (v) => {
@@ -1666,6 +1706,7 @@ class AppGUI {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
                     let thumbnail = AppGUI.THUMBNAIL;
                     if( model.includes('models.readyplayer.me') ) {
+                        model+= '?pose=T&morphTargets=ARKit&lod=1';
                         thumbnail =  "https://models.readyplayer.me/" + name + ".png?background=68,68,68";
                     }
                     if (config) {
