@@ -51,6 +51,7 @@ class AppGUI {
         this.panel = panelArea.addPanel({height: "100%"});
         panelArea.addOverlayButtons([{
             icon: "fa fa-xmark",
+            class: "relative",
             callback: () => {
                 if(this.settingsActive || this.cameraActive) {
                     this.mainArea._moveSplit(-100);
@@ -98,7 +99,7 @@ class AppGUI {
                             if(this.settingsActive) {
                                 this.createSettingsPanel();             
                             }
-                            this.changePlayButtons(this.playing);
+                            this.changePlayButtons(this.app.keyframeApp.playing);
                         }
                         else {
                             LX.popup("No animations to play!", null, {size:["200px", "auto"]})
@@ -344,6 +345,7 @@ class AppGUI {
 
     createAvatarsPanel() {
         const p = this.panel;
+        
         if(p.getBranch("Avatars")) {
             this.branchesOpened["Avatars"] = !p.getBranch("Avatars").content.parentElement.classList.contains("closed");
         }
@@ -421,6 +423,7 @@ class AppGUI {
                     this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
                         this.app.changeAvatar(value);
                         this.createAvatarsPanel(); 
+                        
                         $('#loading').fadeOut();
                     }, (err) => {
                         $('#loading').fadeOut();
@@ -825,6 +828,8 @@ class AppGUI {
         const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
         if(resetBtn) {
             resetBtn.classList.add("floating-button");
+        }
+        if(this.app.mode != App.Modes.SCRIPT) {
             resetBtn.classList.add("hidden");
         }
     }
@@ -841,6 +846,30 @@ class AppGUI {
             btn.classList.remove("hidden");
             const btn2 = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
             btn2.classList.add("hidden");
+        }
+    }
+
+    onChangeMode(mode) {
+        if(mode == App.Modes.SCRIPT) {
+            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
+            if(resetBtn) {
+                resetBtn.classList.remove("hidden");
+            }
+            this.changePlayButtons(false);
+        }
+        else if(mode == App.Modes.KEYFRAME) {
+            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
+            if(resetBtn) {
+                resetBtn.classList.add("hidden");
+            }           
+            this.changePlayButtons( this.app.keyframeApp.playing);
+        }
+        else {
+            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
+            if(resetBtn) {
+                resetBtn.classList.add("hidden");
+            }
+            this.changePlayButtons(false);
         }
     }
 
@@ -1118,7 +1147,7 @@ class AppGUI {
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.app.bmlApp.replay();         
-            this.changePlayButtons(true);    
+            this.changePlayButtons(false);    
         }, {icon: "fa-solid fa-play"});
 
         this.bmlGui.endLine();
@@ -1386,6 +1415,7 @@ class AppGUI {
 
         this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
             this.app.keyframeApp.changePlayState();
+            this.changePlayButtons(this.app.keyframeApp.playing );
             if(refresh) {
                 refresh();
             }
@@ -1539,7 +1569,7 @@ class AppGUI {
                                 panel.refresh();
                                 panel.setValue("Config URL", "https://webglstudio.org/3Dcharacters/ReadyEva/ReadyEva.json");
                                 
-                            },{input: false,  fitHeight: true})                            
+                            },{input: false, fitHeight: true})                            
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }

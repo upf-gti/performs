@@ -65,6 +65,8 @@ class App {
         if(this.bmlApp.ECAcontroller) {
             this.bmlApp.ECAcontroller.reset();
         }
+
+        this.gui.onChangeMode(mode);
     }
 
     // returns value (hex) with the colour in sRGB space
@@ -418,7 +420,7 @@ class App {
             showControls = !(urlParams.get('controls') === "false");
         }
 
-        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva/Eva.glb', 'https://webglstudio.org/3Dcharacters/Eva/Eva.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "Eva" ];
+        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
         if(urlParams.has('avatar')) {
             let avatar = urlParams.get('avatar');
             const path = avatar.split(".");
