@@ -9,6 +9,7 @@ import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 import { AppGUI } from './GUI.js';
 import { BMLApp } from './BMLApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
+import { findIndexOfBoneByName } from './sigml/Utils.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -18,7 +19,7 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 class App {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
     static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
-
+    static ATELIER_URL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
     constructor() {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
@@ -50,6 +51,7 @@ class App {
         this.background = App.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
+        this._atelier = null;
     }
 
     setSpeed( value ){ this.speed = value; }
@@ -593,6 +595,52 @@ class App {
                 callback(data[0]);
             }
         });
+    }
+
+    openAtelier(name, model, config, fromFile = true, rotation = 0) {
+            
+        let rawConfig = config;
+        if(config && !fromFile) {
+            rawConfig = JSON.parse(JSON.stringify(config));
+            const skeleton = this.currentCharacter.skeleton;
+            const innerLocationToObjects = (locations) => {
+                let result = {};
+                const bindMat4 = new THREE.Matrix4();
+                const bindMat3 = new THREE.Matrix3();
+                for(let part in locations) {
+                    
+                    const obj = [];
+                    const location = locations[part];
+                    let idx = findIndexOfBoneByName( skeleton, location.parent.name );
+                    if ( idx < 0 ){ continue; }
+    
+                    obj.push(location.parent.name);
+                    bindMat4.copy( skeleton.boneInverses[ idx ] ).invert();
+                    obj.push( location.position.clone().applyMatrix4( bindMat4 ) ); // from mesh space to bone local space
+                    
+                    // check direction of distance vector 
+                    if(location.direction) {
+                        bindMat3.setFromMatrix4( bindMat4 );
+                        obj.push( location.direction.clone().applyMatrix3( bindMat3 ) );
+
+                    }    
+                    result[part] = obj;
+                }
+                return result;
+            }
+            rawConfig.bodyController.bodyLocations = innerLocationToObjects(config.bodyController.bodyLocations);
+            rawConfig.bodyController.handLocationsL = innerLocationToObjects(config.bodyController.handLocationsL);
+            rawConfig.bodyController.handLocationsR = innerLocationToObjects(config.bodyController.handLocationsR);
+        }
+        const atelierData = [name, model, rawConfig, rotation];        
+        localStorage.setItem("atelierData", JSON.stringify(atelierData));
+        if(!this._atelier || this._atelier.closed) {
+            this._atelier = window.open(App.ATELIER_URL, "Atelier");            
+        }
+        else {
+            this._atelier.location.reload();
+        }
+        this._atelier.focus();
     }
 }
 

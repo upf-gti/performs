@@ -37,7 +37,7 @@ class BMLApp {
         this.baseSkeleton = null;
         this.applyIdle = false;
 
-        this.intensity = 0.8;
+        this.intensity = 0.3;
         this.speed = 1;
     }
 
@@ -429,7 +429,6 @@ class BMLApp {
         if(!Object.keys(this.loadedIdleAnimations).length) {
             this.loadIdleAnimations(["./data/animations/Idle.bvh", "./data/animations/SitIdle.bvh", "./data/animations/standingIdle.bvh"]).then((v) => {
                 this.currentIdle = Object.keys(this.loadedIdleAnimations)[0].replace("./data/animations/", "");
-                this.bindAnimationToCharacter(this.currentIdle, newAvatar.name);
             })
         }
         else {

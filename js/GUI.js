@@ -192,35 +192,6 @@ class AppGUI {
         p.addText(null, "Script animation", null, {disabled: true});
         p.addText(null, "Clip animation", null, {disabled: true});
         p.endLine();
-        // const combo = p.addComboButtons(null, [
-        //     {
-        //         value: "BML",
-        //         icon: "fa fa-code",
-        //         callback: (v, e) => {
-        //             if (this.app.currentCharacter.config) {
-        //                 this.app.changeMode(App.Modes.SCRIPT);
-        //                 this.refresh();
-        //             }
-        //             else {
-        //                 alert("Config file is needed for this mode!")
-        //                 const el = combo.domEl.getElementsByClassName('lexcombobuttons')[0];
-        //                 el.children[0].classList.remove('selected');
-        //                 el.children[1].classList.add('selected');
-        //                 //this.app.changeMode(App.Modes.KEYFRAME);                                
-        //             }
-        //         },
-        //         width: "100px"
-        //     },
-        //     {
-        //         value: "File",
-        //         icon: "fa fa-film",
-        //         callback: (v, e) => {
-        //             this.app.changeMode(App.Modes.KEYFRAME);
-        //             this.refresh();
-        //         },
-        //         width: "100px"
-        //     }
-        // ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"});
 
         p.addSeparator();
 
@@ -289,10 +260,9 @@ class AppGUI {
         
         if(this.app.background == App.Backgrounds.PHOTOCALL) {
             btn.children[0].classList.add('selected');
-            p.addButton(null, "Edit logo", (e) => {
+            const ebtn = p.addButton(null, "Edit logo", (e) => {
                 let dialog = new LX.Dialog("Upload logo", (panel) => {
                     let formFile = true;
-                    let logo = null;
                     panel.sameLine();
                     let logoFile = panel.addFile("File", (v, e) => {
                         let files = panel.widgets["File"].domEl.children[1].files;
@@ -367,7 +337,8 @@ class AppGUI {
                     ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
                     panel.endLine();
                 })
-            })
+            }, {icon: "fa fa-pen-to-square", className: "centered"});
+            ebtn.children[0].style.width = "40px"
         }
     }
 
@@ -623,28 +594,6 @@ class AppGUI {
                 }
             },
             {
-                name: "Backgrounds",
-                selectable: false,
-                icon: "fa fa-images",
-                class: "larger",
-                callback: (b) => {
-                    if(this.backgroundsActive) {
-                        this.mainArea.extend();
-                        this.backgroundsActive = false;
-                        return;
-                    }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
-                    }
-                    if(this.settingsActive || this.cameraActive) {
-                        this.mainArea._moveSplit(-100);
-                    }
-                    this.backgroundsActive = true;
-                    this.cameraActive = this.settingsActive = this.avatarsActive = false;
-                    this.createBackgroundsPanel();                    
-                }
-            },
-            {
                 name: "Avatars",
                 selectable: false,
                 icon: "fa fa-user-pen",
@@ -666,6 +615,28 @@ class AppGUI {
                     this.createAvatarsPanel();
                 }
             },
+            {
+                name: "Backgrounds",
+                selectable: false,
+                icon: "fa fa-images",
+                class: "larger",
+                callback: (b) => {
+                    if(this.backgroundsActive) {
+                        this.mainArea.extend();
+                        this.backgroundsActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(this.settingsActive || this.cameraActive) {
+                        this.mainArea._moveSplit(-100);
+                    }
+                    this.backgroundsActive = true;
+                    this.cameraActive = this.settingsActive = this.avatarsActive = false;
+                    this.createBackgroundsPanel();                    
+                }
+            },            
             {
                 name: "Camera",
                 selectable: false,
@@ -1367,7 +1338,7 @@ class AppGUI {
             if(refresh) {
                 refresh();
             }
-        })        
+        }, {nameWidth: "115px"});
         if(this.app.bmlApp.applyIdle) {
    
             this.bmlGui.addDropdown("Animations", Object.keys(this.app.bmlApp.loadedIdleAnimations), this.app.bmlApp.currentIdle, (v) => {
@@ -1606,18 +1577,23 @@ class AppGUI {
                 panel.sameLine();
                 let configFile = panel.addFile("Config File", (v, e) => {
                 
+                    if(!v) {
+                        return;
+                    }
                     const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
                     let extension = filename.split(".");
                     extension = extension.pop();
                     if (extension == "json") { 
                         config = JSON.parse(v); 
                         config._filename = filename; 
+                        editConfigBtn.classList.remove('hidden');
                     }
                     else { LX.popup("Config file must be a JSON!"); }
                 }, {type: "text", nameWidth: "41%"});
                 
                 let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
                     if(!v) {
+                        config = v;
                         return;
                     }
                     const path = v.split(".");
@@ -1635,6 +1611,7 @@ class AppGUI {
                                 }
                                 config = await response.json();                        
                                 config._filename = v; 
+                                editConfigBtn.classList.remove('hidden');
                             }
                             catch (error) {
                                 LX.popup(error.message, "File error!");
@@ -1649,30 +1626,15 @@ class AppGUI {
                 }else {
                     configFile.domEl.classList.add('hidden');
                 }
+                
+                const editConfigBtn = panel.addButton(null, "Edit config file", () => {
+                    this.app.openAtelier(name, model, config, true, rotation);
 
-                panel.addButton(null, "Create/Edit config file", () => {
-                    
-                    const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
-                    const atelier = window.open(atelierURL, "Atelier");
-                    let atelierApp = null
-                    atelier.onload = (e, d) => {
-                        atelierApp = e.currentTarget.global.app;
-                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
-                        atelierApp.gui.avatars[name] = {
-                            "filePath": model,
-                            "modelRotation": 0
-                        }
-                        atelierApp.gui.configFile = config;
-                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
-                        atelierApp.gui.initDialog.destroy();
-                        // atelierApp.gui.createPanel();
-                    }
-        
-                    atelier.addEventListener("beforeunload", () => {
-                        this.realizer = null
-                    });                    
-
-                }, {icon: "fa fa-user-gear", width: "40px"})
+                }, {icon: "fa fa-user-gear", width: "40px"});
+                
+                if(!config) {
+                    editConfigBtn.classList.add('hidden');
+                }
 
                 panel.addComboButtons(null, [
                     {
@@ -1707,21 +1669,7 @@ class AppGUI {
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
-                const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
-                    const atelier = window.open(atelierURL, "Atelier");
-                    let atelierApp = null
-                    atelier.onload = (e, d) => {
-                        atelierApp = e.currentTarget.global.app;
-                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
-                        atelierApp.gui.avatars[name] = {
-                            "filePath": model,
-                            "modelRotation": 0
-                        }
-                        atelierApp.gui.configFile = config;
-                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
-                        atelierApp.gui.initDialog.destroy();
-                        atelierApp.gui.createPanel();
-                    }                 
+                this.app.openAtelier(name, model, config, true, rotation);
             })
             panel.addButton(null, "Upload", () => {
                 if (name && model) {
@@ -1732,7 +1680,7 @@ class AppGUI {
                         thumbnail =  "https://models.readyplayer.me/" + name + ".png?background=68,68,68";
                     }
                     if (config) {
-                        this.avatarOptions[name] = [model, config, rotation,thumbnail ];               
+                        this.avatarOptions[name] = [model, config, rotation, thumbnail];               
                         panel.clear();
                         this.avatarDialog.root.remove();
                         this.avatarOptions[name][1] = config._filename;
@@ -1869,6 +1817,12 @@ class AppGUI {
             }else {
                 configFile.domEl.classList.add('hidden');
             }
+
+            if(config) {
+                panel.addButton(null, "Edit config file", () => {
+                    this.app.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                  
+                }, {icon: "fa fa-user-gear", width: "40px"});
+            }
             panel.addComboButtons(null, [
                 {
                     value: "From File",
@@ -1878,8 +1832,7 @@ class AppGUI {
                         if(!configURL.domEl.classList.contains('hidden')) {
                             configURL.domEl.classList.add('hidden');          
                         }
-                        configFile.domEl.classList.remove('hidden');                                                          
-                        
+                        configFile.domEl.classList.remove('hidden');                                                                                  
                     }
                 },
                 {
@@ -1901,23 +1854,8 @@ class AppGUI {
             }, { min: -180, max: 180, step: 1 } );
             
             panel.sameLine(2);
-            panel.addButton(null, "Create Config File", () => {
-                const atelierURL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
-                    const atelier = window.open(atelierURL, "Atelier");
-                    let atelierApp = null
-                    atelier.onload = (e, d) => {
-                        console.log(this.avatarOptions)
-                        atelierApp = e.currentTarget.global.app;
-                        atelierApp.gui.character = atelierApp.gui.avatarName = name;
-                        atelierApp.gui.avatars[name] = {
-                            "filePath": data,
-                            "modelRotation": 0
-                        }
-                        atelierApp.gui.configFile = config;
-                        atelierApp.gui.initDialog.root.getElementsByClassName("next-button")[0].getElementsByTagName("button")[0].click();
-                        atelierApp.gui.initDialog.destroy();
-                    }
-                         
+            panel.addButton(null, (config ? "Edit": "Create") + " Config File", () => {
+                this.app.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                                       
             })
             panel.addButton(null, "Update", () => {
                 if (name) {
