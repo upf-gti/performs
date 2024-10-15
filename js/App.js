@@ -19,7 +19,7 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 class App {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
     static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
-    static ATELIER_URL = "https://webglstudio.org/users/evalls/performs-atelier/"; // "https://webglstudio.org/projects/signon/performs-atelier/"
+    static ATELIER_URL = "https://webglstudio.org/projects/signon/performs-atelier/";
     constructor() {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
