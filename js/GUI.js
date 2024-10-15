@@ -1211,7 +1211,7 @@ class AppGUI {
                     }
                 })
     
-            }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true, onclose: (root)=>{
+            }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true, onclose: (root)=>{
                 this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
                 this.bmlInputData.dialog = null;
                 this.bmlInputData.codeObj = null;
@@ -1248,7 +1248,7 @@ class AppGUI {
                     this.app.bmlApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                 });
     
-            }, { size: ["35%", "70%"], float: "right", draggable: false, closable: true});
+            }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true});
         
 
         });
@@ -1307,8 +1307,7 @@ class AppGUI {
                     });
                 }
                 p.refresh();
-            }, { closable: true } );
-        
+            }, { float: "left", draggable: false, closable: true } );        
         });    
 
         this.bmlGui.addSeparator();
