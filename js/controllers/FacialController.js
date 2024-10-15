@@ -36,13 +36,14 @@ function FacialController(config = null) {
     this._squintAU = [49, 50]; // idx number of squint related AU - gaze and blink easy access
     
     // t2l
-    this.jali = [0.66, 1.0]; // [jaw, lip]
+    // this.jali = [0.33, 0.5]; // [jaw, lip]
+    this.jali = [1.0, 1.0]; // [jaw, lip]
     this.speakingStyle = null;
     this.speakingStyles = {
-        "Whispering": [0.2, 1.2],
-        "Normal Conversation": [0.66, 1.0],
-        "Enunciating": [1.0, 2.0],
-        "Screaming": [2.0, 2.0],
+        "Whispering": [0.1, 0.6],
+        "Normal Conversation": [0.33, 0.5],
+        "Enunciating": [0.5, 1.0],
+        "Screaming": [1.0, 1.0],
     }
 
 

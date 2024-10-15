@@ -253,7 +253,7 @@ class AppGUI {
                     this.app.bmlApp.ECAcontroller.facialController.jali = value;
                     this.app.bmlApp.ECAcontroller.facialController.speakingStyle = null;
                     this.refresh();
-                }, { min: 0, max: 2, step: 0.01 });
+                }, { min: 0, max: 1, step: 0.01 });
                 
                 p.addDropdown("Speaking Style", Object.keys(this.app.bmlApp.ECAcontroller.facialController.speakingStyles), this.app.bmlApp.ECAcontroller.facialController.speakingStyle, (value, event) => {
                     this.app.bmlApp.ECAcontroller.facialController.speakingStyle = value;

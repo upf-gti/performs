@@ -1878,10 +1878,9 @@ Text2Lip.prototype.getViseme = function ( phoneme, outResult = null, ) {
     let jaliVisemes = [jaw, lip];
 
     let result = ( outResult ) ? outResult : ( [ new Float32Array( this.numShapes[0] ), new Float32Array( this.numShapes[1] ) ] );
-    let intensity = this.intensity;
     for ( let i = 0; i < this.numShapes.length; i++ ) {
         for ( let j = 0; j < this.numShapes[i]; j++ ) {
-            result[ i ][ j ] = jaliVisemes[ i ][ j ] * intensity;
+            result[ i ][ j ] = jaliVisemes[ i ][ j ];
         }
     }
     return result;
@@ -2319,7 +2318,7 @@ const jawVisemes2Au = [
     [0.2, 0.1, 0.0, 0.8, 0.5]  // LLL
   ];
 
-  // [ Upper Lip Raiser (Left, Right), Lip Puckerer (Left, Right), Lip Funneler, Lip Pressor (Left, Right), Lips Part, Lip_Corner_Puller_Left, Lip_Corner_Puller_Right ]
+  // [ Upper Lip Raiser (Left, Right), Lip Puckerer (Left, Right), Lip Funneler, Lip Pressor (Left, Right), Lips Part, Lip Corner Puller (Left, Right) ]
   const lipVisemes2Au = [
     [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   0.0,   0.0, 0.0], // ._   - 0
     [0.0, 0.0,   0.2, 0.2,   0.0,   1.0, 1.0,   0.0,   0.0, 0.0], // MMM  
@@ -2332,7 +2331,7 @@ const jawVisemes2Au = [
     [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   1.0,   0.0, 0.0], // EEE  - 8
     [0.0, 0.0,   0.0, 0.0,   0.0,   0.0, 0.0,   0.6,   0.4, 0.4], // III
     [-0.2, -0.2, 0.8, 0.8,   0.4,   0.0, 0.0,   0.0,   0.0, 0.0], // OOO
-    [0.0, 0.0,   0.8, 0.8,   1.0,   0.0, 0.0,   0.8,   0.0, 0.0], // UUU  - 11
+    [0.0, 0.0,   0.8, 0.8,   0.4,   0.0, 0.0,   0.6,   0.0, 0.0], // UUU  - 11
     [0.0, 0.0,   0.1, 0.1,   0.0,   0.1, 0.1,   0.7,   0.3, 0.3], // GGG
     [0.2, 0.1,   0.0, 0.0,   0.0,   0.0, 0.0,   0.4,   0.0, 0.0]  // LLL  - 13
   ];
