@@ -53,11 +53,11 @@ class AppGUI {
             icon: "fa fa-xmark",
             class: "relative",
             callback: () => {
-                if(this.settingsActive || this.cameraActive) {
+                if(this.settingsActive || this.cameraActive || this.lightsActive) {
                     this.mainArea._moveSplit(-100);
                 }
                 this.mainArea.extend();
-                this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
+                this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
             }
         }], {float: "rt"});
 
@@ -570,8 +570,24 @@ class AppGUI {
         }
     }
 
+    createLightsPanel() {
+        const p = this.panel;
+        
+        p.clear();
+        p.branch( "Lights", { icon: "fa-solid fa-lightbulb"} );
+
+        p.addColor("Color Chroma", "#" + this.app.dirLight.color.getHexString(), (value, event) => {
+            this.app.dirLight.color.set(value);
+        });
+        
+        const position = [this.app.dirLight.position.x , this.app.dirLight.position.y, this.app.dirLight.position.z];
+        p.addVector3("Position", position, (v) => {
+            this.app.dirLight.position.set(v[0], v[1], v[2]);
+        }, {min: -10, max: 10})
+    }
+
     createIcons(area) {
-        this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
+        this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
         const buttons = [
             {
                 name: "Settings",
@@ -588,11 +604,11 @@ class AppGUI {
                     else if(this.mainArea.split_extended) {
                         this.mainArea.reduce();
                     }
-                    if(!this.cameraActive) {
+                    if(!this.cameraActive && !this.lightsActive) {
                         this.mainArea._moveSplit(100);
                     }
                     this.settingsActive = true;
-                    this.cameraActive = this.backgroundsActive = this.avatarsActive = false;
+                    this.cameraActive = this.backgroundsActive = this.avatarsActive = this.lightsActive = false;
                     this.createSettingsPanel();                    
                 }
             },
@@ -610,11 +626,11 @@ class AppGUI {
                     else if(this.mainArea.split_extended) {
                         this.mainArea.reduce();
                     }
-                    if(this.settingsActive || this.cameraActive) {
+                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
                         this.mainArea._moveSplit(-100);
                     }
                     this.avatarsActive = true;
-                    this.cameraActive = this.settingsActive = this.backgroundsActive = false;
+                    this.cameraActive = this.settingsActive = this.backgroundsActive = this.lightsActive = false;
                     this.createAvatarsPanel();
                 }
             },
@@ -632,11 +648,11 @@ class AppGUI {
                     else if(this.mainArea.split_extended) {
                         this.mainArea.reduce();
                     }
-                    if(this.settingsActive || this.cameraActive) {
+                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
                         this.mainArea._moveSplit(-100);
                     }
                     this.backgroundsActive = true;
-                    this.cameraActive = this.settingsActive = this.avatarsActive = false;
+                    this.cameraActive = this.settingsActive = this.avatarsActive = this.lightsActive = false;
                     this.createBackgroundsPanel();                    
                 }
             },            
@@ -655,12 +671,35 @@ class AppGUI {
                     else if(this.mainArea.split_extended) {
                         this.mainArea.reduce();
                     }
-                    if(!this.settingsActive) {
+                    if(!this.settingsActive && !this.lightsActive) {
                         this.mainArea._moveSplit(100);
                     }
                     this.cameraActive = true;
-                    this.settingsActive = this.backgroundsActive = this.avatarsActive = false;
+                    this.settingsActive = this.backgroundsActive = this.avatarsActive = this.lightsActive = false;
                     this.createCameraPanel();                    
+                }
+            },
+            {
+                name: "Lights",
+                selectable: false,
+                icon: "fa fa-lightbulb",
+                class: "larger",
+                callback: (b) => {
+                    if(this.lightsActive) {
+                        this.mainArea._moveSplit(-100);
+                        this.mainArea.extend();
+                        this.lightsActive = false;
+                        return;
+                    }
+                    else if(this.mainArea.split_extended) {
+                        this.mainArea.reduce();
+                    }
+                    if(!this.settingsActive && !this.cameraActive) {
+                        this.mainArea._moveSplit(100);
+                    }
+                    this.lightsActive = true;
+                    this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
+                    this.createLightsPanel();                    
                 }
             }
         ]

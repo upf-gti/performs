@@ -371,7 +371,7 @@ class App {
         this.scene.add( fillSpotlight.target );
         this.scene.add( fillSpotlight );
 
-        let dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
+        let dirLight = this.dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
         dirLight.position.set( 1.5, 5, 2 );
         dirLight.shadow.mapSize.width = 1024;
         dirLight.shadow.mapSize.height = 1024;
