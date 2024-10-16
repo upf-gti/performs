@@ -66,7 +66,9 @@ class App {
             this.bmlApp.ECAcontroller.reset();
         }
 
-        this.gui.onChangeMode(mode);
+        if(this.gui) {
+            this.gui.onChangeMode(mode);
+        }
     }
 
     // returns value (hex) with the colour in sRGB space
