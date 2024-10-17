@@ -41,11 +41,10 @@ function FacialController(config = null) {
     this.speakingStyle = null;
     this.speakingStyles = {
         "Whispering": [0.1, 0.6],
-        "Normal Conversation": [0.33, 0.5],
+        "Normal Conversation": [0.4, 0.5],
         "Enunciating": [0.5, 1.0],
         "Screaming": [1.0, 1.0],
     }
-
 
     // TODO: update a2l names ?
     this.lipsPressedBSName = "Jaw_Up";
