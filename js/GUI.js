@@ -776,7 +776,7 @@ class AppGUI {
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        if(this.bmlGui) {
+                        if(this.bmlGui && this.bmlGui.widgets["Mood"]) {
                             this.bmlGui.setValue( "Mood", "Neutral" ); 
                         }
                         this.app.bmlApp.ECAcontroller.reset();
