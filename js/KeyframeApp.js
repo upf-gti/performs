@@ -47,11 +47,13 @@ class KeyframeApp {
         }
     }
 
-    onLoadAvatar(newAvatar, config, skeleton){      
+    onLoadAvatar(character){      
         // Create mixer for animation
-        const mixer = new THREE.AnimationMixer(newAvatar);  
-        this.currentCharacter = newAvatar.name;
-        this.loadedCharacters[newAvatar.name] = { mixer, config, model: newAvatar, skeleton};
+        const mixer = new THREE.AnimationMixer(character.model);  
+        this.currentCharacter = character.model.name;
+        this.loadedCharacters[character.model.name] = character;
+        this.loadedCharacters[character.model.name].mixer = mixer;
+
         this.mixer = mixer;
     }
 
@@ -59,10 +61,18 @@ class KeyframeApp {
         if (!this.loadedCharacters[avatarName]) { 
             return false; 
         }
+
         this.currentCharacter = avatarName;
         this.changePlayState(this.playing);
         this.mixer = this.loadedCharacters[avatarName].mixer;  
         this.bindAnimationToCharacter(this.currentAnimation, avatarName);
+
+        const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3);
+        const RToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3);
+        let diff = this.loadedCharacters[avatarName].LToePos.y - LToePos.y; 
+        
+        this.loadedCharacters[avatarName].model.position.y = this.loadedCharacters[avatarName].position.y - this.loadedCharacters[avatarName].diffToGround + diff;
+
         return true;
     }
 
@@ -71,7 +81,14 @@ class KeyframeApp {
             console.warn(animationName + 'not found')
         }
         this.currentAnimation = animationName;
+        this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y
         this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+        const LToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].LToeName).getWorldPosition(new THREE.Vector3);
+        const RToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].RToeName).getWorldPosition(new THREE.Vector3);
+        let diff = this.loadedCharacters[this.currentCharacter].LToePos.y - LToePos.y; 
+        
+        this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y - this.loadedCharacters[this.currentCharacter].diffToGround + diff;
+
     }
 
     onMessage( data, callback ) {

@@ -3,13 +3,12 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import { CharacterController } from './controllers/CharacterController.js';
 import { AnimationRecorder } from './recorder/recorder.js';
-import { sigmlStringToBML } from './sigml/SigmlToBML.js';
 import { AppGUI } from './GUI.js';
 import { BMLApp } from './BMLApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
 import { findIndexOfBoneByName } from './sigml/Utils.js';
+import { computeAutoBoneMap } from './retargeting/retargeting.js'
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -52,6 +51,8 @@ class App {
 
         this.logo = "./data/imgs/performs2.png";
         this._atelier = null;
+
+        this.raycaster = new THREE.Raycaster();
     }
 
     setSpeed( value ){ this.speed = value; }
@@ -152,7 +153,16 @@ class App {
         if ( this.currentCharacter ) this.scene.remove( this.currentCharacter.model ); // delete from scene current model
         this.currentCharacter = this.loadedCharacters[avatarName];
         this.scene.add( this.currentCharacter.model ); // add model to scene
-
+        
+        const diffToGround = this.precomputeFeetOffset(avatarName);
+        this.loadedCharacters[avatarName].diffToGround = diffToGround;
+        this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
+        const LToePos = this.currentCharacter.skeleton.getBoneByName(this.currentCharacter.LToeName).getWorldPosition(new THREE.Vector3);
+        const RToePos = this.currentCharacter.skeleton.getBoneByName(this.currentCharacter.RToeName).getWorldPosition(new THREE.Vector3);
+        const diff = this.currentCharacter.LToePos.y - LToePos.y; 
+        
+        // this.currentCharacter.model.position.y -= (diffToGround + diff);
+          
         this.bmlApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
         
@@ -225,9 +235,9 @@ class App {
                         object.castShadow = true;
                         object.receiveShadow = true;
                         if (object.name == "Eyelashes") // eva
-                        object.castShadow = false;
+                            object.castShadow = false;
                         if(object.material.map) 
-                        object.material.map.anisotropy = 16;
+                            object.material.map.anisotropy = 16;
                 } else if (object.isBone) {
                     object.scale.set(1.0, 1.0, 1.0);
                     }
@@ -241,13 +251,12 @@ class App {
                 if( hair && hair.children.length > 1 ){ hair.children[1].renderOrder = 1; }
             }
                         
-            // model.add( new THREE.SkeletonHelper( model ) );
-
             model.name = avatarName;
 
             this.loadedCharacters[avatarName] ={
                 model, skeleton, config: null
             }
+
 
             if (configFilePath) {
                 if(typeof(configFilePath) == 'string') {
@@ -257,7 +266,7 @@ class App {
                         config._filename = configFilePath;
                         this.loadedCharacters[avatarName].config = config;
                         this.bmlApp.onLoadAvatar(model, config, skeleton);
-                        this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                        this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
                         if (callback) {
                             callback();
                         }
@@ -267,7 +276,7 @@ class App {
                     let config = configFilePath;
                     this.loadedCharacters[avatarName].config = config;
                     this.bmlApp.onLoadAvatar(model, config, skeleton);
-                    this.keyframeApp.onLoadAvatar(model, config, skeleton);
+                    this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
                     
                     if (callback) {
                         callback();
@@ -275,7 +284,7 @@ class App {
                 }
             }
             else {
-                this.keyframeApp.onLoadAvatar(model, null, skeleton);
+                this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
                 if (callback) {
                     callback();
                 }
@@ -465,6 +474,20 @@ class App {
 
         requestAnimationFrame( this.animate.bind(this) );
 
+        // don't let the camera to be under the ground 
+        if(this.cameraMode) {
+            let centerPosition = this.controls[this.camera].target.clone();
+            centerPosition.y = 0;
+            let groundPosition = this.cameras[this.camera].position.clone();
+            groundPosition.y = 0;
+            let d = (centerPosition.distanceTo(groundPosition));
+    
+            let origin = new THREE.Vector2(this.controls[this.camera].target.y,0);
+            let remote = new THREE.Vector2(0,d); // replace 0 with raycasted ground altitude
+            let angleRadians = Math.atan2(remote.y - origin.y, remote.x - origin.x);
+            this.controls[this.camera].maxPolarAngle = angleRadians - 0.01;
+        }
+
         this.controls[this.camera].update(); // needed because of this.controls.enableDamping = true
         let delta = this.clock.getDelta()         
         // delta *= this.speed;
@@ -486,6 +509,35 @@ class App {
         }        
 
         this.renderer.render( this.scene, this.cameras[this.camera] );
+    }
+
+    precomputeFeetOffset(avatarName) {
+        const character = this.loadedCharacters[avatarName];
+        const map = computeAutoBoneMap( character.skeleton );
+        character.LToeName = character.model.getObjectByName(map.nameMap.LFoot).children[0].name;
+        character.RToeName = character.model.getObjectByName(map.nameMap.RFoot).children[0].name;
+        const LtoePos = character.model.getObjectByName(map.nameMap.LFoot).children[0].getWorldPosition(new THREE.Vector3());
+        const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3);
+      
+        // Cast a ray downwards from the left toe's position
+      
+        let dir = new THREE.Vector3(0, 1, 0);
+        this.raycaster.layers.enableAll()
+        this.raycaster.set( new THREE.Vector3(LtoePos.x, -1, LtoePos.z), dir);
+              
+        // const obj = character.model.children[0].getObjectByName("Wolf3D_Outfit_Footwear");
+        // obj.material.side = THREE.DoubleSide;
+        const intersects = this.raycaster.intersectObjects(character.model.children[0].children, true); // Adjust based on your scene setup
+        let diff = 0;
+        if (intersects.length > 0) {
+            // Get the ground position from the first intersection
+            const groundPosition = intersects[0].point;
+            diff = groundPosition.y;
+        }
+
+        character.LToePos = LtoePos;
+        character.RToePos = RtoePos;
+        return diff;
     }
 
     onMessage(event) {
