@@ -277,7 +277,7 @@ class AppGUI {
                              const imgCallback = ( event ) => {
 
                                 this.app.logo = event.target;        
-                                this.app.setBackground( App.Backgrounds.PHOTOCALL);            
+                                this.app.setBackground( App.Backgrounds.PHOTOCALL, this.app.logo);            
                             }
             
                             const img = new Image();            
@@ -302,7 +302,7 @@ class AppGUI {
                             const imgCallback = ( event ) => {
 
                                 this.app.logo = event.target;        
-                                this.app.setBackground( App.Backgrounds.PHOTOCALL);            
+                                this.app.setBackground( App.Backgrounds.PHOTOCALL, this.app.logo);            
                             }
             
                             const img = new Image();            
@@ -337,6 +337,10 @@ class AppGUI {
                         }
                     ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
                     panel.endLine();
+
+                    panel.addNumber("Offset", this.app.repeatOffset, (v) => {
+                        this.app.changePhotocallOffset(v);
+                    }, {min: 0, max: 1, step: 0.01})
                 })
             }, {icon: "fa fa-pen-to-square", className: "centered"});
             ebtn.children[0].style.width = "40px"

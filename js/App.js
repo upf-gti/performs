@@ -74,8 +74,15 @@ class App {
 
     // returns value (hex) with the colour in sRGB space
     getBackPlaneColour(){
-        if ( !this.backPlane ){ return 0; }   
-        return this.backPlane.material.color.getHex(); // css works in sRGB
+        if ( !this.backPlane ){ return 0; }  
+        let color = null; 
+        if(this.backPlane.material.color) {
+            color = this.backPlane.material.color.getHex();   
+        }
+        else {
+            color = this.backPlane.material.uniforms.color.value.getHex();
+        }
+        return color; // css works in sRGB
     }
     // value (hex colour) in sRGB space 
     setBackPlaneColour( value ){
@@ -83,7 +90,14 @@ class App {
         this.scene.background.set(value);
 
         if ( this.backPlane ){ 
-            this.backPlane.material.color.set( value );   
+            if(this.backPlane.material.color) {
+                this.backPlane.material.color.set( value );   
+            }
+            else {
+                this.photocallMaterial.uniforms.color.value.set(value);
+                this.backPlane.material.uniforms.color.value.set(value);
+                this.backPlane.material.needsUpdate = true;
+            }
         }                
 
         if(this.ground) {
@@ -92,7 +106,7 @@ class App {
         return true;
     }
     
-    setBackground( type ) {
+    setBackground( type, image = null ) {
         this.background = type;
 
         switch(type) {
@@ -102,41 +116,45 @@ class App {
                 break;
             case App.Backgrounds.STUDIO:
                 this.backPlane.visible = true;
-                this.backPlane.material.map = null;                            
+                // this.backPlane.material.map = null;        
+                this.backPlane.material = this.studioMaterial;                    
+                this.backPlane.material.color.set(this.sceneColor);
                 this.backPlane.material.needsUpdate = true;
                 this.ground.visible = false;
                 break;
             case App.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
-                let texture = null;
-                if(typeof(this.logo) == 'string') {
-                    texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
-                        image.repeat.set(20, 20);
-                    });
-
+                // let texture = null;
+                if(image) {
+                    if(typeof(image) == 'string') {
+                        this.logoTexture = new THREE.TextureLoader().load( this.logo);
+    
+                    }
+                    else {
+                        this.logoTexture = new THREE.Texture( this.logo );
+                        this.logoTexture.colorSpace = THREE.SRGBColorSpace;
+                    }                           
+                    this.logoTexture.needsUpdate = true;
+                    this.photocallMaterial.uniforms.textureMap.value = this.logoTexture;      
                 }
-                else {
-                    texture = new THREE.Texture( this.logo );
-                    texture.colorSpace = THREE.SRGBColorSpace;
-                }
-                texture.format = THREE.RGBAFormat;
-                texture.wrapT = THREE.RepeatWrapping;
-                texture.wrapS = THREE.RepeatWrapping;
-                texture.repeat.set(20, 20);
-                texture.needsUpdate = true;
-                
-                if ( this.backPlane.material.map ) {
 
-					this.backPlane.material.map.dispose();
-				}
-
-				this.backPlane.material.map = texture;
-
+                this.backPlane.material = this.photocallMaterial;
+                this.backPlane.material.uniforms.color.value.set(this.sceneColor);
                 this.backPlane.material.needsUpdate = true;
                 break;
         }
     }
+
+    changePhotocallOffset(offset) {
+        if(!this.backPlane.material.uniforms) {
+            return;
+        }
+        this.backPlane.material.uniforms.offset.value = offset, offset;
+        this.backPlane.material.needsUpdate = true;
+        this.repeatOffset = offset;
+    }
+
     // returns value (hex) with the colour in sRGB space
     getClothesColour(){
         if ( !this.avatarShirt ){ return 0; }   
@@ -399,17 +417,69 @@ class App {
         ground.receiveShadow = true;
         this.scene.add( ground );
         
-        const texture = new THREE.TextureLoader().load( this.logo, (image) =>{            
-           image.repeat.set(20, 20);
+        this.logoTexture = new THREE.TextureLoader().load(this.logo);
+        this.logoTexture.wrapS = THREE.RepeatWrapping;
+
+        this.studioMaterial = new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
+        this.repeatOffset = 0;
+        this.photocallMaterial = new THREE.ShaderMaterial({
+            uniforms: {
+              textureMap: { value: this.logoTexture },
+              color:  { value: new THREE.Color(sceneColor)},
+              repeat: { value: [20,20]},
+              offset: { value: this.repeatOffset}
+            },
+            vertexShader: `
+                varying vec3 vPosition;
+                varying vec2 vUv;
+                void main() {
+                    vPosition = position;
+                    vUv = uv;
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+                }
+            `,
+            fragmentShader: `
+                uniform sampler2D textureMap;
+                uniform vec3 color;
+                uniform vec2 repeat; // Texture repetition count
+                uniform float offset; // Offset for the texture in UV space
+                varying vec3 vPosition;
+                varying vec2 vUv;
+            
+                void main() {
+                
+                    vec4 finalColor = vec4(color, 1.0);
+
+                    if (vPosition.y > 0.0) {
+
+                        // Scale the UV coordinates by the repeat factor
+                        vec2 uvScaled = vUv * repeat;
+                        
+                        // Use mod to wrap the UVs for repeating the texture
+                        vec2 uvMod = mod(uvScaled, 1.0);
+                        
+                        // Shrink the UV space to account for the gaps
+                        float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps
+                       
+                        // Only apply the texture inside the non-gap area
+                        if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {
+                            // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area
+                            vec2 uv = fract(uvScaled);
+                            vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;
+                            vec2 smooth_uv = uvScaled;
+                            vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));
+                            vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);
+                            
+                            finalColor = mix(texColor, vec4(color, 1.0), 1.0 - texColor.a);;               
+                        }                        
+                    } 
+
+                    gl_FragColor = finalColor;
+                }
+            `,
+            side: THREE.DoubleSide, // Ensure both sides of the triangles are rendered
         });
-        texture.format = THREE.RGBAFormat;
-        texture.wrapT = THREE.RepeatWrapping;
-        texture.wrapS = THREE.RepeatWrapping;
-        let logo = new THREE.Mesh( new THREE.PlaneGeometry(0.5, 0.15 ), new THREE.MeshBasicMaterial( {color: new THREE.Color(0x323232), needsUpdate:true, map: texture, transparent: true, depthWrite: false, alphaTest: 0.9} ) );
-        logo.position.set(2.6,0.15, -0.98);
-        this.scene.add( logo );
-       
-        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} ) );
+        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
@@ -712,8 +782,8 @@ function createBackdropGeometry(width = 5, height = 5, segments = 32) {
         vertex.fromBufferAttribute( position, i );
        
         if( vertex.y < 0) {
+            vertex.z = -vertex.y; // Apply curve on Z axis
             vertex.y = 0;
-            vertex.z = (height - vertex.y); // Apply curve on Z axis
         }
         vertices.push(vertex.x);
         vertices.push(vertex.y);
