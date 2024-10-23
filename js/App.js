@@ -121,6 +121,7 @@ class App {
                 this.backPlane.material.color.set(this.sceneColor);
                 this.backPlane.material.needsUpdate = true;
                 this.ground.visible = false;
+               
                 break;
             case App.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
@@ -136,11 +137,27 @@ class App {
                         this.logoTexture.colorSpace = THREE.SRGBColorSpace;
                     }                           
                     this.logoTexture.needsUpdate = true;
-                    this.photocallMaterial.uniforms.textureMap.value = this.logoTexture;      
+
+                    const shader = this.backPlane.material.userData.shader;
+                    if ( shader ) {
+
+                        shader.uniforms.textureMap.value = this.logoTexture;
+
+                    }
+                    else {
+                        this.photocallMaterial.uniforms.textureMap.value = this.logoTexture;      
+
+                    }
                 }
 
                 this.backPlane.material = this.photocallMaterial;
-                this.backPlane.material.uniforms.color.value.set(this.sceneColor);
+                if(this.backPlane.material.color) {
+                    this.backPlane.material.color.set(this.sceneColor);
+                }
+                else {
+                    this.backPlane.material.uniforms.color.value.set(this.sceneColor);
+                }
+
                 this.backPlane.material.needsUpdate = true;
                 break;
         }
@@ -148,9 +165,16 @@ class App {
 
     changePhotocallOffset(offset) {
         if(!this.backPlane.material.uniforms) {
-            return;
+            const shader = this.backPlane.material.userData.shader;
+            if ( shader ) {
+
+                shader.uniforms.offset.value = offset;
+
+            }
         }
-        this.backPlane.material.uniforms.offset.value = offset, offset;
+        else {
+            this.backPlane.material.uniforms.offset.value = offset;
+        }
         this.backPlane.material.needsUpdate = true;
         this.repeatOffset = offset;
     }
@@ -422,63 +446,44 @@ class App {
 
         this.studioMaterial = new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
         this.repeatOffset = 0;
-        this.photocallMaterial = new THREE.ShaderMaterial({
-            uniforms: {
-              textureMap: { value: this.logoTexture },
-              color:  { value: new THREE.Color(sceneColor)},
-              repeat: { value: [20,20]},
-              offset: { value: this.repeatOffset}
-            },
-            vertexShader: `
-                varying vec3 vPosition;
-                varying vec2 vUv;
-                void main() {
-                    vPosition = position;
-                    vUv = uv;
-                    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-                }
-            `,
-            fragmentShader: `
-                uniform sampler2D textureMap;
-                uniform vec3 color;
-                uniform vec2 repeat; // Texture repetition count
-                uniform float offset; // Offset for the texture in UV space
-                varying vec3 vPosition;
-                varying vec2 vUv;
+
+        this.photocallMaterial = new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
+        this.photocallMaterial.onBeforeCompile = (shader) => {
+            shader.uniforms.textureMap = {value: this.logoTexture}; 
+            shader.uniforms.repeat = {value: [20,20]};
+            shader.uniforms.offset = {value: this.repeatOffset};
             
-                void main() {
-                
-                    vec4 finalColor = vec4(color, 1.0);
+            shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;
+            
+            //prepend the input to the shader
+            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
 
-                    if (vPosition.y > 0.0) {
+            shader.fragmentShader = 
+            shader.fragmentShader.replace(
+            'vec4 diffuseColor = vec4( diffuse, opacity );', 
+            'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+            \ if (vWorldPosition.y > 0.0) { \n\
+                \ // Scale the UV coordinates by the repeat factor\n\
+                \ vec2 uvScaled = vUv * repeat;\n\n\
+                \ // Use mod to wrap the UVs for repeating the texture\n\
+                \ vec2 uvMod = mod(uvScaled, 1.0);\n\
+                \ // Shrink the UV space to account for the gaps\n\
+                \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+                \ // Only apply the texture inside the non-gap area\n\
+                \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
+                    \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
+                    \ vec2 uv = fract(uvScaled);\n\
+                    \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
+                    \ vec2 smooth_uv = uvScaled;\n\
+                    \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+                    \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
+                    \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+                \ }\n\
+            \ }\n'
+            )
+            this.photocallMaterial.userData.shader = shader;
+        };
 
-                        // Scale the UV coordinates by the repeat factor
-                        vec2 uvScaled = vUv * repeat;
-                        
-                        // Use mod to wrap the UVs for repeating the texture
-                        vec2 uvMod = mod(uvScaled, 1.0);
-                        
-                        // Shrink the UV space to account for the gaps
-                        float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps
-                       
-                        // Only apply the texture inside the non-gap area
-                        if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {
-                            // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area
-                            vec2 uv = fract(uvScaled);
-                            vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;
-                            vec2 smooth_uv = uvScaled;
-                            vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));
-                            vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);
-                            
-                            finalColor = mix(texColor, vec4(color, 1.0), 1.0 - texColor.a);;               
-                        }                        
-                    } 
-
-                    gl_FragColor = finalColor;
-                }
-            `,
-            side: THREE.DoubleSide, // Ensure both sides of the triangles are rendered
-        });
         let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
@@ -515,12 +520,14 @@ class App {
         }
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
-            if ( typeof AppGUI != "undefined" && showControls) { this.gui = new AppGUI( this ); }
-            if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                const name = modelToLoad[3];
-                modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
-                this.gui.avatarOptions[name] = modelToLoad;
-                this.gui.refresh();
+            if ( typeof AppGUI != "undefined" && showControls) { 
+                this.gui = new AppGUI( this ); 
+                if(!this.gui.avatarOptions[modelToLoad[3]]) {
+                    const name = modelToLoad[3];
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
+                    this.gui.avatarOptions[name] = modelToLoad;
+                    this.gui.refresh();
+                }
             }
             this.animate();
             $('#loading').fadeOut(); //hide();
@@ -533,8 +540,16 @@ class App {
         });
 
         this.animationRecorder = new AnimationRecorder(this.cameras.length);
-        this.animationRecorder.onStartCapture = (v) => {this.gui.showCaptureModal(v)};
-        this.animationRecorder.onStopCapture = () => {this.gui.hideCaptureModal()};
+        this.animationRecorder.onStartCapture = (v) => {
+            if(this.gui) {
+                this.gui.showCaptureModal(v);
+            }
+        };
+        this.animationRecorder.onStopCapture = () => {
+            if(this.gui) {
+                this.gui.hideCaptureModal();
+            }
+        };
         window.addEventListener( "message", this.onMessage.bind(this) );
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
@@ -637,11 +652,13 @@ class App {
         if ( Array.isArray(data) ){
             this.changeMode(App.Modes.SCRIPT);
             this.bmlApp.onMessage(data, (processedData) => {
-                this.gui.setBMLInputText( 
-                    JSON.stringify(this.bmlApp.msg.data, function(key, val) {
-                        return val.toFixed ? Number(val.toFixed(3)) : val;
-                    }) 
-                );
+                if(this.gui) {
+                    this.gui.setBMLInputText( 
+                        JSON.stringify(this.bmlApp.msg.data, function(key, val) {
+                            return val.toFixed ? Number(val.toFixed(3)) : val;
+                        }) 
+                    );
+                }
             }); 
             return;
         } 
