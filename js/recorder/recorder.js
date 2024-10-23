@@ -107,12 +107,14 @@ AnimationRecorder.prototype.handleDataAvailable = function (event, idx) {
 
 AnimationRecorder.prototype.handleStart = function (idx) {
     if (idx === 0) {
-        if (window.global.app.mode == App.Modes.SCRIPT){
-            window.global.app.bmlApp.replay();
+        if (this.app.mode == App.Modes.SCRIPT){
+            this.app.bmlApp.replay();
         }
-        else if (window.global.app.mode == App.Modes.KEYFRAME) {
-            window.global.app.keyframeApp.changePlayState(true); // start animation
-            window.global.app.gui.keyframeGui.refresh();
+        else if (this.app.mode == App.Modes.KEYFRAME) {
+            this.app.keyframeApp.changePlayState(true); // start animation
+            if(this.app.gui) {
+                this.app.gui.keyframeGui.refresh();
+            }
         }
     }
     this.clock.start();
