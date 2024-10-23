@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { App } from '../App.js'
 
-function AnimationRecorder(numCameras) {
+function AnimationRecorder(numCameras, app) {
     this.isRecording = false;
     this.timeLimit = null;
     this.mediaRecorders = [];
@@ -32,7 +32,7 @@ function AnimationRecorder(numCameras) {
         this.mediaRecorders.push( mediaRecorder );
         this.recordedChunks.push([]);
     };
-
+    this.app = app;
 }
 
 AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp) {
@@ -61,7 +61,15 @@ AnimationRecorder.prototype.manageMultipleCapture = async function (keyframeApp)
 AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit = null) {
     if (window.global.app.mode == App.Modes.SCRIPT){
         this.animationsCount = 1;
-        if (this.isRecording) { this.stopCapture(); }
+        if(this.onStartCapture) {
+            this.onStartCapture('');
+        }
+        if (this.isRecording) { 
+            this.stopCapture(); 
+            // if(this.onStopCapture) {
+            //     this.onStopCapture();
+            // }
+        }
         else { this.startCapture("BML"); }
     }
     else if (window.global.app.mode == App.Modes.KEYFRAME) {
@@ -77,7 +85,7 @@ AnimationRecorder.prototype.manageCapture = function (animationName, timeLimit =
     }
 }
 
-let zip = new JSZip();
+let zip = typeof JSZip != 'undefined' ? new JSZip() : null;
 
 AnimationRecorder.prototype.startCapture = function (animationName) {
     this.isRecording = true;
@@ -128,6 +136,10 @@ AnimationRecorder.prototype.handleStop = function (idx) {
     const name =  `${animationName} ${idx + 1}.webm`;
 
     blobToBase64(blob, (binaryData) => {
+        if(!zip) {
+            console.error("JSZip not imported. The recordings can't be downloaded.");
+            return;
+        }
         // Add downloaded file video to zip in the specified folder:
         zip.folder(animationName).file(name, binaryData, {base64: true})
         let files = Object.keys(zip.files);

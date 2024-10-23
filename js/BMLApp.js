@@ -39,6 +39,8 @@ class BMLApp {
 
         this.intensity = 0.3;
         this.speed = 1;
+
+        this.scene = null;
     }
 
     // loads dictionary for mouthing purposes. Not synchronous.
@@ -166,6 +168,9 @@ class BMLApp {
         let faceAnimation = null;
         if ( animationData && animationData.skeletonAnim ){
             skeleton = animationData.skeletonAnim.skeleton;
+            if(!skeleton) {
+                return;
+            }
             skeleton.bones.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
             // loader does not correctly compute the skeleton boneInverses and matrixWorld 
             skeleton.bones[0].updateWorldMatrix( false, true ); // assume 0 is root
@@ -327,6 +332,8 @@ class BMLApp {
         scene.add(this.eyesTarget);
         scene.add(this.headTarget);
         scene.add(this.neckTarget);
+
+        this.scene = scene;
     }
         
     update( deltaTime ) {
@@ -409,10 +416,10 @@ class BMLApp {
         if(bones[0].parent.parent) {
             let parent = bones[0].parent.parent.clone(false);
             parent.add(root);
-            window.global.app.scene.add(parent)
+            this.scene.add(parent)
         }
         else {
-            window.global.app.scene.add(root)
+            this.scene.add(root)
         }
         resultBones[0].updateWorldMatrix( true, true ); // assume 0 is root. Update all global matrices (root does not have any parent)
         let resultSkeleton = new THREE.Skeleton(resultBones);
@@ -428,7 +435,9 @@ class BMLApp {
 
         if(!Object.keys(this.loadedIdleAnimations).length) {
             this.loadIdleAnimations(["./data/animations/Idle.bvh", "./data/animations/SitIdle.bvh", "./data/animations/standingIdle.bvh"]).then((v) => {
+                if(!Object.keys(this.loadedIdleAnimations).length) {return;}
                 this.currentIdle = Object.keys(this.loadedIdleAnimations)[0].replace("./data/animations/", "");
+                this.bindAnimationToCharacter(this.currentIdle, newAvatar.name);
             })
         }
         else {

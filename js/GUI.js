@@ -36,7 +36,7 @@ class AppGUI {
                 }
             });      
         };
-
+        this.mainArea.onresize = (bounding) => app.onCanvasResize(bounding.width, bounding.height);
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
         this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
@@ -2055,6 +2055,12 @@ class AppGUI {
     }
 
     showCaptureModal(capture) {
+        if(!this.mainArea.split_extended) {
+            this.mainArea.extend();
+        }
+        if(!capture) {
+            return;
+        }
         $("#loading p").text( "Capturing animation: " + capture);
 		$("#loading").removeClass("hidden");
 		$("#loading").css({ background: "rgba(17,17,17," + 0.5 + ")" })

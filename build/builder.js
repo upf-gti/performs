@@ -45,7 +45,16 @@ function build() {
         ],
         "IKSolver.js" : ["../js/sigml/GeometricArmIK.js"],
         "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
-        "App.js": ["../js/App.js"]
+        "App.js": [
+            "../js/BMLApp.js",
+            "../js/KeyframeApp.js",
+            "../js/recorder/recorder.js",
+            "../js/App.js"
+        ],
+        "Animation.js": [
+            "../js/extendedBVHLoader.js",
+            "../js/retargeting/retargeting.js"
+        ]
     };
     
     //change import files of classes
@@ -58,7 +67,6 @@ function build() {
         
         readFiles(files[filename], 
             (data, imports, exports) => {
-
                 
                 toImport[filename] = imports;
                 toExport[filename] = exports;
@@ -85,9 +93,10 @@ function build() {
             let classes = imports[oldPath];
             let isExported = false;
             for(let i = 0; i < classes.length; i++) {
-                if(exports.indexOf(classes[i])>-1)
+                if(exports.indexOf(classes[i])>-1 && classes[i] !='BVHLoader')
                     isExported = true;
             }
+
             if(isExported)
                 continue;
             let newPath = oldPath;
@@ -112,7 +121,7 @@ function build() {
                 newPaths[newPath] = [...newPaths[newPath], ...classes];
             else
                 newPaths[newPath] = classes;
-            
+              
             let temp = [];
             for (let i = 0; i < newPaths[newPath].length; i++) {
                 if ( !temp.includes( newPaths[newPath][i] ) ){
@@ -160,10 +169,13 @@ function readFiles(filenames, onFileContent, onError) {
     let exports = [];
     let contentFile = ""; //"(function(global){\n";
     let files = filenames.map((x) => {let a = x.split("."); return a[a.length-2]});
-
     for(let i = 0; i < filenames.length; i++) {
         let filename = filenames[i];
         let content = fs.readFileSync(filename, 'utf-8');
+        // if(filename.includes("extendedBVH")) {
+        //     contentFile = content;
+        //     continue;
+        // }
         let newContent = "";
         content.split(/\r?\n/).forEach(line =>  {
             if(line.includes("import "))
@@ -222,9 +234,7 @@ function readFiles(filenames, onFileContent, onError) {
         contentFile += 
         // "/** \n"+
         // "* @class "+ context + "\n*/ " +
-        newContent + "\n" 
-        
-
+        newContent + "\n"         
     }
 
     onFileContent(contentFile, imports, exports);

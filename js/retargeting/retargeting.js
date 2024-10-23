@@ -1,6 +1,4 @@
 import * as THREE from 'three';
-//import { normalize } from 'three/src/math/MathUtils.js';
-
 
 // asymetric and/or negative scaling of objects is not properly supported 
 class AnimationRetargeting {

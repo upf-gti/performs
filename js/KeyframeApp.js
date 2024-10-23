@@ -194,6 +194,9 @@ class KeyframeApp {
         let faceAnimation = null;
         if ( animationData && animationData.skeletonAnim ){
             skeleton = animationData.skeletonAnim.skeleton;
+            if(!skeleton) {
+                return;
+            }
             skeleton.bones.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
             // loader does not correctly compute the skeleton boneInverses and matrixWorld 
             skeleton.bones[0].updateWorldMatrix( false, true ); // assume 0 is root

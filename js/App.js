@@ -529,6 +529,9 @@ class App {
                     this.gui.refresh();
                 }
             }
+            else {
+                window.document.body.appendChild(this.renderer.domElement);
+            }
             this.animate();
             $('#loading').fadeOut(); //hide();
             this.isAppReady = true;
@@ -539,7 +542,7 @@ class App {
             }
         });
 
-        this.animationRecorder = new AnimationRecorder(this.cameras.length);
+        this.animationRecorder = new AnimationRecorder(this.cameras.length, this);
         this.animationRecorder.onStartCapture = (v) => {
             if(this.gui) {
                 this.gui.showCaptureModal(v);
@@ -589,7 +592,7 @@ class App {
                 break;
         }
         
-        if (this.animationRecorder.isRecording) {
+        if (this.animationRecorder && this.animationRecorder.isRecording) {
             this.animationRecorder.update(this.scene, this.cameras);
         }        
 
