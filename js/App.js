@@ -65,6 +65,7 @@ class App {
         }
         if(this.bmlApp.ECAcontroller) {
             this.bmlApp.ECAcontroller.reset();
+            this.bmlApp.ECAcontroller.update(0,0);
         }
 
         if(this.gui) {
@@ -340,6 +341,7 @@ class App {
 
     newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
         let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
+        camera.record = true;
         let controls = new OrbitControls( camera, this.renderer.domElement );
 
         controls.target.set(0, 1.3, 0);
@@ -701,7 +703,6 @@ class App {
             this.controls[this.camera].maxAzimuthAngle = THREE.Infinity;
             this.controls[this.camera].minPolarAngle = 0.0;
             this.controls[this.camera].maxPolarAngle = Math.PI;     
-            this.setBackPlaneColour( 0x4f4f9c );
         } else {
             this.controls[this.camera].enablePan = false;
             this.controls[this.camera].minDistance = 0.7;
@@ -710,7 +711,6 @@ class App {
             this.controls[this.camera].maxAzimuthAngle = 2;
             this.controls[this.camera].minPolarAngle = 0.6;
             this.controls[this.camera].maxPolarAngle = 2.1;
-            this.setBackPlaneColour( 0x46c219 );
 
             if ( this.currentCharacter && this.currentCharacter.config ){
                 this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );

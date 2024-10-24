@@ -9,7 +9,6 @@ class AppGUI {
     constructor( app ){
         this.app = app;
         this.randomSignAmount = 0;
-        
         // available model models paths - [model, config, rotation]
         this.avatarOptions = {
             "EvaLow": ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.png'],
@@ -28,7 +27,7 @@ class AppGUI {
 			this.app.loadFiles(e.dataTransfer.files, (files) => {
                 $("#loading").fadeOut();
                 if(files.length) {
-                    this.gui.refresh(); 
+                    // this.gui.refresh(); 
                     this.createSettingsPanel();
                 }
                 else {
@@ -120,8 +119,8 @@ class AppGUI {
         this.captureEnabled = false;
 
         this.createIcons(canvasArea);
-        this.createPanel();
-        this.gui.root.classList.add('hidden');
+        // this.createPanel();
+        // this.gui.root.classList.add('hidden');
 
     }
 
@@ -136,7 +135,7 @@ class AppGUI {
     }
 
     refresh(){
-        this.gui.refresh();
+        // this.gui.refresh();
     }
 
     createSettingsPanel(force = false) {
@@ -148,9 +147,7 @@ class AppGUI {
         }
 
         p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
-        // p.sameLine();
-        // p.addButton
-        // p.endLine();
+        
         p.addText(null,"Animation mode options", null, {disabled: true});
         p.sameLine();
 
@@ -177,7 +174,8 @@ class AppGUI {
         }
         btn = p.addButton(null, "Keyframing animation",  (v, e) => {
             this.app.changeMode(App.Modes.KEYFRAME);
-            this.createSettingsPanel();       
+            this.createSettingsPanel(); 
+            
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
             if(resetBtn) {
                 resetBtn.classList.add("hidden");
@@ -414,10 +412,10 @@ class AppGUI {
         for(let avatar in this.avatarOptions) {
             // p.sameLine();
             const btn = p.addButton(null, avatar, (value)=> {
-                // if(this.app.mode == App.Modes.SCRIPT) {
-                //     this.bmlGui.setValue( "Mood", "Neutral" );  
-                // }
-                
+                this.app.bmlApp.mood = "Neutral";
+                let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
+                this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+
                 // load desired model
                 if ( !this.app.loadedCharacters[value] ) {
                     $('#loading').fadeIn(); //hide();
@@ -560,7 +558,7 @@ class AppGUI {
             p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
                 // Replay animation - dont replay if stopping the capture
                 if(this.app.mode == App.Modes.SCRIPT) {
-                    this.app.bmlApp.ECAcontroller.reset();
+                    this.app.bmlApp.ECAcontroller.reset(true);
                     this.app.animationRecorder.manageCapture();
                     this.createCameraPanel();
                 }
@@ -571,6 +569,19 @@ class AppGUI {
                     });
                 }
             }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
+
+            p.addText(null, "Select cameras to be recorded:", null, {disabled: true});
+            p.sameLine();
+            p.addCheckbox("1", this.app.cameras[0].record, (value, event) => {
+                this.app.cameras[0].record = value;
+            });
+            p.addCheckbox("2", this.app.cameras[1].record, (value, event) => {
+                this.app.cameras[1].record = value;
+            });
+            p.addCheckbox("3", this.app.cameras[2].record, (value, event) => {
+                this.app.cameras[2].record = value;
+            });
+            p.endLine();
         }
     }
 
@@ -580,7 +591,7 @@ class AppGUI {
         p.clear();
         p.branch( "Lights", { icon: "fa-solid fa-lightbulb"} );
 
-        p.addColor("Color Chroma", "#" + this.app.dirLight.color.getHexString(), (value, event) => {
+        p.addColor("Color", "#" + this.app.dirLight.color.getHexString(), (value, event) => {
             this.app.dirLight.color.set(value);
         });
         
@@ -780,10 +791,9 @@ class AppGUI {
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        if(this.bmlGui && this.bmlGui.widgets["Mood"]) {
-                            this.bmlGui.setValue( "Mood", "Neutral" ); 
-                        }
+                        this.app.bmlApp.mood = "Neutral";
                         this.app.bmlApp.ECAcontroller.reset();
+                        this.createSettingsPanel();
                     }
                 }
             }
@@ -796,7 +806,7 @@ class AppGUI {
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.bmlApp.ECAcontroller.reset(true);
                         this.app.animationRecorder.manageCapture();
                         this.createCameraPanel();
                     }
@@ -844,8 +854,7 @@ class AppGUI {
                 class: "large",
                 callback: () => {
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        // this.bmlGui.setValue( "Mood", "Neutral" ); 
-                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.bmlApp.ECAcontroller.reset(true);
                     }
                     else if(this.app.mode == App.Modes.KEYFRAME) {
                         this.app.keyframeApp.changePlayState(false);
@@ -894,11 +903,14 @@ class AppGUI {
 
     onChangeMode(mode) {
         if(mode == App.Modes.SCRIPT) {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
+            
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
             if(resetBtn) {
                 resetBtn.classList.remove("hidden");
             }
             this.changePlayButtons(false);
+            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
         }
         else if(mode == App.Modes.KEYFRAME) {
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
@@ -983,7 +995,9 @@ class AppGUI {
                 }
                 p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.bmlGui.setValue( "Mood", "Neutral" );  
+                        this.app.bmlApp.mood = "Neutral";
+                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.bmlApp.ECAcontroller.update(0,0);
                     }
                     
                     // load desired model
@@ -1093,7 +1107,7 @@ class AppGUI {
                 p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.bmlApp.ECAcontroller.reset(true);
                         this.app.animationRecorder.manageCapture();
                         this.refresh();
                     }
@@ -1182,10 +1196,9 @@ class AppGUI {
 
         this.bmlGui.sameLine();
         this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
-            if(this.bmlGui) {
-                this.bmlGui.setValue( "Mood", "Neutral" ); 
-            }
+            this.app.bmlApp.mood = "Neutral";
             this.app.bmlApp.ECAcontroller.reset();
+            refresh();
         }, {icon: "fa-solid fa-person", width: "40px", class:"floating-button"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
@@ -1399,10 +1412,17 @@ class AppGUI {
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
-        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], "Neutral", (value, event) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: 1, start: 0.0, shift: true } ] };
+        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.app.bmlApp.mood, (value, event) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
+            this.app.bmlApp.mood = value;
             this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
         });
+
+        this.bmlGui.addNumber("Mood intensity", this.app.bmlApp.moodIntensity, (v) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
+            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            this.app.bmlApp.moodIntensity = v;
+        }, {min: 0.1, max: 1.0, step: 0.01})
 
         this.bmlGui.addCheckbox("Apply idle animation", this.app.bmlApp.applyIdle, (v) => {
             this.app.bmlApp.applyIdle = v;            

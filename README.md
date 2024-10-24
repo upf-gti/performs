@@ -2,8 +2,42 @@
 
 <img src="./data/imgs/performs.png" height="200" align="right">
 
-Performs is designed to integrate a variety of BML (Behavior Markup Language) instructions pertaining to both Manual Features (MF) and Non-Manual Features (NMF) into cohesive animations. The current progress of the project has achieved a robust synthesis of NMF, crucial for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
+Performs is designed to visualize and synthesize humanoid animations for customized avatars. It supports two types of animations: **keyframe animations** (glTF, BVH) and **script animations** (SiGML, BML). The second mode integrates a variety of BML (Behavior Markup Language) instructions for Manual Features (MF) and Non-Manual Features (NMF) to create cohesive animations, performed in real-time. The project has made significant progress in synthesizing NMF, which is essential for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
 
+## Installation and Running
+Clone the repository:
+```
+git clone https://github.com/upf-gti/performs.git
+```
+To run locally, host a server from the main project folder. You can also use the [build](./build/) version without GUI.
+> [!IMPORTANT]  
+> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
+
+## Adding avatars
+> [!IMPORTANT]  
+> Currently only glTF and glb are supported. If you happen to use another format, please convert it to either glTF or glb.
+
+To add a new avatar to Performs, you must follow this steps:
+
+ 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
+ 2. Check that your avatar has the correct scale and orientation.
+ 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application (only required for Script mode), this will generate a configuration .json file containing all the needed information.
+ 4. Select `upload yours` in  the application Avatars section and select your files or your URLs.
+ 5. Change to your avatar inside the application Avatars section. For a hosted file, you can load the avatar as default by adding the link to the "avatar" parameter in the app's URL.
+
+## Customisation
+The application allows users to customize the following features:
+- Avatar:
+    - [x] Character
+    - [x] Color
+- Background:
+    - [x] Space: _Open space_, _Studio_, _Photocall_
+    - [x] Color
+- Illumination:
+    - [x] Light position
+    - [x] Light color
+
+## Script animation
 The current supported instructions are explained in detail in [BML Instructions](./docs/InstructionsBML.md).
 An example:
 ``` javascript
@@ -17,35 +51,16 @@ An example:
     lexeme: "NMF_ARCH"
 }
 ```
-## Installation and Running
-Clone the repository:
-```
-git clone https://github.com/upf-gti/performs.git
-```
-To run locally, host a server from the main project folder.
-
-## Adding avatars
-> [!IMPORTANT]  
-> Currently only glTF and glb are supported. If you happen to use another format, please convert it to either glTF or glb.
-
-To add a new avatar to performs, you must follow this steps:
-
- 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
- 2. Check that your avatar has the correct scale and orientation
- 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application, this will generate a configuration .json file containing all the needed information.
- 4. Select `upload your avatar` in  the application avatar selection combo and select your files.
- 5. Change to your avatar inside the application avatar selection combo
-
-## Examples
+### Examples
 Some examples on simple NGT (Dutch Sign Language) 
 
 Kind lezen boek (child reads a book):
-![Alt Text](https://iili.io/JYsmKzX.gif) 
+![Alt Text](https://iili.io/2foQwCu.gif) 
 
 Man rijden fiets (Man rides a bicycle) :
-![Alt Text](https://iili.io/JYL9aBn.gif)
+![Alt Text](https://iili.io/2foZgS4.gif)
 
-## Architecture
+### Architecture
 
 The realizer is divided into main sections, each containing several files. 
 The whole pipeline is warpped inside the CharacterController class which is in charge of receiving a BML block and triggering and executing its instructions when required.

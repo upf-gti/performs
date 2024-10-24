@@ -40,6 +40,9 @@ class BMLApp {
         this.intensity = 0.3;
         this.speed = 1;
 
+        this.mood = "Neutral";
+        this.moodIntensity = 1.0;
+        
         this.scene = null;
     }
 
