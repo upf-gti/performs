@@ -23,18 +23,113 @@ class AppGUI {
         this.mainArea.root.ondrop = (e) => {
 			e.preventDefault();
 			e.stopPropagation();
-            $("#loading").fadeIn();
-			this.app.loadFiles(e.dataTransfer.files, (files) => {
-                $("#loading").fadeOut();
-                if(files.length) {
-                    // this.gui.refresh(); 
-                    this.createSettingsPanel();
+           
+            let animations = [];
+            let config = null;
+            let gltfs = [];
+
+            let files = e.dataTransfer.files;
+            for(let i = 0; i < files.length; i++) {
+                //load json (bml) file
+                const file = files[i];
+                const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
+                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf'];
+                if(formats.indexOf(extension) < 0) {
+                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe', 'glb, 'gltf', 'json'\n\t");
+                }
+                if(extension == 'gltf' || extension == 'glb') {
+                    gltfs.push(file);
+                }
+                else if(extension == 'json') {
+                    config = file;
                 }
                 else {
-                    LX.popup("This file doesn't contain any animation or a valid source avatar!");
+                    animations.push(file);
                 }
-            });      
+            }
+
+            if(gltfs.length) {
+                this.createImportDialog('.glb', (isAvatar) => {
+                    if(isAvatar) {
+                        this.uploadAvatar((value, config) => {
+                    
+                            if ( !this.app.loadedCharacters[value] ) {
+                                $('#loading').fadeIn(); //hide();
+                                let modelFilePath = this.avatarOptions[value][0]; 
+                                let configFilePath = this.avatarOptions[value][1]; 
+                                let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                                this.app.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
+                                    this.app.changeAvatar(value);
+                                    this.createAvatarsPanel();
+                                    if(this.app.currentCharacter.config) {
+                                        this.app.changeMode(App.Modes.SCRIPT);
+                                        
+                                        const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
+                                        if(resetBtn) {
+                                            resetBtn.classList.remove("hidden");
+                                        }
+                                    }
+                                    $('#loading').fadeOut();
+                                }, (err) => {
+                                    $('#loading').fadeOut();
+                                    LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
+                                } );
+                                return;
+                            } 
+            
+                            // use controller if it has been already loaded in the past
+                            this.app.changeAvatar(value);
+                            this.createAvatarsPanel();
+                        });
+                        
+                        // Create a data transfer object
+                        let dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(gltfs[0]);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
+                        this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                        
+                        if (config) { 
+                            // Create a data transfer object
+                            dataTransfer = new DataTransfer();
+                            // Add file to the file list of the object
+                            dataTransfer.items.add(config);
+                            // Save the file list to a new variable
+                            const fileList = dataTransfer.files;
+                            this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
+                            this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
+                        }
+                    }
+                    else {
+                        $("#loading").fadeIn();
+                        this.app.loadFiles(gltfs, (files) => {
+                            $("#loading").fadeOut();
+                            if(files.length) {
+                                this.createSettingsPanel();
+                            }
+                            else {
+                                LX.popup("This file doesn't contain any animation or a valid source avatar!");
+                            }
+                        });    
+                    }
+                });            
+            }
+            if(animations.length) {
+                $("#loading").fadeIn();
+                this.app.loadFiles(animations, (files) => {
+                    $("#loading").fadeOut();
+                    if(files.length) {
+                        this.createSettingsPanel();
+                    }
+                    else {
+                        LX.popup("This file doesn't contain any animation or a valid source avatar!");
+                    }
+                });      
+            }
         };
+
         this.mainArea.onresize = (bounding) => app.onCanvasResize(bounding.width, bounding.height);
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
         this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
@@ -109,8 +204,14 @@ class AppGUI {
                         if(this.settingsActive) {
                             this.createSettingsPanel();             
                         }
-                        //this.changePlayButtons(this.playing);                        
+                    }                    
+                }
+                else if(event.key == 'Escape') {
+                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
+                        this.mainArea._moveSplit(-100);
                     }
+                    this.mainArea.extend();
+                    this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
                 }
             });
         }
@@ -119,8 +220,6 @@ class AppGUI {
         this.captureEnabled = false;
 
         this.createIcons(canvasArea);
-        // this.createPanel();
-        // this.gui.root.classList.add('hidden');
 
     }
 
@@ -135,7 +234,9 @@ class AppGUI {
     }
 
     refresh(){
-        // this.gui.refresh();
+        if(this.gui) {
+            this.gui.refresh();
+        }
     }
 
     createSettingsPanel(force = false) {
@@ -1563,6 +1664,16 @@ class AppGUI {
 
     }
     
+    createImportDialog(type, callback) {
+        let isAvatar = false;
+        const dialog = new LX.Dialog(type + " File Detected!", (panel) => {
+            panel.sameLine();
+            panel.addButton(null, "Use as Avatar", (v) => { isAvatar = true; dialog.close(); callback(isAvatar); });
+            panel.addButton(null, "Use Animations only", (v) => { isAvatar = false; dialog.close(); callback(isAvatar);})
+            panel.endLine();
+        })
+    }
+
     uploadAvatar(callback = null) {
         let name, model, config;
         let rotation = 0;
@@ -1797,42 +1908,7 @@ class AppGUI {
             panel.root.addEventListener("drop", (v, e) => {
 
                 let files = v.dataTransfer.files;
-                if(!files.length) {
-                    return;
-                }
-                for(let i = 0; i < files.length; i++) {
-
-                    const path = files[i].name.split(".");
-                    const filename = path[0];
-                    const extension = path[1];
-                    if (extension == "glb" || extension == "gltf") { 
-                        // Create a data transfer object
-                        const dataTransfer = new DataTransfer();
-                        // Add file to the file list of the object
-                        dataTransfer.items.add(files[i]);
-                        // Save the file list to a new variable
-                        const fileList = dataTransfer.files;
-                        avatarFile.domEl.children[1].files = fileList;
-                        avatarFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-                        model = v;
-                        if(!name) {
-                            name = filename;
-                            nameWidget.set(name)
-                        }
-                    }
-                    else if (extension == "json") { 
-                        // Create a data transfer object
-                        const dataTransfer = new DataTransfer();
-                        // Add file to the file list of the object
-                        dataTransfer.items.add(files[i]);
-                        // Save the file list to a new variable
-                        const fileList = dataTransfer.files;
-                        configFile.domEl.children[1].files = fileList;
-                        configFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-
-                        //config = JSON.parse(files[i]); 
-                    }
-                }
+                this.onDropAvatarFiles(files);
             })
             
         }
@@ -1978,42 +2054,7 @@ class AppGUI {
             panel.root.addEventListener("drop", (v, e) => {
 
                 let files = v.dataTransfer.files;
-                if(!files.length) {
-                    return;
-                }
-                for(let i = 0; i < files.length; i++) {
-
-                    const path = files[i].name.split(".");
-                    const filename = path[0];
-                    const extension = path[1];
-                    if (extension == "glb" || extension == "gltf") { 
-                        // Create a data transfer object
-                        const dataTransfer = new DataTransfer();
-                        // Add file to the file list of the object
-                        dataTransfer.items.add(files[i]);
-                        // Save the file list to a new variable
-                        const fileList = dataTransfer.files;
-                        avatarFile.domEl.children[1].files = fileList;
-                        avatarFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-                        model = v;
-                        if(!name) {
-                            name = filename;
-                            nameWidget.set(name)
-                        }
-                    }
-                    else if (extension == "json") { 
-                        // Create a data transfer object
-                        const dataTransfer = new DataTransfer();
-                        // Add file to the file list of the object
-                        dataTransfer.items.add(files[i]);
-                        // Save the file list to a new variable
-                        const fileList = dataTransfer.files;
-                        configFile.domEl.children[1].files = fileList;
-                        configFile.domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-
-                        //config = JSON.parse(files[i]); 
-                    }
-                }
+                this.onDropAvatarFiles(files);
             })
             
         }
@@ -2022,6 +2063,44 @@ class AppGUI {
         }, { size: ["40%"], closable: true, onclose: (root) => {  root.remove(); }});
 
         return name;
+    }
+
+    onDropAvatarFiles(files) {
+        if(!files.length) {
+            return;
+        }
+        for(let i = 0; i < files.length; i++) {
+
+            const path = files[i].name.split(".");
+            const filename = path[0];
+            const extension = path[1];
+            if (extension == "glb" || extension == "gltf") { 
+                // Create a data transfer object
+                const dataTransfer = new DataTransfer();
+                // Add file to the file list of the object
+                dataTransfer.items.add(files[i]);
+                // Save the file list to a new variable
+                const fileList = dataTransfer.files;
+
+                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
+                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                // model = v;
+                // if(!name) {
+                //     name = filename;
+                //     nameWidget.set(name)
+                // }
+            }
+            else if (extension == "json") { 
+                // Create a data transfer object
+                const dataTransfer = new DataTransfer();
+                // Add file to the file list of the object
+                dataTransfer.items.add(files[i]);
+                // Save the file list to a new variable
+                const fileList = dataTransfer.files;
+                this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
+                this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+            }
+        }
     }
 
     setBMLInputText( text ){
@@ -2075,9 +2154,11 @@ class AppGUI {
     }
 
     showCaptureModal(capture) {
-        if(!this.mainArea.split_extended) {
-            this.mainArea.extend();
+        if(this.settingsActive || this.cameraActive || this.lightsActive) {
+            this.mainArea._moveSplit(-100);
         }
+        this.mainArea.extend();
+        this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
         if(!capture) {
             return;
         }

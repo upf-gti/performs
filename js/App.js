@@ -721,17 +721,7 @@ class App {
     }
 
     loadFiles( files, callback ) {
-        for(let i = 0; i < files.length; i++) {
-            //load json (bml) file
-            const file = files[i];
-            const extension = file.name.substr(file.name.lastIndexOf(".") + 1);
-            const formats = ['bvh', 'bvhe', 'glb', 'gltf'];
-            if(formats.indexOf(extension) < 0) {
-                alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe'\n\t");
-            }
-        }
-
-        
+               
         this.keyframeApp.processMessageFiles(files).then((data) => {
             if(data[0].length) {
                 this.changeMode(App.Modes.KEYFRAME);
