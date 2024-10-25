@@ -36,6 +36,44 @@
             </div>
 		</div>
 
+        <div class="guide-modal hidden" id="guide-modal">
+            <div class="container" id="modal0">
+                <h2>Visualize animations on any character to create your perfect scene</h2>
+                <img src="https://iili.io/2foZgS4.gif">
+                <p>Performs is designed to visualize and synthesize humanoid animations for customized avatars. You can play animation files or synthesize them in real-time from instructions. Select whether to use the <strong>Keyframe mode</strong> or the <strong>Script mode</strong>.</p>
+                <button>Next</button>
+            </div>
+            <div class="container hidden" id="modal1">
+                <h2>Keyframe mode</h2>
+                <img src="https://iili.io/2q9u8Mb.gif">
+                <p>Performs uses <a href="https://github.com/upf-gti/retargeting-threejs" target="_blank">retargeting-threejs</a>. Just drag and drop your own .GLB, .GLTF or .BVH files to add your animations and adjust the retargeting configuration in <i>Settings</i>. You can use <a href="https://webglstudio.org/projects/signon/animics" target="_blank">Animics</a> for generate the animations.</p>
+                <button>Back</button>
+                <button>Next</button>
+            </div>
+            <div class="container hidden" id="modal2">
+                <h2>Script mode</h2>
+                <img src="https://iili.io/2qHjqYB.gif">
+                <p>Performs works with BML (Behavior Markup Language) instructions, extended to create cohesive animations in real-time, which are explained in detail <a href="https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md" target="_blank">here</a>. It also supports SiGML (Signing Gesture Markup Language) and NGT glosses. </p> 
+                <p>This mode allows you to synthesize MF (Manual) and NMF (Non-Manual) features, which is essential for enhancing the realism of sign language animations. Just go to <i>Settings</i> to see the options. </p>
+                <p>To apply these actions, a configuration file is needed for your character, which can be created in <a href="https://webglstudio.org/projects/signon/performs-atelier" target="_blank">Atelier</a>.</p>
+                <button>Back</button>
+                <button>Next</button>
+            </div>
+            <div class="container hidden" id="modal3">
+                <h2>Choose your avatar</h2>
+                <p>Performs works with any rigged 3D character. Just drag and drop your .GLB or .GLTF or go to <i>Avatars</i>, select <i>Upload yours</i> and put the link of your file.</p>
+                <p>Use the <a href="https://webglstudio.org/projects/signon/performs-atelier" target="_blank">Atelier</a> tool to configure all the parameters needed for the <strong>Script mode</strong>. This will generate a configuration .JSON file containing all the needed information.</p>
+                <button>Back</button>
+                <button>Next</button>
+            </div>
+            <div class="container hidden" id="modal4">
+                <h2>Customize Your Experience</h2>
+                <p>Choose the avatar, change the colors, setup the background, modify the illumination... and export the configuration to use it in your app! You can include Performs using an <i>iframe</i> or downloading the build version from <a href="https://github.com/upf-gti/performs" type="_blank">Github</a>.</p>
+                <button>Back</button>
+                <button>Finish</button>
+            </div>
+        </div>
+
         <script src="./js/App.js" type="module"></script>
 
     </body>

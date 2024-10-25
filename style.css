@@ -128,8 +128,8 @@
 
 .lexoverlaybuttons .lexwidget.larger button {
 
-	width: 40px!important;
-	height: 40px!important;	
+	width: 37px!important;
+	height: 37px!important;	
     max-height: 80px!important;
 	max-width: 80px!important;
 }
@@ -171,4 +171,85 @@
 
 .lexoverlaybuttons .lexwidget.relative.left {    
     margin-right: 77px;
+}
+
+.lexbutton.selected {
+    background: var(--global-selected);
+    outline: 1px solid var(--global-color-terciary);
+    color: #DDD;
+}
+
+
+/* GUIDE */ 
+.overlay {
+	display: none;
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background-color: rgba(0, 0, 0, 0.8);
+	z-index: 999;
+	transition: opacity 0.3s ease;
+}
+
+.guide-modal {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	z-index: 1000;
+	background-color: #1e1e2fe6;
+}
+
+.guide-modal .container {
+	position: fixed;
+	top: 50%;
+	left: 50%;
+	width: 20%;
+	transform: translate(-50%, -50%) scale(0.8);
+	background-color: #1E1E2F;
+	padding: 30px;
+	border-radius: 12px;
+	box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+	transition: transform 0.3s ease, opacity 0.3s ease;
+
+	color: #FFFFFF;
+}
+
+.guide-modal .container.show {
+	display: flex;
+	flex-direction: column;
+	transform: translate(-50%, -50%) scale(1);
+}
+
+.guide-modal .container h2 {
+	color: #BB86FC;
+}
+
+.guide-modal .container p {
+	text-align: justify;
+}
+
+.guide-modal .container p i, .guide-modal .container p strong {
+	color:#BB86FC;
+}
+
+.guide-modal .container img {
+	height: 200px;
+	border-radius: 10px;
+}
+
+.guide-modal .container button {
+	background-color: #6200EA;
+	color: #FFFFFF;
+	border: none;
+	padding: 10px 15px;
+	border-radius: 5px;
+	cursor: pointer;
+	margin-top: 10px;
+	transition: background-color 0.3s;
+}
+
+.guide-modal .container button:hover {
+	background-color: #BB86FC;
 }

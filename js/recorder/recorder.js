@@ -122,10 +122,7 @@ class AnimationRecorder {
                 this.app.bmlApp.replay();
             }
             else if (this.app.mode == App.Modes.KEYFRAME) {
-                this.app.keyframeApp.changePlayState(true); // start animation
-                if(this.app.gui) {
-                    this.app.gui.keyframeGui.refresh();
-                }
+                this.app.keyframeApp.changePlayState(true); // start animation                
             }
         }
         this.clock.start();
@@ -164,10 +161,7 @@ class AnimationRecorder {
 
         // refresh gui
         if (idx === 0) {
-            if (this.app.mode == App.Modes.KEYFRAME) {
-                this.app.gui.keyframeGui.refresh();
-            }
-            else if (this.app.mode == App.Modes.SCRIPT) {
+            if (this.app.mode == App.Modes.SCRIPT) {
                 // reset avatar pose / stop animation
                 this.app.bmlApp.ECAcontroller.reset(true);
             }

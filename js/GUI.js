@@ -200,6 +200,9 @@ class AppGUI {
                         }
                     }
                     else if (this.app.mode == App.Modes.SCRIPT) {
+                        if(event.target.tagName == 'TEXTAREA') {
+                            return;
+                        }
                         this.app.bmlApp.replay();
                         if(this.settingsActive) {
                             this.createSettingsPanel();             
@@ -514,8 +517,9 @@ class AppGUI {
             // p.sameLine();
             const btn = p.addButton(null, avatar, (value)=> {
                 this.app.bmlApp.mood = "Neutral";
-                let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
-                this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+                if(this.app.bmlApp.ECAcontroller) {
+                    this.app.bmlApp.ECAcontroller.reset();
+                }
 
                 // load desired model
                 if ( !this.app.loadedCharacters[value] ) {
@@ -705,6 +709,15 @@ class AppGUI {
     createIcons(area) {
         this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
         const buttons = [
+            {
+                name: "Info",
+                selectable: false,
+                icon: "fa fa-question",
+                class: "larger",
+                callback: (b) => {
+                    this.showGuide();     
+                }
+            },
             {
                 name: "Settings",
                 selectable: false,
@@ -2172,6 +2185,52 @@ class AppGUI {
     hideCaptureModal() {
         $("#loading").addClass("hidden");
     }
+
+
+    showGuide() {
+        const modal = document.getElementById("guide-modal");
+        modal.classList.remove('hidden');
+        const modals = document.querySelectorAll('.guide-modal .container');
+        
+        const innerChange = (id) => {
+            modals.forEach(modalContent => {
+                modalContent.classList.remove('show');
+                modalContent.classList.add('hidden');
+                if (modalContent.id === id) {
+                    modalContent.classList.add('show');
+                    modalContent.classList.remove('hidden');
+                }
+            });            
+        }
+        innerChange("modal0");
+        for(let i = 0; i < modals.length; i++) {
+            const modalContent = modals[i];
+            const buttons = modalContent.getElementsByTagName('button');
+            for(let j = 0; j < buttons.length; j++) {
+                const btn = buttons[j];
+                if(btn.innerText == "Back") {
+                    btn.addEventListener("click", () => {
+                        innerChange("modal" + (i-1).toString())
+                    })
+                }
+                else if(btn.innerText == "Next") {
+                    btn.addEventListener("click", () => {
+                        innerChange("modal" + (i+1).toString())
+                    })
+                }
+                else {
+                    btn.addEventListener("click", () => {
+                        modal.classList.add('hidden');
+                    });
+                }
+            }
+        }
+
+    }
 }
 
 export { AppGUI };
+
+LX.setThemeColor("global-selected", "#6200EA");
+LX.setThemeColor("global-selected-light", "#bb86fc");
+LX.setThemeColor("global-selected-dark", "#a100ff");
