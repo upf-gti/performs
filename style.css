@@ -253,3 +253,9 @@
 .guide-modal .container button:hover {
 	background-color: #BB86FC;
 }
+
+.guide-modal .container span {
+	position: absolute;
+	width: 40px;
+	right: 0px;
+}
