@@ -150,8 +150,8 @@ class App {
 
                     }
                 }
-
                 this.backPlane.material = this.photocallMaterial;
+
                 if(this.backPlane.material.color) {
                     this.backPlane.material.color.set(this.sceneColor);
                 }
@@ -168,9 +168,7 @@ class App {
         if(!this.backPlane.material.uniforms) {
             const shader = this.backPlane.material.userData.shader;
             if ( shader ) {
-
                 shader.uniforms.offset.value = offset;
-
             }
         }
         else {
@@ -514,6 +512,8 @@ class App {
         }
 
         let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
+        
+        // Default avatar & config file
         if(urlParams.has('avatar')) {
             let avatar = urlParams.get('avatar');
             const path = avatar.split(".");
@@ -525,8 +525,74 @@ class App {
 
             modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];          
         }
+
+        // Default top cloth color
+        let clothColor = null;
+        if(urlParams.has('cloth')) {
+            clothColor = urlParams.get('cloth');
+            if(!(clothColor[0] == '0' && clothColor[1] =='x' || clothColor[0] == '#' || clothColor.includes('rgb'))) {
+                clothColor = null;
+            }           
+        }
+
+        // Default background
+        if(urlParams.has('background')) {
+            let background = urlParams.get('background');
+            switch(background.toLocaleLowerCase()) {
+                case 'studio':
+                    this.background = App.Backgrounds.STUDIO;
+                    break;
+                case 'photocall':
+                        this.background = App.Backgrounds.PHOTOCALL;
+                        break;
+                default:
+                    break;
+            }
+            this.setBackground(this.background);            
+        }
+
+        // Default background color
+        if(urlParams.has('color')) {
+            let color = urlParams.get('color');
+            if(color[0] == '0' && color[1] =='x' || color[0] == '#' || color.includes('rgb')) {
+                this.sceneColor = color;
+                this.setBackPlaneColour(this.sceneColor);            
+            }           
+        }
+
+
+        // Default light color
+        if(urlParams.has('light')) {
+            let light = urlParams.get('light');
+            if(light[0] == '0' && light[1] =='x' || light[0] == '#' || light.includes('rgb')) {
+                this.dirLight.color.set(light);                  
+            }           
+        }
+
+        // Default light position
+        if(urlParams.has('lightpos')) {
+            let light = urlParams.get('lightpos');
+            light = light.split(',');
+            if(light.length == 3) {
+                this.dirLight.position.set(light[0], light[1], light[2]);                  
+            }           
+        }
+
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
+            if(clothColor) {
+                let modelShirt = null;
+                this.currentCharacter.model.traverse((object) => {
+                    if(object.isSkinnedMesh && object.name.includes("Top")) {
+                        modelShirt = object;
+                    }
+                })
+                
+                if ( modelShirt ){
+                    modelShirt.material.color.set(clothColor);
+                }
+
+            }
             if ( typeof AppGUI != "undefined" && showControls) { 
                 this.gui = new AppGUI( this ); 
                 if(!this.gui.avatarOptions[modelToLoad[3]]) {
@@ -543,6 +609,14 @@ class App {
             $('#loading').fadeOut(); //hide();
             this.isAppReady = true;
                         
+            
+            // Default background image
+            if(urlParams.has('img')) {
+                let img = urlParams.get('img');
+                this.logo = img;
+                this.logoTexture = new THREE.TextureLoader().load( this.logo);
+                this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
+            }
             if(this.pendingMessageReceived) {
                 this.onMessage( this.pendingMessageReceived );
                 this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
