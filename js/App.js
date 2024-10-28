@@ -487,6 +487,41 @@ class App {
             \ }\n'
             )
             this.photocallMaterial.userData.shader = shader;
+            const urlParams = new URLSearchParams(queryString);
+            // Default background image
+            if(urlParams.has('img')) {
+                this.setBackground( App.Backgrounds.PHOTOCALL);         
+
+                let image = urlParams.get('img');
+                const imgCallback = ( event ) => {
+
+                    this.logo = event.target;        
+                    // this.logoTexture = new THREE.TextureLoader().load( this.logo);   
+                    this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
+                }
+
+                const img = new Image();            
+                img.onload = imgCallback;    
+                fetch(image)
+                .then(function (response) {
+                    if (response.ok) {
+                    response.blob().then(function (miBlob) {
+                        var objectURL = URL.createObjectURL(miBlob);
+                        img.src = objectURL;
+                    });
+                    } else {
+                    console.log("Respuesta de red OK pero respuesta HTTP no OK");
+                    }
+                })
+                .catch(function (error) {
+                    console.log("Hubo un problema con la petición Fetch:" + error.message);
+                });        
+
+                // this.logo = img;
+                // this.logoTexture = new THREE.TextureLoader().load( this.logo);
+                // this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
+            }
+
         };
 
         let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
@@ -560,6 +595,10 @@ class App {
             }           
         }
 
+        if(urlParams.has('offset')) {
+            let offset = Number(urlParams.get('offset'));
+            this.changePhotocallOffset(offset);
+        }
 
         // Default light color
         if(urlParams.has('light')) {
@@ -612,10 +651,36 @@ class App {
             
             // Default background image
             if(urlParams.has('img')) {
-                let img = urlParams.get('img');
-                this.logo = img;
-                this.logoTexture = new THREE.TextureLoader().load( this.logo);
-                this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
+                this.setBackground( App.Backgrounds.PHOTOCALL);         
+
+                // let image = urlParams.get('img');
+                // const imgCallback = ( event ) => {
+
+                //     this.logo = event.target;        
+                //     this.logoTexture = new THREE.TextureLoader().load( this.logo);   
+                //     this.setBackground( App.Backgrounds.PHOTOCALL);         
+                // }
+
+                // const img = new Image();            
+                // img.onload = imgCallback;    
+                // fetch(image)
+                // .then(function (response) {
+                //     if (response.ok) {
+                //     response.blob().then(function (miBlob) {
+                //         var objectURL = URL.createObjectURL(miBlob);
+                //         img.src = objectURL;
+                //     });
+                //     } else {
+                //     console.log("Respuesta de red OK pero respuesta HTTP no OK");
+                //     }
+                // })
+                // .catch(function (error) {
+                //     console.log("Hubo un problema con la petición Fetch:" + error.message);
+                // });        
+
+                // this.logo = img;
+                // this.logoTexture = new THREE.TextureLoader().load( this.logo);
+                // this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
             }
             if(this.pendingMessageReceived) {
                 this.onMessage( this.pendingMessageReceived );
