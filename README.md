@@ -33,6 +33,7 @@ The application allows users to customize the following features:
 - Background:
     - [x] Space: _Open space_, _Studio_, _Photocall_
     - [x] Color
+    - [x] Photocall image
 - Illumination:
     - [x] Light position
     - [x] Light color
