@@ -216,6 +216,9 @@ class App {
                 control.saveState();
                 control.update();
             });
+            if(this.bmlApp.currentIdle) {
+                this.bmlApp.bindAnimationToCharacter(this.bmlApp.currentIdle, this.currentCharacter.model.name);
+            }
         }
         else {
             this.changeMode(App.Modes.KEYFRAME);

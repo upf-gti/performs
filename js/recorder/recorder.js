@@ -15,6 +15,7 @@ class AnimationRecorder {
         this.handleStop = this.handleStop.bind(this);
         this.animationsCount = 0;
         this.enabledCameras = 0;
+        this.exportZip = true;
 
         for (let i = 0; i < numCameras; i++) {
             // offscreen renderer for each camera
@@ -134,28 +135,43 @@ class AnimationRecorder {
         const name =  `${animationName} ${idx + 1}.webm`;
 
         blobToBase64(blob, (binaryData) => {
-            if(!zip) {
+            if(!zip && this.exportZip) {
                 console.error("JSZip not imported. The recordings can't be downloaded.");
-                return;
             }
-            // Add downloaded file video to zip in the specified folder:
-            zip.folder(animationName).file(name, binaryData, {base64: true})
-            let files = Object.keys(zip.files);
 
-            if((files.length - this.animationsCount) == this.animationsCount * this.enabledCameras) {
-                if(this.onStopCapture) {
-                    this.onStopCapture();
+            if(zip && this.exportZip) {
+                // Add downloaded file video to zip in the specified folder:
+                zip.folder(animationName).file(name, binaryData, {base64: true})
+                let files = Object.keys(zip.files);
+    
+                if((files.length - this.animationsCount) == this.animationsCount * this.enabledCameras) {
+                    if(this.onStopCapture) {
+                        this.onStopCapture();
+                    }
+                    // All files have been downloaded, create the zip and download it
+                    zip.generateAsync({type:"base64"}).then(function (base64) {
+                        let zipName = 'performs-recordings.zip';
+                        let a = document.createElement('a'); 
+                        // Then trigger the download link
+                        a.href = "data:application/zip;base64," + base64;
+                        a.download = zipName;
+                        a.click();
+                        zip.files = {};
+                    });
                 }
-                // All files have been downloaded, create the zip and download it
-                zip.generateAsync({type:"base64"}).then(function (base64) {
-                    let zipName = 'performs-recordings.zip';
-                    let a = document.createElement('a'); 
-                    // Then trigger the download link
-                    a.href = "data:application/zip;base64," + base64;
-                    a.download = zipName;
-                    a.click();
-                    zip.files = {};
-                });
+            }
+            else {
+                let a = document.createElement('a'); 
+                // Then trigger the download link
+                a.href = "data:application/webm;base64," + binaryData;
+                a.download = name;
+                a.click();
+
+                if(this.isRecording == false) {
+                    if(this.onStopCapture) {
+                        this.onStopCapture();
+                    }
+                }
             }
         });
 

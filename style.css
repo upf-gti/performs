@@ -259,3 +259,8 @@
 	width: 40px;
 	right: 0px;
 }
+
+.guide-modal span:hover {
+	cursor: pointer;
+	color: #BB86FC;
+}

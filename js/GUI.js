@@ -646,6 +646,7 @@ class AppGUI {
         ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
         p.endLine("left");
 
+        p.addSeparator();
         p.addCheckbox("Enable capture", this.captureEnabled, (v) => {
             this.captureEnabled = v;
             this.createCameraPanel();
@@ -659,21 +660,30 @@ class AppGUI {
                 }
             }
         })
+        
         if(this.captureEnabled) {
-            p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
-                // Replay animation - dont replay if stopping the capture
-                if(this.app.mode == App.Modes.SCRIPT) {
-                    this.app.bmlApp.ECAcontroller.reset(true);
-                    this.app.animationRecorder.manageCapture();
-                    this.createCameraPanel();
-                }
-                else { 
-                    this.showRecordingDialog(() => {
-                        this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
-                        this.createCameraPanel();
-                    });
-                }
-            }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
+
+            // p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
+            //     // Replay animation - dont replay if stopping the capture
+            //     if(!this.app.animationRecorder.isRecording) {
+            //         if(this.settingsActive || this.cameraActive || this.lightsActive) {
+            //             this.mainArea._moveSplit(-100);
+            //         }
+            //         this.mainArea.extend();
+            //         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
+            //     }
+            //     if(this.app.mode == App.Modes.SCRIPT) {
+            //         this.app.bmlApp.ECAcontroller.reset(true);
+            //         this.app.animationRecorder.manageCapture();
+            //         this.createCameraPanel();
+            //     }
+            //     else { 
+            //         this.showRecordingDialog(() => {
+            //             this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+            //             this.createCameraPanel();
+            //         });
+            //     }
+            // }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
 
             p.addText(null, "Select cameras to be recorded:", null, {disabled: true});
             p.sameLine();
@@ -687,6 +697,12 @@ class AppGUI {
                 this.app.cameras[2].record = value;
             });
             p.endLine();
+
+            p.addTitle("Automatic exportation")
+            p.addCheckbox("Export as ZIP", this.app.animationRecorder.exportZip, (v) => {
+                this.app.animationRecorder.exportZip = v;
+                this.createCameraPanel();            
+            })
         }
     }
 
@@ -919,6 +935,13 @@ class AppGUI {
                 class: "relative",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
+                    if(!this.app.animationRecorder.isRecording) {
+                        if(this.settingsActive || this.cameraActive || this.lightsActive) {
+                            this.mainArea._moveSplit(-100);
+                        }
+                        this.mainArea.extend();
+                        this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
+                    }
                     if(this.app.mode == App.Modes.SCRIPT) {
                         this.app.bmlApp.ECAcontroller.reset(true);
                         this.app.animationRecorder.manageCapture();
@@ -1040,255 +1063,6 @@ class AppGUI {
             }
             this.changePlayButtons(false);
         }
-    }
-
-    createPanel(){
-
-        let pocketDialog = new LX.PocketDialog( "Controls", p => {
-            this.gui = p;
-
-            this.gui.refresh = () =>{
-                if(p.branches.length)                 {
-                    this.branchesOpened["Customization"] = !p.getBranch("Customization").content.parentElement.classList.contains("closed");
-                    this.branchesOpened["Transformations"] = !p.getBranch("Transformations").content.parentElement.classList.contains("closed");
-                    this.branchesOpened["Recording"] = !p.getBranch("Recording").content.parentElement.classList.contains("closed");
-                    this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
-                }
-                                
-                this.gui.clear();
-                // // --------- Customization ---------
-                p.branch( "Customization", { icon: "fa-solid fa-palette", closed: !this.branchesOpened["Customization"]} );
-                // get color set on the actual objects and set them as default values to the colorpicker
-                let color = new THREE.Color(this.app.sceneColor);
-
-                p.addColor("Color Chroma", "#" + color.getHexString(), (value, event) => {
-                    this.app.setBackPlaneColour(value);
-                });
-                
-                p.addDropdown("Background", ["Open", "Studio", "Photocall"], "Open", (v) => {
-                    switch(v) {
-                        case "Open":
-                            this.app.backPlane.visible = false;
-                            this.app.ground.visible = true;
-                            break;
-                        case "Studio":
-                            this.app.backPlane.visible = true;
-                            this.app.backPlane.material.map = null;                            
-                            this.app.backPlane.material.needsUpdate = true;
-                            this.app.ground.visible = false;
-                            break;
-                        case "Photocall":
-                            this.app.backPlane.visible = true;
-                            this.app.ground.visible = false;
-                            const texture = new THREE.TextureLoader().load( this.app.logo, (image) =>{            
-                                image.repeat.set(20, 20);
-                            });
-                            
-                            texture.format = THREE.RGBAFormat;
-                            texture.wrapT = THREE.RepeatWrapping;
-                            texture.wrapS = THREE.RepeatWrapping;
-                            this.app.backPlane.material.map =  texture;
-                            this.app.backPlane.material.needsUpdate = true;
-                            break;
-                    }
-                });
-                let modelShirt = this.app.currentCharacter.model.getObjectByName("Tops");
-                if ( modelShirt ){
-                    color.copy(this.app.currentCharacter.model.getObjectByName("Tops").material.color);
-                    let topsColor = "#" + color.getHexString();
-        
-                    p.addColor("Color Clothes", topsColor, (value, event) => {
-                        this.app.scene.getObjectByName("Tops").material.color.set(value); // css works in sRGB
-                    });
-                }
-
-                p.sameLine();
-                let avatars = [];
-                for(let avatar in this.avatarOptions) {
-                    avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL});
-                }
-                p.addDropdown("Avatar", avatars, this.app.currentCharacter.model.name, (value, event) => {
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.mood = "Neutral";
-                        this.app.bmlApp.ECAcontroller.reset();
-                        this.app.bmlApp.ECAcontroller.update(0,0);
-                    }
-                    
-                    // load desired model
-                    if ( !this.app.loadedCharacters[value] ) {
-                        $('#loading').fadeIn(); //hide();
-                        let modelFilePath = this.avatarOptions[value][0]; 
-                        let configFilePath = this.avatarOptions[value][1]; 
-                        let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                        this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                            this.app.changeAvatar(value);
-                            $('#loading').fadeOut();
-                        }, (err) => {
-                            $('#loading').fadeOut();
-                            LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
-                        }  );
-                        return;
-                    } 
-
-                    // use controller if it has been already loaded in the past
-                    this.app.changeAvatar(value);
-                    });
-
-                p.addButton( null, "Edit Avatar", (v) => {
-                    this.createEditAvatarDialog();
-                } ,{ width: "40px", icon: "fa-solid fa-user-pen" } );
-                p.addButton( null, "Upload Avatar", (v) => {
-                    this.uploadAvatar((value) => {
-                            
-                        if ( !this.app.loadedCharacters[value] ) {
-                            $('#loading').fadeIn(); //hide();
-                            let modelFilePath = this.avatarOptions[value][0]; 
-                            let configFilePath = this.avatarOptions[value][1]; 
-                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                            this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                                this.app.changeAvatar(value);
-                                $('#loading').fadeOut();
-                            }, (err) => {
-                                $('#loading').fadeOut();
-                                LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
-                            } );
-                            return;
-                        } 
-
-                        // use controller if it has been already loaded in the past
-                        this.app.changeAvatar(value);
-
-                    });
-                } ,{ width: "40px", icon: "fa-solid fa-cloud-arrow-up" } );
-                
-                p.endLine();
-
-                p.branch( "Transformations", { icon: "fa-solid fa-up-down-left-right", closed: !this.branchesOpened["Transformations"]} );
-
-                const model = this.app.currentCharacter.model;
-                p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
-                    model.position.set(value[0], value[1], value[2]);
-                }, {step:0.01});
-                p.addVector3("Rotation", [THREE.MathUtils.radToDeg(model.rotation.x), THREE.MathUtils.radToDeg(model.rotation.y), THREE.MathUtils.radToDeg(model.rotation.z)], (value, event) => {
-                    model.rotation.set(THREE.MathUtils.degToRad(value[0]), THREE.MathUtils.degToRad(value[1]), THREE.MathUtils.degToRad(value[2]));
-                }, {step:0.01});
-                p.addNumber("Scale", model.scale.x, (value, event) => {
-                    model.scale.set(value, value, value);
-                }, {step:0.01});        
-
-                p.branch( "Recording", { icon: "fa-solid fa-video", closed: !this.branchesOpened["Recording"]} );
-
-                let cameras = [];
-                for (let i = 0; i < this.app.cameras.length; i++) {
-                    const camera = {
-                        value: (i + 1).toString(),
-                        callback: (v,e) => {
-                            this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
-                            this.app.camera = v - 1; // update active camera
-                            this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
-                        }
-                    }
-
-                    cameras.push(camera);                  
-                }
-
-                p.sameLine();
-                p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "55%"});    
-                p.addButton(null, "Reset", (V) => {
-                    this.app.controls[this.app.camera].reset();
-
-                }, { width: "30px", icon: "fa-solid fa-rotate-left"} ) 
-                p.addComboButtons(null, [
-                    {
-                        value: "Restricted View",
-                        icon: "fa-solid fa-camera",
-                        callback: (v, e) => {
-                            this.app.toggleCameraMode(); 
-                            this.refresh();
-                        }
-                    },
-                    {
-                        value: "Free View",
-                        icon: "fa-solid fa-up-down-left-right",
-                        callback: (v, e) => {
-                            this.app.toggleCameraMode(); 
-                            this.refresh();
-                        }
-                    }
-                ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
-                p.endLine("left");
-
-                p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
-                    // Replay animation - dont replay if stopping the capture
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.ECAcontroller.reset(true);
-                        this.app.animationRecorder.manageCapture();
-                        this.refresh();
-                    }
-                    else if (this.app.mode == App.Modes.KEYFRAME) { 
-                        this.showRecordingDialog(() => {
-                            this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
-                            this.refresh();
-                        });
-                    }
-
-
-                }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
-                p.merge(); // random signs
-
-                p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
-                const combo = p.addComboButtons("Animation from", [
-                    {
-                        value: "BML",
-                        callback: (v, e) => {
-                            if (this.app.currentCharacter.config) {
-                                this.app.changeMode(App.Modes.SCRIPT);
-                                this.refresh();
-                            }
-                            else {
-                                console.log(combo)
-                                const el = combo.domEl.getElementsByClassName('lexcombobuttons')[0];
-                                el.children[0].classList.remove('selected');
-                                el.children[1].classList.add('selected');
-                                //this.app.changeMode(App.Modes.KEYFRAME);                                
-                            }
-                        }
-                    },
-                    {
-                        value: "File",
-                        callback: (v, e) => {
-                            this.app.changeMode(App.Modes.KEYFRAME);
-                            this.refresh();
-                        }
-                    }
-                ], {selected: this.app.mode == App.Modes.SCRIPT ? "BML" : "File"});
-                
-                
-                // p.addNumber("Signing Speed", this.app.speed, (value, event) => {
-                //     // this.app.speed = Math.pow( Math.E, (value - 1) );
-                //     this.app.speed = value;
-                // }, { min: 0, max: 2, step: 0.01});
-                
-
-                if(this.app.mode == App.Modes.SCRIPT) {
-                    this.createBMLPanel(p);
-                }
-                else {
-                    this.createKeyframePanel(p);
-                }
-                p.merge();
-            }
-
-            this.gui.refresh();           
-
-        }, { size: ["20%", null], float: "left", draggable: false });
-        
-        
-        if ( window.innerWidth < window.innerHeight || pocketDialog.title.offsetWidth > (0.21*window.innerWidth) ){
-            pocketDialog.title.click();
-        }
-        pocketDialog.destroy()
-
     }
 
     createBMLPanel(panel, refresh) {
@@ -2167,11 +1941,7 @@ class AppGUI {
     }
 
     showCaptureModal(capture) {
-        if(this.settingsActive || this.cameraActive || this.lightsActive) {
-            this.mainArea._moveSplit(-100);
-        }
-        this.mainArea.extend();
-        this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
+
         if(!capture) {
             return;
         }
@@ -2224,6 +1994,10 @@ class AppGUI {
                     });
                 }
             }
+            const span = modalContent.getElementsByTagName('span')[0];
+            span.addEventListener("click", () => {
+                modal.classList.add('hidden');
+            });
         }
 
     }
