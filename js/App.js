@@ -431,10 +431,12 @@ class App {
         dirLight.position.set( 1.5, 5, 2 );
         dirLight.shadow.mapSize.width = 1024;
         dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.left= -1;
-        dirLight.shadow.camera.right= 1;
-        dirLight.shadow.camera.bottom= -1;
-        dirLight.shadow.camera.top= 1;
+        dirLight.shadow.camera.left= -5;
+        dirLight.shadow.camera.right= 5;
+        dirLight.shadow.camera.bottom= -5;
+        dirLight.shadow.camera.top= 5;
+        dirLight.shadow.camera.near= 1;
+        dirLight.shadow.camera.far= 20;
         dirLight.shadow.bias = 0.00001;
         dirLight.castShadow = true;
         this.scene.add( dirLight );

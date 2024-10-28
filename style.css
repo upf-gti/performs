@@ -178,20 +178,18 @@
     outline: 1px solid var(--global-color-terciary);
     color: #DDD;
 }
+.lexoverlaybuttons .lexwidget {
+	visibility: visible;
+	transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
+}
+.lexoverlaybuttons .lexwidget.hide {
+	transform: translateY(-20px);
+    opacity: 0;
+	visibility: hidden;
+}
 
 
 /* GUIDE */ 
-.overlay {
-	display: none;
-	position: fixed;
-	top: 0;
-	left: 0;
-	width: 100%;
-	height: 100%;
-	background-color: rgba(0, 0, 0, 0.8);
-	z-index: 999;
-	transition: opacity 0.3s ease;
-}
 
 .guide-modal {
 	position: absolute;
@@ -214,6 +212,11 @@
 	transition: transform 0.3s ease, opacity 0.3s ease;
 
 	color: #FFFFFF;
+}
+@media all and (orientation:portrait) {
+	.guide-modal .container {
+		width: 80%;
+	}
 }
 
 .guide-modal .container.show {
