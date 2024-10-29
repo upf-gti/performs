@@ -2113,7 +2113,7 @@ class AppGUI {
             let panel = new LX.Panel({height:'auto'});
             panel.refresh = () => {
                 panel.clear();
-                let url = window.location.host + "?";
+                let url = window.location.pathname + "?";
                 for(let key in toExport) {
                     panel.sameLine();
                     panel.addCheckbox(key, toExport[key].state, (v, e) => {
