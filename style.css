@@ -188,6 +188,9 @@
 	visibility: hidden;
 }
 
+.lexbutton.accept:hover {
+    background-color: #BB86FC;
+}
 
 /* GUIDE */ 
 
@@ -266,4 +269,24 @@
 .guide-modal span:hover {
 	cursor: pointer;
 	color: #BB86FC;
+}
+
+/* Copy pop up feedback*/
+#bubble {
+	display: none; /* Initially hidden */
+    position: absolute;
+	background-color: #6200EA;
+	color: white;
+    padding: 5px 10px;
+    border-radius: 5px;
+    font-size: 12px;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+    pointer-events: none; /* Prevent mouse events on the bubble */
+	z-index: 1000;
+}
+
+#bubble.show {
+    display: block;
+    opacity: 1;
 }

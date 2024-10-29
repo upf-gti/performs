@@ -55,7 +55,7 @@ Control the top cloth color by multipling it by the given color.
 
 ##### Expected values
 - **`rgb(255,255,255)`** - RGB color.
-- **`0xffffff`** or **`#ffffff`** - Hexadecimal color.
+- **`0xffffff`** - Hexadecimal color.
 - **`hsl(0,100%,50%)`** - HSL color.
 - **`skyblue`** - X11 color name.
 
@@ -64,7 +64,7 @@ Control the background color.
 
 ##### Expected values
 - **`rgb(255,255,255)`** - RGB color.
-- **`0xffffff`** or **`#ffffff`** - Hexadecimal color.
+- **`0xffffff`** - Hexadecimal color.
 - **`hsl(0,100%,50%)`** - HSL color.
 - **`skyblue`** - X11 color name.
 
@@ -93,7 +93,7 @@ Defines the spacing between the repeated logo or image in the photocall backgrou
 Control the direct light color.
 ##### Expected values
 - **`rgb(255,255,255)`** - RGB color.
-- **`0xffffff`** or **`#ffffff`** - Hexadecimal color.
+- **`0xffffff`** - Hexadecimal color.
 - **`hsl(0,100%,50%)`** - HSL color.
 - **`skyblue`** - X11 color name.
 

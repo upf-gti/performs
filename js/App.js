@@ -44,6 +44,7 @@ class App {
         
         this.isAppReady = false;
         this.pendingMessageReceived = null;
+        this.showControls = true;
 
         this.sceneColor = 0x46c219;
         this.background = App.Backgrounds.OPEN;
@@ -74,15 +75,8 @@ class App {
 
     // returns value (hex) with the colour in sRGB space
     getBackPlaneColour(){
-        if ( !this.backPlane ){ return 0; }  
-        let color = null; 
-        if(this.backPlane.material.color) {
-            color = this.backPlane.material.color.getHex();   
-        }
-        else {
-            color = this.backPlane.material.uniforms.color.value.getHex();
-        }
-        return color; // css works in sRGB
+       
+        return this.sceneColor; // css works in sRGB
     }
     // value (hex colour) in sRGB space 
     setBackPlaneColour( value ){
@@ -180,7 +174,7 @@ class App {
     // returns value (hex) with the colour in sRGB space
     getClothesColour(){
         if ( !this.avatarShirt ){ return 0; }   
-        return this.avatarShirt.material.color.getHex(); // css works in sRGB
+        return this.avatarShirt.material.color.getHexString(); // css works in sRGB
     }
     // value (hex colour) in sRGB space 
     setClothesColour( value ){
@@ -221,7 +215,11 @@ class App {
             this.changeMode(App.Modes.KEYFRAME);
         }
 
-
+        this.currentCharacter.model.traverse((object) => {
+            if(object.isSkinnedMesh && object.name.includes("Top")) {
+                this.avatarShirt = object;
+            }
+        })
         if ( this.gui ){ this.gui.refresh(); }
     }
 
@@ -286,7 +284,7 @@ class App {
                     }
                 } );
     
-                this.avatarShirt = model.getObjectByName( "Tops" );
+                this.avatarShirt = model.getObjectByName( "Tops" ) || model.getObjectByName( "Top" );
             }
 
             if ( avatarName == "Kevin" ){
@@ -532,9 +530,8 @@ class App {
 
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
-        let showControls = true;
         if(urlParams.has('controls')) {
-            showControls = !(urlParams.get('controls') === "false");
+            this.showControls = !(urlParams.get('controls') === "false");
         }
 
         let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
@@ -556,6 +553,9 @@ class App {
         let clothColor = null;
         if(urlParams.has('cloth')) {
             clothColor = urlParams.get('cloth');     
+            if(typeof(clothColor) == 'string'){
+                clothColor = clothColor.replace('0x', '#');
+            }
         }
 
         // Default background
@@ -577,7 +577,9 @@ class App {
         // Default background color
         if(urlParams.has('color')) {
             let color = urlParams.get('color');
-           
+            if(typeof(color) == 'string'){
+                color = color.replace('0x', '#');
+            }
             this.sceneColor = color;
             this.setBackPlaneColour(this.sceneColor);                                  
         }
@@ -589,10 +591,11 @@ class App {
 
         // Default light color
         if(urlParams.has('light')) {
-            let light = urlParams.get('light');
-            if(light[0] == '0' && light[1] =='x' || light[0] == '#' || light.includes('rgb')) {
-                this.dirLight.color.set(light);                  
-            }           
+            let light = urlParams.get('light');   
+            if(typeof(light) == 'string'){
+                light = light.replace('0x', '#');
+            }
+            this.dirLight.color.set(light);                          
         }
 
         // Default light position
@@ -600,7 +603,7 @@ class App {
             let light = urlParams.get('lightpos');
             light = light.split(',');
             if(light.length == 3) {
-                this.dirLight.position.set(light[0], light[1], light[2]);                  
+                this.dirLight.position.set(Number(light[0]), Number(light[1]), Number(light[2]));                  
             }           
         }
         
@@ -617,19 +620,10 @@ class App {
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
             if(clothColor) {
-                let modelShirt = null;
-                this.currentCharacter.model.traverse((object) => {
-                    if(object.isSkinnedMesh && object.name.includes("Top")) {
-                        modelShirt = object;
-                    }
-                })
-                
-                if ( modelShirt ){
-                    modelShirt.material.color.set(clothColor);
-                }
+                this.setClothesColour(clothColor);
 
             }
-            if ( typeof AppGUI != "undefined" && showControls) { 
+            if ( typeof AppGUI != "undefined" && this.showControls) { 
                 this.gui = new AppGUI( this ); 
                 if(!this.gui.avatarOptions[modelToLoad[3]]) {
                     const name = modelToLoad[3];

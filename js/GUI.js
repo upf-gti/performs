@@ -320,6 +320,12 @@ class AppGUI {
         p.addNumber("Scale", model.scale.x, (value, event) => {
             model.scale.set(value, value, value);
         }, {step:0.01});      
+
+        p.branch( "Export", { icon: "fa-solid fa-file-export", closed: !this.branchesOpened["Export"]} );
+        p.addButton(null, "Export", (v) => {
+            this.showExportDialog();
+        })
+
     }
 
     createBackgroundsPanel() {
@@ -505,21 +511,12 @@ class AppGUI {
       
         p.addSeparator();
 
-        let modelShirt = null;
-        this.app.currentCharacter.model.traverse((object) => {
-            if(object.isSkinnedMesh && object.name.includes("Top")) {
-                modelShirt = object;
-            }
-        })
-        
-        let color = new THREE.Color(this.app.sceneColor);
 
-        if ( modelShirt ){
-            color.copy(modelShirt.material.color);
-            let topsColor = "#" + color.getHexString();
+        if ( this.app.avatarShirt ){
+            let topsColor = this.app.getClothesColour();
 
-            p.addColor("Clothes", topsColor, (value, event) => {
-                modelShirt.material.color.set(value); // css works in sRGB
+            p.addColor("Clothes", '#' + topsColor, (value, event) => {
+                this.app.setClothesColour(value);; // css works in sRGB
             });
         }
 
@@ -2059,6 +2056,163 @@ class AppGUI {
                 modal.classList.add('hidden');
             });
         }
+
+    }
+
+    showExportDialog(callback) {
+
+        // Avatar URL
+        const currentCharacterInfo = this.avatarOptions[this.app.currentCharacter.model.name];
+        let avatar = currentCharacterInfo[0];
+        avatar = avatar.split('?')[0];
+        
+        // Background color
+        let color = this.app.getBackPlaneColour();
+        if(typeof(color) == 'string') {
+            color = color.replace("#", "0x");
+        }
+
+        // Background type 
+        const backgrounds = Object.keys(App.Backgrounds);
+        
+        // Photocall image
+        let img = this.app.logo;
+        if(typeof(img) != 'string') {
+            img = img.src;
+        }
+
+        const toExport = {
+            avatar      : {state: true, text: "Character file URL", value: avatar},
+            config      : {state: true, text: "Configuration file URL", value: currentCharacterInfo[1]},
+            cloth       : {state: true, text: "Top cloth color value", value: "0x" + this.app.getClothesColour()},
+            color       : {state: true, text: "Background color", value: color},
+            background  : {state: true, text: "Background design", value: backgrounds[this.app.background]},
+            img         : {state: true, text: "Logo/image file URL for photocall", value: img},
+            offset      : {state: true, text: "Logo space repetition", value: this.app.repeatOffset},
+            light       : {state: true, text: "Light color", value: "0x" + this.app.dirLight.color.getHexString()},
+            lightpos    : {state: true, text: "Light position", value: this.app.dirLight.position.x + ',' + this.app.dirLight.position.y + ',' + this.app.dirLight.position.z},
+            restrictView: {state: true, text: "Restrict camera controls", value: !this.app.cameraMode ?? false},
+            controls    : {state: true, text: "Show GUI controls", value: this.app.showControls},
+        }
+
+        const dialog = new LX.Dialog("Export configuration", p => {
+            
+            p.sameLine();
+            p.addButton("Select the configuration settings you want to export.", 'More info...', (v) => {
+                window.open('https://github.com/upf-gti/performs/blob/main/docs/IntegrationGuide.md', '_blank');
+            }, {nameWidth: "80%"})
+            p.endLine();
+            p.addCheckbox("Select All", true, (v, e) => {
+                for(let key in toExport) {                    
+                    toExport[key].state = v;                    
+                }
+                panel.refresh();
+            });
+            p.addSeparator();
+
+            let panel = new LX.Panel({height:'auto'});
+            panel.refresh = () => {
+                panel.clear();
+                let url = window.location.host + "?";
+                for(let key in toExport) {
+                    panel.sameLine();
+                    panel.addCheckbox(key, toExport[key].state, (v, e) => {
+                        toExport[key].state = v;
+                        panel.refresh();
+                    })
+                    panel.addText(null, toExport[key].text, null, {disabled: true});
+                    panel.endLine();
+                }
+                if(toExport.avatar.state) {
+                    url += '&avatar=' + toExport.avatar.value;
+                }
+                if(toExport.config.state && currentCharacterInfo[1]) {
+                    url += '&config=' + toExport.config.value;
+                }
+                if(toExport.cloth.state) {
+                    url += '&cloth=' + toExport.cloth.value;
+                }
+                if(toExport.color.state) {                    
+                    url += '&color=' + toExport.color.value;
+                }
+                if(toExport.background.state) {                    
+                    url += '&background=' + toExport.background.value;
+                }
+                if(toExport.img.state) {                    
+                    url += '&img=' + toExport.img.value;
+                }
+                if(toExport.offset.state) {
+                    url += '&offset=' + toExport.offset.value;
+                }
+                if(toExport.light.state) {
+                    url += '&light=' + toExport.light.value;
+                }
+                if(toExport.lightpos.state) {
+                    url += '&lightpos=' + toExport.lightpos.value;
+                }
+                if(toExport.restrictView.state) {
+                    url += '&restrictView=' + toExport.restrictView.value;
+                }
+                if(toExport.controls.state) {
+                    url += '&controls=' + toExport.controls.value;
+                }
+                panel.addSeparator();
+
+                panel.sameLine();
+                panel.addTextArea("Iframe", url, null, {nameWidth: "80px", fitHeight: true, disabled:true});
+                panel.addButton(null, 'Copy', (value, event) => {
+                    navigator.clipboard.writeText(url);
+                    const bubble = document.getElementById('bubble');
+                    
+                    // Get the bounding rect of button                    
+                    const rect = event.target.getBoundingClientRect();
+                    // Set the bubble position
+                    bubble.style.left = `${rect.left - 20}px`//`${x - 25}px`;
+                    bubble.style.top = `${rect.top - 35}px`//`${y - bubble.offsetHeight - 35}px`; // Position above the mouse click
+                    bubble.classList.add('show');
+                    
+                    setTimeout(function() {
+                        bubble.classList.remove('show');
+                    }, 2000); // Bubble will show for 2 seconds
+                }, {icon:'fa fa-clipboard', width:"40px"})
+                panel.endLine();
+            }
+            panel.refresh();
+            p.root.appendChild(panel.root);
+                        
+            p.addButton(null, "Download configuration as .json", () => {
+
+                let json = {};
+                for(let key in toExport) {
+                    if(toExport[key].state) {
+                        json[key] = toExport[key].value;
+                    }
+                }
+                const data = JSON.stringify(json);
+                let a = document.createElement('a'); 
+                // Then trigger the download link
+                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                a.download = "performsSettings.json";
+                a.click();
+                // // writing the JSON string content to a file
+                // fs.writeFile("performsSettings.json", data, (error) => {
+                //     // throwing the error
+                //     // in case of a writing problem
+                //     if (error) {
+                //         // logging the error
+                //         console.error(error);
+                    
+                //         throw error;
+                //     }
+                    
+
+                //     console.log("data.json written correctly");
+                // });
+                if (callback) callback();
+                dialog.close();
+            }, {buttonClass: "accept", width: "auto"});
+
+        }, {size: ["40%", "auto"], resizable: true, draggable: true, scroll: false });
 
     }
 }
