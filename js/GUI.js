@@ -221,7 +221,8 @@ class AppGUI {
 
         this.playing = false;
         this.captureEnabled = false;
-
+        this.controlsActive = true;
+        
         this.createIcons(canvasArea);
 
     }
@@ -737,12 +738,51 @@ class AppGUI {
         this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
         const buttons = [
             {
-                name: "Info",
+                name: "Hide controls",
                 selectable: false,
-                icon: "fa fa-question",
+                icon: this.controlsActive ? "fa fa-eye-slash": 'fa fa-eye',
                 class: "larger",
                 callback: (b) => {
-                    this.showGuide();     
+                    this.controlsActive = !this.controlsActive;   
+                    if(this.controlsActive) {
+                        const icon = document.getElementsByClassName('fa fa-eye')[0];
+                        icon.classList.remove('fa-eye');
+                        icon.classList.add('fa-eye-slash');
+                    }
+                    else {
+                        const icon = document.getElementsByClassName('fa fa-eye-slash')[0];
+                        icon.classList.remove('fa-eye-slash');
+                        icon.classList.add('fa-eye');
+                    }
+                    let el = document.getElementById('overlay-controls');
+                    for(let i = 1; i < el.children.length; i++) {
+                        if(!this.controlsActive) {
+                            el.children[i].classList.add("hide");
+                        }
+                        else {
+                            el.children[i].classList.remove("hide");
+                        }
+                    }
+
+                    el = document.getElementById('overlay-playbuttons');
+                    for(let i = 0; i < el.children.length; i++) {
+                        if(!this.controlsActive) {
+                            el.children[i].classList.add("hide");
+                        }
+                        else {
+                            el.children[i].classList.remove("hide");
+                        }
+                    }
+
+                    el = document.getElementById('overlay-buttons');
+                    for(let i = 0; i < el.children.length; i++) {
+                        if(!this.controlsActive) {
+                            el.children[i].classList.add("hide");
+                        }
+                        else {
+                            el.children[i].classList.remove("hide");
+                        }
+                    }
                 }
             },
             {
@@ -857,9 +897,18 @@ class AppGUI {
                     this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
                     this.createLightsPanel();                    
                 }
-            }
+            },
+            {
+                name: "Info",
+                selectable: false,
+                icon: "fa fa-question",
+                class: "larger",
+                callback: (b) => {
+                    this.showGuide();     
+                }
+            },
         ]
-        area.addOverlayButtons(buttons, {float: "vr"});
+        area.addOverlayButtons(buttons, {float: "vr", id: "overlay-controls"});
         this.createPlayButtons()
         // const buttonsContainer = document.createElement('div');
         // buttonsContainer.id ="buttons-container";
@@ -1011,8 +1060,8 @@ class AppGUI {
                 }
             },            
         ];
-        area.addOverlayButtons(playButtons, {float: "vbr"});
-        area.addOverlayButtons(buttons, {float: "hbr"});
+        area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
+        area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
 
         const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
         if(btn) {
