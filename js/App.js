@@ -496,7 +496,6 @@ class App {
                 const imgCallback = ( event ) => {
 
                     this.logo = event.target;        
-                    // this.logoTexture = new THREE.TextureLoader().load( this.logo);   
                     this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
                 }
 
@@ -510,16 +509,13 @@ class App {
                         img.src = objectURL;
                     });
                     } else {
-                    console.log("Respuesta de red OK pero respuesta HTTP no OK");
+                    console.log("Bad request");
                     }
                 })
                 .catch(function (error) {
-                    console.log("Hubo un problema con la petición Fetch:" + error.message);
+                    console.log("Error:" + error.message);
                 });        
 
-                // this.logo = img;
-                // this.logoTexture = new THREE.TextureLoader().load( this.logo);
-                // this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
             }
 
         };
@@ -533,11 +529,7 @@ class App {
         this.scene.add( backPlane );
 
         this.setBackground(this.background);
-        // so the screen is not black while loading
-        this.changeCameraMode( false ); //moved here because it needs the backplane to exist
-        this.renderer.render( this.scene, this.cameras[this.camera] );
-        
-        this.bmlApp.init(this.scene);
+
 
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
@@ -564,10 +556,7 @@ class App {
         // Default top cloth color
         let clothColor = null;
         if(urlParams.has('cloth')) {
-            clothColor = urlParams.get('cloth');
-            if(!(clothColor[0] == '0' && clothColor[1] =='x' || clothColor[0] == '#' || clothColor.includes('rgb'))) {
-                clothColor = null;
-            }           
+            clothColor = urlParams.get('cloth');     
         }
 
         // Default background
@@ -589,10 +578,9 @@ class App {
         // Default background color
         if(urlParams.has('color')) {
             let color = urlParams.get('color');
-            if(color[0] == '0' && color[1] =='x' || color[0] == '#' || color.includes('rgb')) {
-                this.sceneColor = color;
-                this.setBackPlaneColour(this.sceneColor);            
-            }           
+           
+            this.sceneColor = color;
+            this.setBackPlaneColour(this.sceneColor);                                  
         }
 
         if(urlParams.has('offset')) {
@@ -616,6 +604,16 @@ class App {
                 this.dirLight.position.set(light[0], light[1], light[2]);                  
             }           
         }
+        
+        let view = false;
+        if(urlParams.has('restrictView')) {
+            view = (urlParams.get('restrictView') === "false");
+        }
+        // so the screen is not black while loading
+        this.changeCameraMode( view ); //moved here because it needs the backplane to exist
+        this.renderer.render( this.scene, this.cameras[this.camera] );
+        
+        this.bmlApp.init(this.scene);
 
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
@@ -652,35 +650,6 @@ class App {
             // Default background image
             if(urlParams.has('img')) {
                 this.setBackground( App.Backgrounds.PHOTOCALL);         
-
-                // let image = urlParams.get('img');
-                // const imgCallback = ( event ) => {
-
-                //     this.logo = event.target;        
-                //     this.logoTexture = new THREE.TextureLoader().load( this.logo);   
-                //     this.setBackground( App.Backgrounds.PHOTOCALL);         
-                // }
-
-                // const img = new Image();            
-                // img.onload = imgCallback;    
-                // fetch(image)
-                // .then(function (response) {
-                //     if (response.ok) {
-                //     response.blob().then(function (miBlob) {
-                //         var objectURL = URL.createObjectURL(miBlob);
-                //         img.src = objectURL;
-                //     });
-                //     } else {
-                //     console.log("Respuesta de red OK pero respuesta HTTP no OK");
-                //     }
-                // })
-                // .catch(function (error) {
-                //     console.log("Hubo un problema con la petición Fetch:" + error.message);
-                // });        
-
-                // this.logo = img;
-                // this.logoTexture = new THREE.TextureLoader().load( this.logo);
-                // this.setBackground(App.Backgrounds.PHOTOCALL, this.logo);
             }
             if(this.pendingMessageReceived) {
                 this.onMessage( this.pendingMessageReceived );

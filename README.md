@@ -4,6 +4,7 @@
 
 Performs is designed to visualize and synthesize humanoid animations for customized avatars. It supports two types of animations: **keyframe animations** (glTF, BVH) and **script animations** (SiGML, BML). The second mode integrates a variety of BML (Behavior Markup Language) instructions for Manual Features (MF) and Non-Manual Features (NMF) to create cohesive animations, performed in real-time. The project has made significant progress in synthesizing NMF, which is essential for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
 
+It can be easily integrated into other applications by downloading the code or using it directly with an HTML iframe. For detailed instructions, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
 ## Installation and Running
 Clone the repository:
 ```
