@@ -37,7 +37,7 @@ URL of a glTF file. Supported extensions are _glb_ and _gltf_.
 - **`../3Dcharacters/ReadyEva/ReadyEva.glb`** - Relative URL.
 - **`https://models.readyplayer.me/67162be7608ab3c0a85ceb2d.glb`** - Get Ready Player Me avatar in T-pose with ARKit morph targets. It can be also an own hosted file.
 
->[!IMPORTANT]
+>[!NOTE]
 > Without any of the optional parameters, the avatar is returned based on default values.
 
 #### config (String)

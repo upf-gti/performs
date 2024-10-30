@@ -163,7 +163,7 @@ class AppGUI {
         if ( window.sessionStorage ){
             let text;
             text = window.sessionStorage.getItem( "msg" );
-            this.app.bmlApp.msg = text ? JSON.parse( text ) : null;
+            this.app.scriptApp.msg = text ? JSON.parse( text ) : null;
             text = window.sessionStorage.getItem( "bmlInput" ); 
             this.bmlInputData.prevInstanceText = text ? text : "";
             text = window.sessionStorage.getItem( "sigmlInput" ); 
@@ -173,7 +173,7 @@ class AppGUI {
             
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
-                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.bmlApp.msg) );
+                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.scriptApp.msg) );
                 if( this.bmlInputData && this.bmlInputData.codeObj ){
                     window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
                 }
@@ -203,7 +203,7 @@ class AppGUI {
                         if(event.target.tagName == 'TEXTAREA') {
                             return;
                         }
-                        this.app.bmlApp.replay();
+                        this.app.scriptApp.replay();
                         if(this.settingsActive) {
                             this.createSettingsPanel();             
                         }
@@ -259,8 +259,8 @@ class AppGUI {
         let btn = p.addButton(null, "Script animation", (v, e) => {
             if (this.app.currentCharacter.config) {
                 this.app.changeMode(App.Modes.SCRIPT);
-                if(this.app.bmlApp.currentIdle) {
-                    this.app.bmlApp.bindAnimationToCharacter(this.app.bmlApp.currentIdle, this.app.currentCharacter.model.name);
+                if(this.app.scriptApp.currentIdle) {
+                    this.app.scriptApp.bindAnimationToCharacter(this.app.scriptApp.currentIdle, this.app.currentCharacter.model.name);
                 }
             }
             else {
@@ -525,9 +525,9 @@ class AppGUI {
         for(let avatar in this.avatarOptions) {
             // p.sameLine();
             const btn = p.addButton(null, avatar, (value)=> {
-                this.app.bmlApp.mood = "Neutral";
-                if(this.app.bmlApp.ECAcontroller) {
-                    this.app.bmlApp.ECAcontroller.reset();
+                this.app.scriptApp.mood = "Neutral";
+                if(this.app.scriptApp.ECAcontroller) {
+                    this.app.scriptApp.ECAcontroller.reset();
                 }
 
                 // load desired model
@@ -589,9 +589,9 @@ class AppGUI {
                 this.app.currentCharacter.config = config;
                 if(config) {
                     this.avatarOptions[name][1] = config._filename;
-                    this.app.bmlApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                    this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
                     this.app.currentCharacter.skeleton.pose();
-                    this.app.bmlApp.ECAcontroller.reset();                        
+                    this.app.scriptApp.ECAcontroller.reset();                        
                     this.app.changeMode(App.Modes.SCRIPT);
                     if(this.settingsActive) {
                         this.createSettingsPanel();             
@@ -682,7 +682,7 @@ class AppGUI {
             //         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
             //     }
             //     if(this.app.mode == App.Modes.SCRIPT) {
-            //         this.app.bmlApp.ECAcontroller.reset(true);
+            //         this.app.scriptApp.ECAcontroller.reset(true);
             //         this.app.animationRecorder.manageCapture();
             //         this.createCameraPanel();
             //     }
@@ -978,8 +978,8 @@ class AppGUI {
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.mood = "Neutral";
-                        this.app.bmlApp.ECAcontroller.reset();
+                        this.app.scriptApp.mood = "Neutral";
+                        this.app.scriptApp.ECAcontroller.reset();
                         this.createSettingsPanel();
                     }
                 }
@@ -1000,7 +1000,7 @@ class AppGUI {
                         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
                     }
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.ECAcontroller.reset(true);
+                        this.app.scriptApp.ECAcontroller.reset(true);
                         this.app.animationRecorder.manageCapture();
                         this.createCameraPanel();
                     }
@@ -1029,7 +1029,7 @@ class AppGUI {
                 class: "large",
                 callback: () => {
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.replay();
+                        this.app.scriptApp.replay();
                     }
                     else if(this.app.mode == App.Modes.KEYFRAME) {
                         if(Object.keys(this.app.keyframeApp.loadedAnimations).length) {
@@ -1048,7 +1048,7 @@ class AppGUI {
                 class: "large",
                 callback: () => {
                     if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.bmlApp.ECAcontroller.reset(true);
+                        this.app.scriptApp.ECAcontroller.reset(true);
                     }
                     else if(this.app.mode == App.Modes.KEYFRAME) {
                         this.app.keyframeApp.changePlayState(false);
@@ -1097,14 +1097,14 @@ class AppGUI {
 
     onChangeMode(mode) {
         if(mode == App.Modes.SCRIPT) {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.scriptApp.mood.toUpperCase(), amount: this.app.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
             
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
             if(resetBtn) {
                 resetBtn.classList.remove("hidden");
             }
             this.changePlayButtons(false);
-            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
         }
         else if(mode == App.Modes.KEYFRAME) {
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
@@ -1134,20 +1134,20 @@ class AppGUI {
             return;
         }
                 
-        this.bmlGui.addNumber("Speed", this.app.bmlApp.speed, (value, event) => {
+        this.bmlGui.addNumber("Speed", this.app.scriptApp.speed, (value, event) => {
             // this.app.speed = Math.pow( Math.E, (value - 1) );
-            this.app.bmlApp.speed = value;
+            this.app.scriptApp.speed = value;
         }, { min: 0.1, max: 2, step: 0.01});
 
         this.bmlGui.sameLine();
         this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
-            this.app.bmlApp.mood = "Neutral";
-            this.app.bmlApp.ECAcontroller.reset();
+            this.app.scriptApp.mood = "Neutral";
+            this.app.scriptApp.ECAcontroller.reset();
             refresh();
         }, {icon: "fa-solid fa-person", width: "40px", class:"floating-button"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
-            this.app.bmlApp.replay();         
+            this.app.scriptApp.replay();         
             this.changePlayButtons(false);    
         }, {icon: "fa-solid fa-play"});
 
@@ -1195,7 +1195,7 @@ class AppGUI {
                     
                     if ( !msg.data.length ){ return; }
 
-                    this.app.bmlApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
+                    this.app.scriptApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
                 });
 
                 p.addButton(null, "Edit on Animics", () => {
@@ -1275,7 +1275,7 @@ class AppGUI {
     
                 p.addButton(null, "Send", () => {
                     let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
-                    this.app.bmlApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
+                    this.app.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                 });
     
             }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true});
@@ -1283,14 +1283,14 @@ class AppGUI {
 
         });
 
-        let languages = Object.keys(this.app.bmlApp.languageDictionaries);
+        let languages = Object.keys(this.app.scriptApp.languageDictionaries);
         let glossesDictionary = {};
         this.language = languages[0];
 
         for(let i = 0; i < languages.length; i++) {
             let lang = languages[i];
             glossesDictionary[lang] = [];
-            for(let glossa in this.app.bmlApp.languageDictionaries[lang].glosses) {
+            for(let glossa in this.app.scriptApp.languageDictionaries[lang].glosses) {
                 glossesDictionary[lang].push(glossa.replaceAll(".sigml", ""));
             }
         }
@@ -1307,8 +1307,8 @@ class AppGUI {
                     const area = new LX.Area({ height: "85%" });
                     p.attach( area.root );
                     
-                    p.addDropdown("Language", languages, this.app.bmlApp.selectedLanguage, (value, event) => {
-                        this.app.bmlApp.selectedLanguage = value;
+                    p.addDropdown("Language", languages, this.app.scriptApp.selectedLanguage, (value, event) => {
+                        this.app.scriptApp.selectedLanguage = value;
                         p.refresh();
                     } );
 
@@ -1333,7 +1333,7 @@ class AppGUI {
                             glosses[i] = { type: "glossName", data: glosses[i].toUpperCase() };
                         }
                         if(!glosses.length) alert("Please, write or select at least one gloss");
-                        this.app.bmlApp.processMessageRawBlocks(glosses);    
+                        this.app.scriptApp.processMessageRawBlocks(glosses);    
                     });
                 }
                 p.refresh();
@@ -1345,43 +1345,43 @@ class AppGUI {
         this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"fa-solid fa-dice", nameWidth: "200px" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
             if (!this.randomSignAmount ){ return; }
-            let k = Object.keys( this.app.bmlApp.languageDictionaries[this.app.bmlApp.selectedLanguage]["glosses"] );
+            let k = Object.keys( this.app.scriptApp.languageDictionaries[this.app.scriptApp.selectedLanguage]["glosses"] );
             
             let m = [];
             for( let i = 0; i < this.randomSignAmount; ++i ){
                 m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
             }
             console.log( JSON.parse(JSON.stringify(m)));
-            this.app.bmlApp.processMessageRawBlocks( m );
+            this.app.scriptApp.processMessageRawBlocks( m );
         }, { width: "40px", icon: "fa-solid fa-share"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
-        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.app.bmlApp.mood, (value, event) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.app.bmlApp.moodIntensity, start: 0.0, shift: true } ] };
-            this.app.bmlApp.mood = value;
-            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
+        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.app.scriptApp.mood, (value, event) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.app.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
+            this.app.scriptApp.mood = value;
+            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
         });
 
-        this.bmlGui.addNumber("Mood intensity", this.app.bmlApp.moodIntensity, (v) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.bmlApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
-            this.app.bmlApp.ECAcontroller.processMsg(JSON.stringify(msg));
-            this.app.bmlApp.moodIntensity = v;
+        this.bmlGui.addNumber("Mood intensity", this.app.scriptApp.moodIntensity, (v) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
+            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            this.app.scriptApp.moodIntensity = v;
         }, {min: 0.1, max: 1.0, step: 0.01})
 
-        this.bmlGui.addCheckbox("Apply idle animation", this.app.bmlApp.applyIdle, (v) => {
-            this.app.bmlApp.applyIdle = v;            
+        this.bmlGui.addCheckbox("Apply idle animation", this.app.scriptApp.applyIdle, (v) => {
+            this.app.scriptApp.applyIdle = v;            
             if(refresh) {
                 refresh();
             }
         }, {nameWidth: "115px"});
-        if(this.app.bmlApp.applyIdle) {
+        if(this.app.scriptApp.applyIdle) {
    
-            this.bmlGui.addDropdown("Animations", Object.keys(this.app.bmlApp.loadedIdleAnimations), this.app.bmlApp.currentIdle, (v) => {
-                this.app.bmlApp.bindAnimationToCharacter(v, this.app.currentCharacter.model.name);
+            this.bmlGui.addDropdown("Animations", Object.keys(this.app.scriptApp.loadedIdleAnimations), this.app.scriptApp.currentIdle, (v) => {
+                this.app.scriptApp.bindAnimationToCharacter(v, this.app.currentCharacter.model.name);
             })
-            this.bmlGui.addNumber("Intensity", this.app.bmlApp.intensity, (v) => {
-                this.app.bmlApp.setIntensity(v);
+            this.bmlGui.addNumber("Intensity", this.app.scriptApp.intensity, (v) => {
+                this.app.scriptApp.setIntensity(v);
             }, {min: 0.1, max: 1.0, step: 0.01})
         }
         this.bmlGui.merge(); // random signs
@@ -1986,7 +1986,7 @@ class AppGUI {
                     resultSpeechtext += strSplit[j]; // everything before are phonemes
                     j++;
                     if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                        resultSpeechtext += this.app.bmlApp.wordsToArpa( strSplit[j], "NGT" );
+                        resultSpeechtext += this.app.scriptApp.wordsToArpa( strSplit[j], "NGT" );
                     }
                     j++;
                 }

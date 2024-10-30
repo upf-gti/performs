@@ -4,7 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { AnimationRecorder } from './recorder/recorder.js';
 import { AppGUI } from './GUI.js';
-import { BMLApp } from './BMLApp.js';
+import { ScriptApp } from './ScriptApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
 import { findIndexOfBoneByName } from './sigml/Utils.js';
 import { computeAutoBoneMap } from './retargeting/retargeting.js'
@@ -39,7 +39,7 @@ class App {
         this.avatarShirt = null;
 
         this.mode = App.Modes.SCRIPT;
-        this.bmlApp = new BMLApp();        
+        this.scriptApp = new ScriptApp();        
         this.keyframeApp = new KeyframeApp();   
         
         this.isAppReady = false;
@@ -63,9 +63,9 @@ class App {
         if(this.currentCharacter) {
             this.currentCharacter.skeleton.pose();
         }
-        if(this.bmlApp.ECAcontroller) {
-            this.bmlApp.ECAcontroller.reset();
-            this.bmlApp.ECAcontroller.update(0,0);
+        if(this.scriptApp.ECAcontroller) {
+            this.scriptApp.ECAcontroller.reset();
+            this.scriptApp.ECAcontroller.update(0,0);
         }
 
         if(this.gui) {
@@ -197,7 +197,7 @@ class App {
         
         // this.currentCharacter.model.position.y -= (diffToGround + diff);
           
-        this.bmlApp.onChangeAvatar(avatarName);
+        this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
         
         if (this.currentCharacter.config) {
@@ -207,8 +207,8 @@ class App {
                 control.saveState();
                 control.update();
             });
-            if(this.bmlApp.currentIdle) {
-                this.bmlApp.bindAnimationToCharacter(this.bmlApp.currentIdle, this.currentCharacter.model.name);
+            if(this.scriptApp.currentIdle) {
+                this.scriptApp.bindAnimationToCharacter(this.scriptApp.currentIdle, this.currentCharacter.model.name);
             }
         }
         else {
@@ -306,7 +306,7 @@ class App {
                         let config = JSON.parse( text );
                         config._filename = configFilePath;
                         this.loadedCharacters[avatarName].config = config;
-                        this.bmlApp.onLoadAvatar(model, config, skeleton);
+                        this.scriptApp.onLoadAvatar(model, config, skeleton);
                         this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
                         if (callback) {
                             callback();
@@ -316,7 +316,7 @@ class App {
                 else {
                     let config = configFilePath;
                     this.loadedCharacters[avatarName].config = config;
-                    this.bmlApp.onLoadAvatar(model, config, skeleton);
+                    this.scriptApp.onLoadAvatar(model, config, skeleton);
                     this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
                     
                     if (callback) {
@@ -615,7 +615,7 @@ class App {
         this.changeCameraMode( view ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.cameras[this.camera] );
         
-        this.bmlApp.init(this.scene);
+        this.scriptApp.init(this.scene);
 
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
@@ -691,7 +691,7 @@ class App {
         
         switch( this.mode ){
             case App.Modes.SCRIPT: 
-                this.bmlApp.update(delta); 
+                this.scriptApp.update(delta); 
                 break;
             case App.Modes.KEYFRAME:
                 this.keyframeApp.update(delta); 
@@ -762,10 +762,10 @@ class App {
 
         if ( Array.isArray(data) ){
             this.changeMode(App.Modes.SCRIPT);
-            this.bmlApp.onMessage(data, (processedData) => {
+            this.scriptApp.onMessage(data, (processedData) => {
                 if(this.gui) {
                     this.gui.setBMLInputText( 
-                        JSON.stringify(this.bmlApp.msg.data, function(key, val) {
+                        JSON.stringify(this.scriptApp.msg.data, function(key, val) {
                             return val.toFixed ? Number(val.toFixed(3)) : val;
                         }) 
                     );

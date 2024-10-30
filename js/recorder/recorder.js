@@ -120,7 +120,7 @@ class AnimationRecorder {
     handleStart (idx) {
         if (idx === 0) {
             if (this.app.mode == App.Modes.SCRIPT){
-                this.app.bmlApp.replay();
+                this.app.scriptApp.replay();
             }
             else if (this.app.mode == App.Modes.KEYFRAME) {
                 this.app.keyframeApp.changePlayState(true); // start animation                
@@ -179,7 +179,7 @@ class AnimationRecorder {
         if (idx === 0) {
             if (this.app.mode == App.Modes.SCRIPT) {
                 // reset avatar pose / stop animation
-                this.app.bmlApp.ECAcontroller.reset(true);
+                this.app.scriptApp.ECAcontroller.reset(true);
             }
         }
 

@@ -2,31 +2,10 @@
 
 <img src="./data/imgs/performs.png" height="200" align="right">
 
-Performs is designed to visualize and synthesize humanoid animations for customized avatars. It supports two types of animations: **keyframe animations** (glTF, BVH) and **script animations** (SiGML, BML). The second mode integrates a variety of BML (Behavior Markup Language) instructions for Manual Features (MF) and Non-Manual Features (NMF) to create cohesive animations, performed in real-time. The project has made significant progress in synthesizing NMF, which is essential for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
+Performs is designed to visualize and synthesize humanoid animations for customized avatars. It supports two types of animations: [**keyframe animations**](#keyframe-animation) (glTF, BVH) and [**script animations**](#script-animation) (SiGML, BML). The second mode integrates a variety of BML (Behavior Markup Language) instructions for Manual Features (MF) and Non-Manual Features (NMF) to create cohesive animations, performed in real-time. The project has made significant progress in synthesizing NMF, which is essential for enhancing the realism of sign language animations. This initiative began as part of the SignON project, a user-centric and community-driven effort aimed at facilitating communication among Deaf, hard of hearing, and hearing individuals across Europe.
 
-It can be easily integrated into other applications by downloading the code or using it directly with an HTML iframe. For detailed instructions, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
-## Installation and Running
-Clone the repository:
-```
-git clone https://github.com/upf-gti/performs.git
-```
-To run locally, host a server from the main project folder. You can also use the [build](./build/) version without GUI.
-> [!IMPORTANT]  
-> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
+![Alt Text](https://iili.io/2BeAGwb.gif)
 
-## Adding avatars
-> [!IMPORTANT]  
-> Currently only glTF and glb are supported. If you happen to use another format, please convert it to either glTF or glb.
-
-To add a new avatar to Performs, you must follow this steps:
-
- 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
- 2. Check that your avatar has the correct scale and orientation.
- 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application (only required for Script mode), this will generate a configuration .json file containing all the needed information.
- 4. Select `upload yours` in  the application Avatars section and select your files or your URLs.
- 5. Change to your avatar inside the application Avatars section. For a hosted file, you can load the avatar as default by adding the link to the "avatar" parameter in the app's URL.
-
-## Customisation
 The application allows users to customize the following features:
 - Avatar:
     - [x] Character
@@ -39,7 +18,47 @@ The application allows users to customize the following features:
     - [x] Light position
     - [x] Light color
 
+It can be easily integrated into other applications by downloading the code or using it directly with an HTML iframe. For detailed instructions, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
+
+
+## Installation and Running
+Clone the repository:
+```
+git clone https://github.com/upf-gti/performs.git
+```
+To run locally, host a server from the main project folder. You can also use the [build](./build/) version without GUI.
+> [!IMPORTANT]  
+> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
+
+## Adding avatars
+> [!IMPORTANT]  
+> Currently only **.gltf** and **.glb** are supported. If you happen to use another format, please convert it to the mentioned formats.
+
+To add a new avatar to Performs, you must follow this steps:
+
+ 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
+ 2. Check that your avatar has the correct scale and orientation.
+ 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application (only required for Script mode), this will generate a configuration .json file containing all the needed information.
+ 4. Select `upload yours` in  the application _Avatars_ panel and select your files or your URLs.
+ 5. Change to your avatar in the panel. For a hosted file, you can load the avatar as default by adding the link to the _avatar_ parameter in the app's URL. See [Integration Guide](./docs/IntegrationGuide.md) to know the available parameters.
+
+## Keyframe animation
+This mode visualizes clip animations across different avatars. To ensure effective retargeting, certain options need to be adjusted for the _source_ animation and the _target_ avatar:
+- _Embedded transforms_: Retargeting only takes into account the transforms from the actual bone objects (local transforms). If set to true, external (parent) transforms are computed and embedded into the root joint (only once, on construction). Afterwards, parent transforms/matrices can be safely modified and will not affect in retargeting. Useful when it is easier to modify the container of the skeleton rather than the actual skeleton in order to align source and target poses.
+    - `true` or `false`
+    
+- _Reference pose mode_: Determines which pose will be used as the retargeting bind pose.
+    - `DEFAULT`: Uses skeleton's actual bind pose
+    - `CURRENT`: Uses skeleton's current pose
+    - `TPOSE`: Forces the bind pose to be a T-pose and sets _CURRENT_ mode.
+
+A detailed explanation of these options can be found in the [retargeting repository](https://github.com/upf-gti/retargeting-threejs/tree/main?tab=readme-ov-file#constructor).
+> [!IMPORTANT]  
+> Currently only **.gltf**, **.glb** and **.bvh** are supported. If you happen to use another format, please convert it to the mentioned formats.
+
 ## Script animation
+This mode allows for the generation of procedural animations based on instructions. The system interprets the instructions based in **SiGML** (Signing Gesture Markup Language), and translates them into an extended version of BML (Behavior Markup Language), or directly into BML in **JSON** format. While the results may not match the quality of keyframe animations, this approach requires neither expensive equipment nor extensive manual labor, making it highly suitable for scalable sign synthesis. These instructions can be written manually or generated and exported using [Animics](https://webglstudio.org/projects/signon/animics)' script mode, which enables the creation and editing of this type of animation through a visual timeline-clip representation.
+
 The current supported instructions are explained in detail in [BML Instructions](./docs/InstructionsBML.md).
 An example:
 ``` javascript
@@ -65,14 +84,14 @@ Man rijden fiets (Man rides a bicycle) :
 ### Architecture
 
 The realizer is divided into main sections, each containing several files. 
-The whole pipeline is warpped inside the CharacterController class which is in charge of receiving a BML block and triggering and executing its instructions when required.
+The whole pipeline is warpped inside the _CharacterController_ class which is in charge of receiving a BML block and triggering and executing its instructions when required.
 
 #### __Controllers section__
 
 Files in this block: _CharacterController_, _FacialController_ and _BodyController_
 
 - _CharacterController_: is the main entry. Everything is controlled from here. Every instance of FacialController, BodyController, BehaviourManager and BehaviourPlanner is automatically created and managed by this class.
-Users only need to instantiated this class and call its functions
+Users only need to instantiated this class and call its functions:
     - _start_
     - _update_
     - _processMsg_: receives all the instructions of a block and triggers the whole pipeline to be synthesise the actions specified. 
