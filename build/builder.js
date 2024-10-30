@@ -1,32 +1,45 @@
 let fs = require('fs');
 let path = require('path');
 
-/** BML.js includes: 
+/** ScriptApp.js includes: 
  * - ./js/bml/BehaviourManager.js
  * - ./js/bml/BehaviourPlanner.js
  * - ./js/bml/BehaviourRealizer.js 
- *      - ./js/sigml/Extfidir.js
- *      - ./js/sigml/HandShape.js
- *      - ./js/sigml/LocationArmIK.js
- *      - ./js/sigml/Motion.js
- *      - ./js/sigml/Palmor.js
- *      - ./js/sigml/sigmlUtils.js
+ * 
+ *  - ./js/sigml/Extfidir.js
+ *  - ./js/sigml/HandShape.js
+ *  - ./js/sigml/LocationArmIK.js
+ *  - ./js/sigml/Motion.js
+ *  - ./js/sigml/Palmor.js
+ *  - ./js/sigml/sigmlUtils.js
+ *  - ./js/sigml/BodyController.js 
+ *  - ./js/sigml/GeometricArmIK.js (IKSolver)
+ *  - ./js/sigml/SigmlToBML.js
+ * 
+ *  - ./js/controllers/CharacterController.js
+ *  - ./js/controllers/FacialController.js
+ * 
  * */
 
-/** CharacterController.js includes:
- * - ./js/controllers/CharacterController.js
- * - ./js/controllers/FacialController.js
- * - ./js/sigml/BodyController.js 
- * */
+/** KeyframeApp.js includes:
+ *  - ./js/extendedBVHLoader.js
+ *  - ./js/retargeting/retargeting.js
+ */
 
-/** IKSolver.js --> Same as IKSolver.js */
+// /** CharacterController.js includes:
+//  * - ./js/controllers/CharacterController.js
+//  * - ./js/controllers/FacialController.js
+//  * - ./js/sigml/BodyController.js 
+//  * */
 
-/** SigmlToBML.js --> Same as SigmlToBML.js */
+// /** IKSolver.js --> Same as IKSolver.js */
+
+// /** SigmlToBML.js --> Same as SigmlToBML.js */
 
 function build() {
     
     let files = {
-        "BML.js": [
+        "ScriptApp.js": [
             "../js/sigml/Utils.js",
             "../js/bml/BehaviourManager.js",
             "../js/bml/BehaviourPlanner.js", 
@@ -36,25 +49,37 @@ function build() {
             "../js/sigml/LocationBodyArm.js",
             "../js/sigml/HandConstellation.js",
             "../js/sigml/Motion.js",
-            "../js/sigml/ElbowShouldersBodyNMF.js"
-        ],
-        "CharacterController.js": [
+            "../js/sigml/ElbowShouldersBodyNMF.js",
+
             "../js/controllers/CharacterController.js",
             "../js/controllers/FacialController.js",
             "../js/sigml/BodyController.js",
+            "../js/sigml/GeometricArmIK.js",
+            "../js/sigml/SigmlToBML.js",
+            "../js/ScriptApp.js",
         ],
-        "IKSolver.js" : ["../js/sigml/GeometricArmIK.js"],
-        "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
-        "App.js": [
-            "../js/BMLApp.js",
+        "KeyframeApp.js": [
+            "../js/extendedBVHLoader.js",
+            "../js/retargeting/retargeting.js",
             "../js/KeyframeApp.js",
+        ],
+        // "CharacterController.js": [
+        //     "../js/controllers/CharacterController.js",
+        //     "../js/controllers/FacialController.js",
+        //     "../js/sigml/BodyController.js",
+        // ],
+        // "IKSolver.js" : ["../js/sigml/GeometricArmIK.js"],
+        // "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
+        "App.js": [
+            // "../js/ScriptApp.js",
+            // "../js/KeyframeApp.js",
             "../js/recorder/recorder.js",
             "../js/App.js"
         ],
-        "Animation.js": [
-            "../js/extendedBVHLoader.js",
-            "../js/retargeting/retargeting.js"
-        ]
+        // "Animation.js": [
+        //     "../js/extendedBVHLoader.js",
+        //     "../js/retargeting/retargeting.js"
+        // ]
     };
     
     //change import files of classes
@@ -87,13 +112,13 @@ function build() {
         let newPaths = {};
         let imports = toImport[filename];
         let exports = toExport[filename];
-
+        let importedClasses = [];
         for(let oldPath in imports) {
             
             let classes = imports[oldPath];
             let isExported = false;
             for(let i = 0; i < classes.length; i++) {
-                if(exports.indexOf(classes[i])>-1 && classes[i] !='BVHLoader')
+                if(exports.indexOf(classes[i])>-1 && classes[i] !='BVHLoader' || importedClasses.indexOf(classes[i]) >-1)
                     isExported = true;
             }
 
@@ -129,6 +154,7 @@ function build() {
                 }
             }
             newPaths[newPath] = temp;
+            importedClasses = [...importedClasses, ...temp];
         }
         let data = "";
         for(let newPath in newPaths) {
