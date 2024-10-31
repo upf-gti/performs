@@ -1,6 +1,8 @@
 
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
+
 import { BVHLoader } from './extendedBVHLoader.js';
 import { AnimationRetargeting, applyTPose } from './retargeting/retargeting.js'
 
@@ -11,6 +13,8 @@ class KeyframeApp {
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
         this.GLTFLoader = new GLTFLoader();
+        this.FBXLoader = new FBXLoader();
+
         this.BVHLoader = new BVHLoader();
         
         this.currentCharacter = "";
@@ -64,9 +68,8 @@ class KeyframeApp {
 
         this.currentCharacter = avatarName;
         this.changePlayState(this.playing);
-        this.mixer = this.loadedCharacters[avatarName].mixer;  
-        this.bindAnimationToCharacter(this.currentAnimation, avatarName);
-
+        this.mixer = this.loadedCharacters[avatarName].mixer;          
+        this.onChangeAnimation(this.currentAnimation, true);
         const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3);
         const RToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3);
         let diff = this.loadedCharacters[avatarName].LToePos.y - LToePos.y; 
@@ -76,13 +79,59 @@ class KeyframeApp {
         return true;
     }
 
-    onChangeAnimation(animationName) {
-        if(!this.loadedAnimations[animationName]) {
-            console.warn(animationName + 'not found')
+    onChangeAnimation(animationName, needsUpdate) {
+        if(!animationName || !this.loadedAnimations[animationName]) {
+            console.warn(animationName + 'not found');
+            return;
         }
-        this.currentAnimation = animationName;
         this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y;
-        this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+        
+        let bindedAnim = null;
+        if(needsUpdate) {
+            for(let animation in this.loadedAnimations) {
+                if(this.bindedAnimations[animation][this.currentCharacter]) {
+                    this.bindAnimationToCharacter(animation, this.currentCharacter, true);
+                }
+            }
+            bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
+            // Remove current animation clip
+            this.mixer.stopAllAction();
+    
+            while(this.mixer._actions.length){
+                this.mixer.uncacheClip(this.mixer._actions[0]._clip); // removes action
+            }
+            this.mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
+            this.mixer.update(0);
+            this.currentAnimation = animationName;
+
+        }
+        //this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
+
+        else {
+            bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
+            if(this.mixer._actions.length) {
+                let action = this.mixer.clipAction(bindedAnim.mixerBodyAnimation);
+                action.setEffectiveWeight(1.0);
+                action.play();
+                for(let i = 0; i < this.mixer._actions.length; i++) {
+                    if(this.mixer._actions[i]._clip ==  this.bindedAnimations[this.currentAnimation][this.currentCharacter].mixerBodyAnimation) {
+                        this.prepareCrossFade( this.mixer._actions[i], action, 1.0 );
+                        this.currentAnimation = animationName;
+
+                        break;
+                    }
+                }
+            }
+            else {
+                // if(!(mixer._actions.length && mixer._actions[0].name == animationName)) {
+                // }
+                this.mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
+                this.mixer.update(0);
+                this.currentAnimation = animationName;
+
+            }
+        }
+        
         const LToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].LToeName).getWorldPosition(new THREE.Vector3);
         const RToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].RToeName).getWorldPosition(new THREE.Vector3);
         let diff = this.loadedCharacters[this.currentCharacter].LToePos.y - LToePos.y; 
@@ -90,12 +139,67 @@ class KeyframeApp {
         this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y - this.loadedCharacters[this.currentCharacter].diffToGround + diff;
 
     }
+    
+    prepareCrossFade( startAction, endAction, duration ) {
+
+        // Switch default / custom crossfade duration (according to the user's choice)
+
+        this.unPauseAllActions(startAction);
+
+        // Wait until the current action has finished its current loop
+        this.synchronizeCrossFade( startAction, endAction, duration );
+    }
+
+    synchronizeCrossFade( startAction, endAction, duration ) {
+        
+        const onLoopFinished = ( event ) => {
+
+            if ( event.action === startAction ) {
+
+                this.mixer.removeEventListener( 'loop', onLoopFinished );
+
+                this.executeCrossFade( startAction, endAction, duration );
+
+            }
+
+        }
+        this.mixer.addEventListener( 'loop', onLoopFinished );
+    }
+
+    executeCrossFade( startAction, endAction, duration ) {
+
+        // Not only the start action, but also the end action must get a weight of 1 before fading
+        // (concerning the start action this is already guaranteed in this place)
+
+        endAction.enabled = true;
+		endAction.setEffectiveTimeScale( 1 );
+		endAction.setEffectiveWeight( 1 );
+        endAction.time = 0;
+
+        // Crossfade with warping - you can also try without warping by setting the third parameter to false
+
+        startAction.crossFadeTo( endAction, duration, true );
+
+    }
+
+    unPauseAllActions(skipAction) {
+        this.mixer._actions.forEach(  ( action ) => {
+
+            if(action != skipAction) {
+                
+                action.enabled = false;
+            }
+        } );
+    }
 
     onMessage( data, callback ) {
         this.processMessageFiles(data.data).then( (processedAnimationNames) => {
-            if( processedAnimationNames && processedAnimationNames.length && this.loadedAnimations[processedAnimationNames[0]] ) {
+            if( processedAnimationNames) {
+                for(let i = 0; i < processedAnimationNames.length; i++) {
+
+                    this.bindAnimationToCharacter(this.loadedAnimations[processedAnimationNames[i]], this.currentCharacter);
+                }
                 this.currentAnimation = processedAnimationNames[0];
-                this.bindAnimationToCharacter(this.currentAnimation, this.currentCharacter);
             }
 
             if(callback) {
@@ -122,6 +226,10 @@ class KeyframeApp {
                 loader = this.BVHLoader;
                 type = 'bvh';
             }
+            else if(extension == 'fbx') {
+                loader = this.FBXLoader;
+                type = 'fbx';
+            }
             else {
                 loader = this.GLTFLoader;
                 type = 'glb';
@@ -145,9 +253,10 @@ class KeyframeApp {
                 filePromise = new Promise(resolve => {
                     const reader = new FileReader();
                     reader.onload = () => {  
-                        this.GLTFLoader.load( reader.result, (glb) => {
+                        loader.load( reader.result, (glb) => {
                             let skeleton = null;
-                            glb.scene.traverse( o => {                                    
+                            let model = glb.scene ? glb.scene : glb;
+                            model.traverse( o => {                                    
                                 if ( o.skeleton ){ 
                                     skeleton = o.skeleton;
                                     return;
@@ -219,6 +328,8 @@ class KeyframeApp {
             skeleton,
             type: "bvhe"
         };
+        this.bindAnimationToCharacter(name, this.currentCharacter);
+        
     }
 
     loadGLTFAnimation(name, animationData, skeleton) {
@@ -228,6 +339,8 @@ class KeyframeApp {
             skeleton,
             type: "glb"
         };
+
+        this.bindAnimationToCharacter(name, this.currentCharacter);
     }
 
     /**
@@ -235,46 +348,43 @@ class KeyframeApp {
      * @param {String} animationName 
      * @param {String} characterName 
      */
-    bindAnimationToCharacter(animationName, characterName) {
+    bindAnimationToCharacter(animationName, characterName, force) {
         
         let animation = this.loadedAnimations[animationName];
         if(!animation) {
             console.warn(animationName + " not found");
             return false;
         }
-        this.currentAnimation = animationName;
         
         let currentCharacter = this.loadedCharacters[characterName];
         if(!currentCharacter) {
             console.warn(characterName + ' not loaded')
         }
-        // Remove current animation clip
         let mixer = currentCharacter.mixer;
-        mixer.stopAllAction();
-
-        while(mixer._actions.length){
-            mixer.uncacheClip(mixer._actions[0]._clip); // removes action
-        }
-
-        let srcPoseMode = this.srcPoseMode;
-        let trgPoseMode = this.trgPoseMode;
-        if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
-            const skeleton = applyTPose(currentCharacter.skeleton).skeleton;
-            if(skeleton)
-            {
-                currentCharacter.skeleton = skeleton;
-                trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
-            }
-            else {
-                console.warn("T-pose can't be applyied to the TARGET. Automap falied.")
-            }
-        } 
-        else {
-            currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
-        }
+        this.mixer = mixer;
         
+        let bindedAnim = null;
+
         // if not yet binded, create it. Otherwise just change to the existing animation
-        if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][currentCharacter.name] ) {
+        if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][characterName] || force) {
+            let srcPoseMode = this.srcPoseMode;
+            let trgPoseMode = this.trgPoseMode;
+
+            if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
+                const skeleton = applyTPose(currentCharacter.skeleton).skeleton;
+                if(skeleton)
+                {
+                    currentCharacter.skeleton = skeleton;
+                    trgPoseMode = AnimationRetargeting.BindPoseModes.CURRENT;
+                }
+                else {
+                    console.warn("T-pose can't be applyied to the TARGET. Automap falied.")
+                }
+            } 
+            else {
+                currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
+            }
+               
             let bodyAnimation = animation.bodyAnimation;        
             if(bodyAnimation) {
             
@@ -321,13 +431,39 @@ class KeyframeApp {
             this.bindedAnimations[animationName][this.currentCharacter] = {
                 mixerBodyAnimation: bodyAnimation, mixerFaceAnimation: faceAnimation, // for threejs mixer 
             }
-        }
 
-        let bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
-        mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
-        mixer.update(0);
-        this.duration = bindedAnim.mixerBodyAnimation.duration;
-        this.mixer = mixer;
+            // bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
+            // // Remove current animation clip
+            // mixer.stopAllAction();
+
+            // while(mixer._actions.length){
+            //     mixer.uncacheClip(mixer._actions[0]._clip); // removes action
+            // }
+            // mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
+            // mixer.update(0);
+
+        }
+        else {
+            // bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
+            // if(mixer._actions.length && mixer._actions[0]._clip != bindedAnim.mixerBodyAnimation) {
+            //     mixer.clipAction(bindedAnim.mixerBodyAnimation).play();
+            //     for(let i = 0; i < mixer._actions.length; i++) {
+            //         if(mixer._actions[i]._clip ==  this.bindedAnimations[this.currentAnimation][this.currentCharacter]) {
+            //             mixer._actions[i].crossFadeTo(mixer.clipAction(bindedAnim.mixerBodyAnimation), 0.25);
+            //         }
+            //     }
+            // }
+            // else {
+            //     // if(!(mixer._actions.length && mixer._actions[0].name == animationName)) {
+            //     // }
+            //     mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
+            //     mixer.update(0);
+    
+            // }
+        }
+        
+        // this.duration = bindedAnim.mixerBodyAnimation.duration;
+
 
         return true;
     }

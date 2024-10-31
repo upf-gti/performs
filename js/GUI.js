@@ -33,9 +33,9 @@ class AppGUI {
                 //load json (bml) file
                 const file = files[i];
                 const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
-                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf'];
+                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx'];
                 if(formats.indexOf(extension) < 0) {
-                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe', 'glb, 'gltf', 'json'\n\t");
+                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
                 }
                 if(extension == 'gltf' || extension == 'glb') {
                     gltfs.push(file);
@@ -1419,6 +1419,7 @@ class AppGUI {
 
         this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
             fileinput.domEl.children[1].click();
+           
         }, { icon: "fa fa-upload", width: "40px", className:"no-padding"});
 
         this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
@@ -1434,25 +1435,25 @@ class AppGUI {
            
         this.keyframeGui.addCheckbox("Source embedded transforms", this.app.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.app.keyframeApp.srcEmbedWorldTransforms = v;
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
         },{nameWidth: "auto"})
             
         this.keyframeGui.addCheckbox("Target embedded transforms", this.app.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.app.keyframeApp.trgEmbedWorldTransforms = v;
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
         }, {nameWidth: "auto"})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.app.keyframeApp.srcPoseMode], (v) => {
     
             this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px"});
 
         this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
             
             this.app.keyframeApp.trgPoseMode = poseModes.indexOf(v);
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation);
+            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px"});
     }
 

@@ -831,7 +831,8 @@ class App {
         this.keyframeApp.processMessageFiles(files).then((data) => {
             if(data[0].length) {
                 this.changeMode(App.Modes.KEYFRAME);
-                this.keyframeApp.onChangeAnimation(data[0]);
+                let animation = typeof(data[0]) == 'string' ? data[0] : data[0][0];
+                this.keyframeApp.onChangeAnimation(animation);
             }
             if(callback) {
                 callback(data[0]);
