@@ -1162,7 +1162,7 @@ class AppGUI {
                 this.bmlInputData.dialog = p;
 
                 let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});
     
                 p.addButton(null, "Click here to see BML instructions and attributes", () => {
                     window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
@@ -1170,10 +1170,10 @@ class AppGUI {
     
                 htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
                 htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                p.addTextArea(null, htmlStr, null, {disabled: true, height: "72px"});
     
                 htmlStr = 'An example: { "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }';
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});
     
                 const area = new LX.Area({ height: "59%" });
                 p.attach( area.root );
@@ -1302,7 +1302,7 @@ class AppGUI {
                 p.refresh = () => {
                     p.clear();
                     let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
-                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
+                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});  
                     
                     const area = new LX.Area({ height: "85%" });
                     p.attach( area.root );
@@ -1398,7 +1398,8 @@ class AppGUI {
         }, { min: -2, max: 2, step: 0.01});
 
         this.keyframeGui.sameLine();
-        this.keyframeGui.addDropdown("Animation", Object.keys(this.app.keyframeApp.loadedAnimations), this.app.keyframeApp.currentAnimation, (v) => {
+        const animations = Object.keys(this.app.keyframeApp.loadedAnimations);
+        this.keyframeGui.addDropdown("Animation", animations, this.app.keyframeApp.currentAnimation, (v) => {
             this.app.keyframeApp.onChangeAnimation(v);
         }, {nameWidth:"70px"});
 
@@ -1430,6 +1431,12 @@ class AppGUI {
             }
         }, { width: "40px", className:"no-padding"});
         this.keyframeGui.endLine(); 
+
+        if(animations.length > 1) {
+            this.keyframeGui.addNumber("Blend time", this.app.keyframeApp.blendTime, (v) => {
+                this.app.keyframeApp.blendTime = v;
+            }, {min: 0.0, step: 0.01});
+        }
 
         this.keyframeGui.branch("Retargeting")
            
@@ -2084,7 +2091,6 @@ class AppGUI {
 
         const toExport = {
             avatar      : {state: true, text: "Character file URL", value: avatar},
-            config      : {state: true, text: "Configuration file URL", value: currentCharacterInfo[1]},
             cloth       : {state: true, text: "Top cloth color value", value: "0x" + this.app.getClothesColour()},
             color       : {state: true, text: "Background color", value: color},
             background  : {state: true, text: "Background design", value: backgrounds[this.app.background]},
@@ -2096,6 +2102,18 @@ class AppGUI {
             controls    : {state: true, text: "Show GUI controls", value: this.app.showControls},
         }
 
+        const toExportScript = {
+            config      : {state: true, text: "Configuration file URL", value: currentCharacterInfo[1]},
+            applyIdle   : {state: true, text: "Apply idle animation", value: this.app.scriptApp.applyIdle},
+        }
+
+        const toExportKeyframe = {
+            srcEmbeddedTransforms      : {state: true, text: "Source embedded transformations", value: this.app.keyframeApp.srcEmbedWorldTransforms},
+            trgEmbeddedTransforms      : {state: true, text: "Target embedded transformations", value: this.app.keyframeApp.trgEmbedWorldTransforms},
+            srcReferencePose           : {state: true, text: "Source reference pose", value: this.app.keyframeApp.srcPoseMode},
+            trgReferencePose           : {state: true, text: "Target reference pose", value: this.app.keyframeApp.trgPoseMode},
+        }
+
         const dialog = new LX.Dialog("Export configuration", p => {
             
             p.sameLine();
@@ -2103,65 +2121,16 @@ class AppGUI {
                 window.open('https://github.com/upf-gti/performs/blob/main/docs/IntegrationGuide.md', '_blank');
             }, {nameWidth: "80%"})
             p.endLine();
-            p.addCheckbox("Select All", true, (v, e) => {
-                for(let key in toExport) {                    
-                    toExport[key].state = v;                    
-                }
-                panel.refresh();
-            });
-            p.addSeparator();
+            let url = new URL(window.location.origin + window.location.pathname);
 
-            let panel = new LX.Panel({height:'auto'});
-            panel.refresh = () => {
-                panel.clear();
-                let url = window.location.origin + window.location.pathname + "?";
-                for(let key in toExport) {
-                    panel.sameLine();
-                    panel.addCheckbox(key, toExport[key].state, (v, e) => {
-                        toExport[key].state = v;
-                        panel.refresh();
-                    })
-                    panel.addText(null, toExport[key].text, null, {disabled: true});
-                    panel.endLine();
-                }
-                if(toExport.avatar.state) {
-                    url += '&avatar=' + toExport.avatar.value;
-                }
-                if(toExport.config.state && currentCharacterInfo[1]) {
-                    url += '&config=' + toExport.config.value;
-                }
-                if(toExport.cloth.state) {
-                    url += '&cloth=' + toExport.cloth.value;
-                }
-                if(toExport.color.state) {                    
-                    url += '&color=' + toExport.color.value;
-                }
-                if(toExport.background.state) {                    
-                    url += '&background=' + toExport.background.value;
-                }
-                if(toExport.img.state) {                    
-                    url += '&img=' + toExport.img.value;
-                }
-                if(toExport.offset.state) {
-                    url += '&offset=' + toExport.offset.value;
-                }
-                if(toExport.light.state) {
-                    url += '&light=' + toExport.light.value;
-                }
-                if(toExport.lightpos.state) {
-                    url += '&lightpos=' + toExport.lightpos.value;
-                }
-                if(toExport.restrictView.state) {
-                    url += '&restrictView=' + toExport.restrictView.value;
-                }
-                if(toExport.controls.state) {
-                    url += '&controls=' + toExport.controls.value;
-                }
-                panel.addSeparator();
-
-                panel.sameLine();
-                panel.addTextArea("Iframe", url, null, {nameWidth: "80px", fitHeight: true, disabled:true});
-                panel.addButton(null, 'Copy', (value, event) => {
+            let pp = new LX.Panel({height:'auto'});
+            pp.refresh = () => {
+                pp.clear();
+                pp.sameLine();
+                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true});
+    
+                pp.addButton(null, 'Copy', (value, event) => {
+    
                     navigator.clipboard.writeText(url);
                     const bubble = document.getElementById('bubble');
                     
@@ -2176,11 +2145,156 @@ class AppGUI {
                         bubble.classList.remove('show');
                     }, 2000); // Bubble will show for 2 seconds
                 }, {icon:'fa fa-clipboard', width:"40px"})
-                panel.endLine();
+                pp.endLine();
             }
+            
+            let tabsPanel = new LX.Area({height: 'auto'});
+            let tabs = tabsPanel.addTabs();
+
+            let panel = new LX.Panel({height:'auto'});
+            let spanel = new LX.Panel({height:'auto'});
+            let kpanel = new LX.Panel({height:'auto'});
+            
+            // Customizaiton options
+            let tabPanel = new LX.Panel({height:'auto'});            
+            tabPanel.addCheckbox("Select All", true, (v, e) => {
+                for(let key in toExport) {                    
+                    toExport[key].state = v;                    
+                }
+                panel.refresh();
+            });
+            tabPanel.addSeparator();
+            
+            panel.refresh = () => {
+                panel.clear();               
+                for(let key in toExport) {
+                    url.searchParams.delete(key);
+                    panel.sameLine();
+                    panel.addCheckbox(key, toExport[key].state, (v, e) => {
+                        toExport[key].state = v;
+                        panel.refresh();
+                    })
+                    panel.addText(null, toExport[key].text, null, {disabled: true});
+                    panel.endLine();
+                }
+                if(toExport.avatar.state) {
+                    url.searchParams.append('avatar', toExport.avatar.value);
+                }               
+                if(toExport.cloth.state) {
+                    url.searchParams.append('cloth', toExport.cloth.value);
+                }
+                if(toExport.color.state) {                    
+                    url.searchParams.append('color', toExport.color.value);
+                }
+                if(toExport.background.state) {                    
+                    url.searchParams.append('background', toExport.background.value);
+                }
+                if(toExport.img.state) {                    
+                    url.searchParams.append('img', toExport.img.value);
+                }
+                if(toExport.offset.state) {
+                    url.searchParams.append('offset', toExport.offset.value);
+                }
+                if(toExport.light.state) {
+                    url.searchParams.append('light', toExport.light.value);
+                }
+                if(toExport.lightpos.state) {
+                    url.searchParams.append('lightpos', toExport.lightpos.value);
+                }
+                if(toExport.restrictView.state) {
+                    url.searchParams.append('restrictView', toExport.restrictView.value);
+                }
+                if(toExport.controls.state) {
+                    url.searchParams.append('controls', toExport.controls.value);
+                }
+                panel.addSeparator();                
+                pp.refresh();
+            };
             panel.refresh();
-            p.root.appendChild(panel.root);
-                        
+            tabPanel.root.appendChild(panel.root);
+            tabs.add("Customization", tabPanel.root, () => panel.refresh());
+
+            // Scrip mode idle options
+            tabPanel = new LX.Panel({height:'auto'});     
+            tabPanel.addCheckbox("Select All", true, (v, e) => {
+                for(let key in toExportScript) {                    
+                    toExportScript[key].state = v;                    
+                }
+                spanel.refresh();
+            });
+            tabPanel.addSeparator();
+
+            spanel.refresh = () => {
+                spanel.clear();
+                for(let key in toExportScript) {
+                    url.searchParams.delete(key);
+                    spanel.sameLine();
+                    spanel.addCheckbox(key, toExportScript[key].state, (v, e) => {
+                        toExportScript[key].state = v;
+                        spanel.refresh();
+                    })
+                    spanel.addText(null, toExportScript[key].text, null, {disabled: true});
+                    spanel.endLine();
+                }
+
+                if(toExportScript.config.state && currentCharacterInfo[1]) {
+                    url.searchParams.append('config', toExportScript.config.value);
+                }
+                if(toExportScript.applyIdle.state) {
+                    url.searchParams.append('applyIdle', toExportScript.applyIdle.value);
+                }
+                pp.refresh();
+            }
+            spanel.refresh();
+            tabPanel.root.appendChild(spanel.root);
+            tabs.add("Script mode", tabPanel.root, () => spanel.refresh());
+
+            // Keyframe mode options
+            tabPanel = new LX.Panel({height:'auto'});     
+            tabPanel.addCheckbox("Select All", true, (v, e) => {
+                for(let key in toExportKeyframe) {                    
+                    toExportKeyframe[key].state = v;                    
+                }
+                kpanel.refresh();
+            });
+            tabPanel.addSeparator();
+
+            kpanel.refresh = () => {
+                kpanel.clear();
+                for(let key in toExportKeyframe) {
+                    url.searchParams.delete(key);
+
+                    kpanel.sameLine();
+                    kpanel.addCheckbox(key, toExportKeyframe[key].state, (v, e) => {
+                        toExportKeyframe[key].state = v;
+                        kpanel.refresh();
+                    })
+                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true});
+                    kpanel.endLine();
+                }
+
+                if(toExportKeyframe.srcEmbeddedTransforms.state) {
+                    url.searchParams.append('srcEmbeddedTransforms', toExportKeyframe.srcEmbeddedTransforms.value);
+                }
+                if(toExportKeyframe.trgEmbeddedTransforms.state) {
+                    url.searchParams.append('trgEmbeddedTransforms', toExportKeyframe.trgEmbeddedTransforms.value);
+                }
+                if(toExportKeyframe.srcReferencePose.state) {
+                    url.searchParams.append('srcReferencePose', toExportKeyframe.srcReferencePose.value);
+                }
+                if(toExportKeyframe.trgReferencePose.state) {
+                    url.searchParams.append('trgReferencePose', toExportKeyframe.trgReferencePose.value);
+                }
+                pp.refresh();
+            }
+            kpanel.refresh();
+            tabPanel.root.appendChild(kpanel.root);
+            tabs.add("Keyframe mode", tabPanel.root, () => kpanel.refresh());
+              
+            p.root.appendChild(tabsPanel.root);
+            pp.refresh();
+            p.root.appendChild(pp.root);        
+
             p.addButton(null, "Download configuration as .json", () => {
 
                 let json = {};
@@ -2213,7 +2327,7 @@ class AppGUI {
                 dialog.close();
             }, {buttonClass: "accept", width: "auto"});
 
-        }, {size: ["40%", "auto"], resizable: true, draggable: true, scroll: false });
+        }, {size: ["40%", "auto"], resizable: true, draggable: true, scroll: true });
 
     }
 }

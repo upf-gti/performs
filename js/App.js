@@ -617,6 +617,24 @@ class App {
         
         this.scriptApp.init(this.scene);
 
+        if(urlParams.has('applyIdle')) {
+            this.scriptApp.applyIdle = urlParams.get('applyIdle');
+        }
+
+        if(urlParams.has('srcEmbeddedTransforms')) {
+            this.keyframeApp.srcEmbedWorldTransforms = urlParams.get('srcEmbeddedTransforms');
+        }
+        if(urlParams.has('trgEmbeddedTransforms')) {
+            this.keyframeApp.trgEmbedWorldTransforms = urlParams.get('trgEmbeddedTransforms');
+        }
+
+        if(urlParams.has('srcReferencePose')) {
+            this.keyframeApp.srcPoseMode = urlParams.get('srcReferencePose');
+        }
+        if(urlParams.has('trgReferencePose')) {
+            this.keyframeApp.trgPoseMode = urlParams.get('trgReferencePose');
+        }
+
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
             if(clothColor) {

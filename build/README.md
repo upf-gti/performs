@@ -15,11 +15,8 @@ The organisation of folders and files should be as follows:
         - index.html
         - js/
             - App.js
-            - BML.js
-            - CharacterController.js
-            - IKSolver.js
-            - SigmlToBML.js
-            - Animation.js
+            - KeyframeApp.js
+            - ScriptApp.js
 
         - data/
             - dictionaries/

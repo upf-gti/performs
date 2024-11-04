@@ -26,7 +26,8 @@ class KeyframeApp {
 
         this.mixer = null;
         this.playing = false;
-        this.speed = 1;
+        this.speed = 1.0;
+        this.blendTime = 1.0;
 
         // For retargeting
         this.srcPoseMode = AnimationRetargeting.BindPoseModes.DEFAULT; 
@@ -115,7 +116,7 @@ class KeyframeApp {
                 action.play();
                 for(let i = 0; i < this.mixer._actions.length; i++) {
                     if(this.mixer._actions[i]._clip ==  this.bindedAnimations[this.currentAnimation][this.currentCharacter].mixerBodyAnimation) {
-                        this.prepareCrossFade( this.mixer._actions[i], action, 1.0 );
+                        this.prepareCrossFade( this.mixer._actions[i], action, this.blendTime );
                         this.currentAnimation = animationName;
 
                         break;

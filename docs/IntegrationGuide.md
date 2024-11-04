@@ -6,19 +6,24 @@ Insert Performs inside your application using the _iframe_ HTML element.
 <iframe src='https://webglstudio.org/projects/signon/performs'>
 ```
 
-| Name             | Type    | Description                                             |  
-|------------------|---------|---------------------------------------------------------|
-|  avatar          | String  | Character file URL                                      |
-|  config          | String  | Configuration file URL                                  |
-|  cloth           | String  | Top cloth color value                                   |
-|  color           | String  | Background color                                        |
-|  background      | String  | _open_, _studio_ or _photocall_. Use _open_ as default  |
-|  img             | String  | Image file URL for _photocall_                          |
-|  offset          | Float   | [0, 1]. Space between images in the photocall.          |
-|  light           | String  | Light color                                             |
-|  lightpos        | String  | Direct light position                                   |
-|  restrictView    | Boolean | Restrict camera controls                                |
-|  controls        | Boolean | Show GUI controls.                                      |
+| Name                       | Type    | Description                                                                                                                 |
+|----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------|
+|  avatar                    | String  | Character file URL                                                                                                          |
+|  config                    | String  | Configuration file URL                                                                                                      |
+|  cloth                     | String  | Top cloth color value                                                                                                       |
+|  color                     | String  | Background color                                                                                                            |
+|  background                | String  | _open_, _studio_ or _photocall_. Use _open_ as default                                                                      |
+|  img                       | String  | Image file URL for _photocall_                                                                                              |
+|  offset                    | Float   | [0, 1]. Space between images in the photocall.                                                                              |
+|  light                     | String  | Light color                                                                                                                 |
+|  lightpos                  | String  | Direct light position                                                                                                       |
+|  restrictView              | Boolean | Restrict camera controls                                                                                                    |
+|  controls                  | Boolean | Show GUI controls.                                                                                                          |
+|  applyIdle                 | Boolean | Play idle animation for Script mode.                                                                                        |
+|  srcEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting.    |
+|  trgEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting.              |
+|  srcReferencePose          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting.                               |
+|  trgReferencePose          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting.                               |
 
 > [!IMPORTANT]  
 > You can combine multiple parameters by concatenating with _&_.
@@ -113,3 +118,35 @@ Toogle GUI controls visibility.
 ##### Expected values
 - **`true`** - Show GUI (default).
 - **`false`** - Hide GUI.
+
+#### applyIdle (Boolean)
+Play Idle animation as a base for Script animation mode.
+##### Expected values
+- **`true`** - Play idle animation.
+- **`false`** - Not play idle animation (default).
+
+#### srcEmbeddedTransforms (Boolean)
+Toogle (parent) transforms computations and embedding into the root joint of source skeleton animation for retargeting in Keyframe mode.
+##### Expected values
+- **`true`** -  Takes into account the transforms from the actual bone parent (world transforms)
+- **`false`** -  Takes into account the transforms from the actual bone objects (local transforms).
+
+#### trgEmbeddedTransforms (Boolean)
+Toogle (parent) transforms computations and embedding into the root joint of target skeleton for retargeting in Keyframe mode.
+##### Expected values
+- **`true`** -  Takes into account the transforms from the actual bone parent (world transforms)
+- **`false`** -  Takes into account the transforms from the actual bone objects (local transforms).
+
+#### srcReferencePose (Number)
+Pose of the source skeleton that will be used as the reference pose for the retargeting in Keyframe mode.
+##### Expected values
+- **`0`** - [Default] Skeleton's actual bind pose. (default)
+- **`1`** - [Current] Skeleton's current pose.
+- **`2`** - [Tpose] Computes a Tpose from the skeleton's actual bind pose.
+
+#### trgReferencePose (Number)
+Pose of the target skeleton that will be used as the reference pose for the retargeting in Keyframe mode.
+##### Expected values
+- **`0`** - [Default] Skeleton's actual bind pose. (default)
+- **`1`** - [Current] Skeleton's current pose.
+- **`2`** - [Tpose] Computes a Tpose from the skeleton's actual bind pose.
