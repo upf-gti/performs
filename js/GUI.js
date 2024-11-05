@@ -27,21 +27,28 @@ class AppGUI {
             let animations = [];
             let config = null;
             let gltfs = [];
+            let bml = null;
 
             let files = e.dataTransfer.files;
             for(let i = 0; i < files.length; i++) {
                 //load json (bml) file
                 const file = files[i];
                 const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
-                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx'];
+                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx', 'bml', 'sigml'];
                 if(formats.indexOf(extension) < 0) {
-                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
+                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t 'bml', 'sigml', 'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
+                    $("#loading").fadeOut();
+                    return;
                 }
+
                 if(extension == 'gltf' || extension == 'glb') {
                     gltfs.push(file);
                 }
                 else if(extension == 'json') {
                     config = file;
+                }
+                else if(extension == 'bml' ||extension == 'sigml') {
+                    bml = file;
                 }
                 else {
                     animations.push(file);
@@ -115,6 +122,43 @@ class AppGUI {
                         });    
                     }
                 });            
+            }
+            else if(config) {
+                let name = this.app.currentCharacter.model.name;
+                const reader = new FileReader();
+                reader.readAsText( config );
+                reader.onload = (event) => {
+                    const data = JSON.parse(event.currentTarget.result);
+                    if(data.boneMap) {
+                        this.avatarOptions[name][1] = config._filename;
+                        this.app.currentCharacter.config = data;
+                        this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                        this.app.currentCharacter.skeleton.pose();
+                        this.app.scriptApp.ECAcontroller.reset();                        
+                        this.app.changeMode(App.Modes.SCRIPT);
+                        if(this.settingsActive) {
+                            this.createSettingsPanel();             
+                        }
+                    }
+                    else {
+                        this.app.setConfiguration(data);
+                    }
+                }                
+            }
+
+            if(bml) {
+                if(config || this.app.currentCharacter.config) {
+                    const extension = bml.name.substr(bml.name.lastIndexOf(".") + 1).toLowerCase();
+                    const reader = new FileReader();
+                    reader.readAsText( bml );
+                    reader.onload = (event) => {
+                        const data = event.currentTarget.result;
+                        this.app.scriptApp.onMessage([{type: extension, data: data}]);
+                    }
+                }
+                else {
+                    alert("To use the Script mode, the current character's configuration file is needed.")
+                }
             }
             if(animations.length) {
                 $("#loading").fadeIn();
@@ -1822,7 +1866,7 @@ class AppGUI {
                                     throw new Error(`Response status: ${response.status}`);
                                 }
                                 config = await response.json();                        
-                                config._filename = filename; 
+                                config._filename = v; 
                             }
                             catch (error) {
                                 LX.popup(error.message, "File error!");
@@ -2090,28 +2134,35 @@ class AppGUI {
         }
 
         const toExport = {
-            avatar      : {state: true, text: "Character file URL", value: avatar},
-            cloth       : {state: true, text: "Top cloth color value", value: "0x" + this.app.getClothesColour()},
-            color       : {state: true, text: "Background color", value: color},
-            background  : {state: true, text: "Background design", value: backgrounds[this.app.background]},
-            img         : {state: true, text: "Logo/image file URL for photocall", value: img},
-            offset      : {state: true, text: "Logo space repetition", value: this.app.repeatOffset},
-            light       : {state: true, text: "Light color", value: "0x" + this.app.dirLight.color.getHexString()},
-            lightpos    : {state: true, text: "Light position", value: this.app.dirLight.position.x + ',' + this.app.dirLight.position.y + ',' + this.app.dirLight.position.z},
-            restrictView: {state: true, text: "Restrict camera controls", value: !this.app.cameraMode ?? false},
-            controls    : {state: true, text: "Show GUI controls", value: this.app.showControls},
+            avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : true, text: "Character file URL", value: avatar},
+            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.app.getClothesColour()},
+            color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
+            background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.app.background]},
+            img         : {state: localStorage.getItem("img") != undefined ? JSON.parse(localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},
+            offset      : {state: localStorage.getItem("offset") != undefined ? JSON.parse(localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.app.repeatOffset},
+            light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.app.dirLight.color.getHexString()},
+            lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.app.dirLight.position.x + ',' + this.app.dirLight.position.y + ',' + this.app.dirLight.position.z},
+            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.app.cameraMode ?? false},
+            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.app.showControls},
         }
 
         const toExportScript = {
-            config      : {state: true, text: "Configuration file URL", value: currentCharacterInfo[1]},
-            applyIdle   : {state: true, text: "Apply idle animation", value: this.app.scriptApp.applyIdle},
+            config      : {state: localStorage.getItem("config") != undefined ? JSON.parse(localStorage.getItem("config")) : (currentCharacterInfo[1] ?? false), text: "Configuration file URL", value: currentCharacterInfo[1]},
+            applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? JSON.parse(localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.app.scriptApp.applyIdle},
         }
 
+        let hasAnimations = this.app.keyframeApp.bindedAnimations[this.app.currentCharacter.model.name] ?? false;
         const toExportKeyframe = {
-            srcEmbeddedTransforms      : {state: true, text: "Source embedded transformations", value: this.app.keyframeApp.srcEmbedWorldTransforms},
-            trgEmbeddedTransforms      : {state: true, text: "Target embedded transformations", value: this.app.keyframeApp.trgEmbedWorldTransforms},
-            srcReferencePose           : {state: true, text: "Source reference pose", value: this.app.keyframeApp.srcPoseMode},
-            trgReferencePose           : {state: true, text: "Target reference pose", value: this.app.keyframeApp.trgPoseMode},
+            srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.app.keyframeApp.srcEmbedWorldTransforms},
+            trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.app.keyframeApp.trgEmbedWorldTransforms},
+            srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.app.keyframeApp.srcPoseMode},
+            trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.app.keyframeApp.trgPoseMode},
+        }
+
+        const toExportTransform = {
+            position: {state: localStorage.getItem("position") != undefined ? JSON.parse(localStorage.getItem("position")) : false, text: "Character position", value: this.app.currentCharacter.model.position.x + ',' + this.app.currentCharacter.model.position.y + ',' + this.app.currentCharacter.model.position.z},
+            rotation: {state: localStorage.getItem("rotation") != undefined ? JSON.parse(localStorage.getItem("rotation")) : false, text: "Character rotation", value: this.app.currentCharacter.model.quaternion.x + ',' + this.app.currentCharacter.model.quaternion.y + ',' + this.app.currentCharacter.model.quaternion.z + ',' + this.app.currentCharacter.model.quaternion.w},
+            scale:    {state: localStorage.getItem("scale") != undefined ? JSON.parse(localStorage.getItem("scale")) : false, text: "Character scale", value: this.app.currentCharacter.model.scale.x}
         }
 
         const dialog = new LX.Dialog("Export configuration", p => {
@@ -2154,12 +2205,14 @@ class AppGUI {
             let panel = new LX.Panel({height:'auto'});
             let spanel = new LX.Panel({height:'auto'});
             let kpanel = new LX.Panel({height:'auto'});
+            let tpanel = new LX.Panel({height:'auto'});
             
             // Customizaiton options
             let tabPanel = new LX.Panel({height:'auto'});            
-            tabPanel.addCheckbox("Select All", true, (v, e) => {
+            tabPanel.addCheckbox("Select All", false, (v, e) => {
                 for(let key in toExport) {                    
-                    toExport[key].state = v;                    
+                    toExport[key].state = v;
+                    localStorage.setItem(key, v);               
                 }
                 panel.refresh();
             });
@@ -2171,6 +2224,7 @@ class AppGUI {
                     url.searchParams.delete(key);
                     panel.sameLine();
                     panel.addCheckbox(key, toExport[key].state, (v, e) => {
+                        localStorage.setItem(key, v);
                         toExport[key].state = v;
                         panel.refresh();
                     })
@@ -2216,9 +2270,10 @@ class AppGUI {
 
             // Scrip mode idle options
             tabPanel = new LX.Panel({height:'auto'});     
-            tabPanel.addCheckbox("Select All", true, (v, e) => {
+            tabPanel.addCheckbox("Select All", toExportScript.config.state, (v, e) => {
                 for(let key in toExportScript) {                    
-                    toExportScript[key].state = v;                    
+                    toExportScript[key].state = v;
+                    localStorage.setItem(key, v);               
                 }
                 spanel.refresh();
             });
@@ -2231,6 +2286,7 @@ class AppGUI {
                     spanel.sameLine();
                     spanel.addCheckbox(key, toExportScript[key].state, (v, e) => {
                         toExportScript[key].state = v;
+                        localStorage.setItem(key, v);
                         spanel.refresh();
                     })
                     spanel.addText(null, toExportScript[key].text, null, {disabled: true});
@@ -2251,9 +2307,10 @@ class AppGUI {
 
             // Keyframe mode options
             tabPanel = new LX.Panel({height:'auto'});     
-            tabPanel.addCheckbox("Select All", true, (v, e) => {
+            tabPanel.addCheckbox("Select All", hasAnimations, (v, e) => {
                 for(let key in toExportKeyframe) {                    
-                    toExportKeyframe[key].state = v;                    
+                    toExportKeyframe[key].state = v;
+                    localStorage.setItem(key, v);
                 }
                 kpanel.refresh();
             });
@@ -2267,9 +2324,10 @@ class AppGUI {
                     kpanel.sameLine();
                     kpanel.addCheckbox(key, toExportKeyframe[key].state, (v, e) => {
                         toExportKeyframe[key].state = v;
+                        localStorage.setItem(key, v);
                         kpanel.refresh();
                     })
-                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true});
+                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true, nameWidth:"100px"});
                     kpanel.endLine();
                 }
 
@@ -2290,12 +2348,53 @@ class AppGUI {
             kpanel.refresh();
             tabPanel.root.appendChild(kpanel.root);
             tabs.add("Keyframe mode", tabPanel.root, () => kpanel.refresh());
+
+            // Transforms mode options
+            tabPanel = new LX.Panel({height:'auto'});     
+            tabPanel.addCheckbox("Select All", false, (v, e) => {
+                for(let key in toExportTransform) {                    
+                    toExportTransform[key].state = v;
+                    localStorage.setItem(key, v);
+                }
+                tpanel.refresh();
+            });
+            tabPanel.addSeparator();
+
+            tpanel.refresh = () => {
+                tpanel.clear();
+                for(let key in toExportTransform) {
+                    url.searchParams.delete(key);
+
+                    tpanel.sameLine();
+                    tpanel.addCheckbox(key, toExportTransform[key].state, (v, e) => {
+                        toExportTransform[key].state = v;
+                        localStorage.setItem(key, v);
+                        tpanel.refresh();
+                    })
+                    tpanel.addText(null, toExportTransform[key].text, null, {disabled: true, nameWidth:"100px"});
+                    tpanel.endLine();
+                }
+
+                if(toExportTransform.position.state) {
+                    url.searchParams.append('position', toExportTransform.position.value);
+                }
+                if(toExportTransform.rotation.state) {
+                    url.searchParams.append('rotation', toExportTransform.rotation.value);
+                }
+                if(toExportTransform.scale.state) {
+                    url.searchParams.append('scale', toExportTransform.scale.value);
+                }                
+                pp.refresh();
+            }
+            tpanel.refresh();
+            tabPanel.root.appendChild(tpanel.root);
+            tabs.add("Transforms", tabPanel.root, () => tpanel.refresh());
               
             p.root.appendChild(tabsPanel.root);
             pp.refresh();
             p.root.appendChild(pp.root);        
 
-            p.addButton(null, "Download configuration as .json", () => {
+            p.addButton(null, "Download configuration as file (.json)", () => {
 
                 let json = {};
                 for(let key in toExport) {
@@ -2303,10 +2402,25 @@ class AppGUI {
                         json[key] = toExport[key].value;
                     }
                 }
+                for(let key in toExportTransform) {
+                    if(toExportTransform[key].state) {
+                        json[key] = toExportTransform[key].value;
+                    }
+                }
+                for(let key in toExportScript) {
+                    if(toExportScript[key].state) {
+                        json[key] = toExportScript[key].value;
+                    }
+                }
+                for(let key in toExportScript) {
+                    if(toExportScript[key].state) {
+                        json[key] = toExportScript[key].value;
+                    }
+                }
                 const data = JSON.stringify(json);
                 let a = document.createElement('a'); 
                 // Then trigger the download link
-                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(data));
+                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(data);
                 a.download = "performsSettings.json";
                 a.click();
                 // // writing the JSON string content to a file

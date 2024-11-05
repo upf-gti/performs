@@ -224,7 +224,7 @@ class App {
     }
 
     loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null, onerror = null ) {
-        this.loaderGLB.load( modelFilePath, (glb) => {
+        this.loaderGLB.load( modelFilePath, async (glb) => {
             let model = glb.scene;
             model.quaternion.premultiply( modelRotation );
             model.castShadow = true;
@@ -302,7 +302,19 @@ class App {
             if (configFilePath) {
                 if(typeof(configFilePath) == 'string') {
 
-                    fetch( configFilePath ).then(response => response.text()).then( (text) =>{
+                    try {
+                        const response = await fetch( configFilePath );
+                        
+                        if(!response.ok) {
+                            if (callback) {
+                                callback();
+                            }
+                            throw new Error(`Response status: ${response.status}`);
+                            
+                        }
+                        
+                        const text = await response.text()                       
+                        
                         let config = JSON.parse( text );
                         config._filename = configFilePath;
                         this.loadedCharacters[avatarName].config = config;
@@ -311,7 +323,14 @@ class App {
                         if (callback) {
                             callback();
                         }
-                    })
+                       
+                    }
+                    catch(err) {
+                        console.error(err);
+                        if(callback) {
+                            callback();
+                        }
+                    }
                 }
                 else {
                     let config = configFilePath;
@@ -530,9 +549,17 @@ class App {
 
         const queryString = window.location.search;
         const urlParams = new URLSearchParams(queryString);
-        if(urlParams.has('controls')) {
-            this.showControls = !(urlParams.get('controls') === "false");
+        const settings = {};
+        for (const [key, value] of urlParams.entries()) {
+            if(key == 'avatar') {
+                continue;
+            }
+            settings[key] = value;
         }
+
+        // if(urlParams.has('controls')) {
+        //     this.showControls = !(urlParams.get('controls') === "false");
+        // }
 
         let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
         
@@ -549,98 +576,117 @@ class App {
             modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];          
         }
 
-        // Default top cloth color
-        let clothColor = null;
-        if(urlParams.has('cloth')) {
-            clothColor = urlParams.get('cloth');     
-            if(typeof(clothColor) == 'string'){
-                clothColor = clothColor.replace('0x', '#');
-            }
+        if(urlParams.has('rotation')) {
+            let rotation = urlParams.get('rotation');
+            rotation = rotation.split(',');
+            modelToLoad[2].fromArray(rotation);
         }
 
-        // Default background
-        if(urlParams.has('background')) {
-            let background = urlParams.get('background');
-            switch(background.toLocaleLowerCase()) {
-                case 'studio':
-                    this.background = App.Backgrounds.STUDIO;
-                    break;
-                case 'photocall':
-                        this.background = App.Backgrounds.PHOTOCALL;
-                        break;
-                default:
-                    break;
-            }
-            this.setBackground(this.background);            
-        }
+        // // Default top cloth color
+        // let clothColor = null;
+        // if(urlParams.has('cloth')) {
+        //     clothColor = urlParams.get('cloth');     
+        //     if(typeof(clothColor) == 'string'){
+        //         clothColor = clothColor.replace('0x', '#');
+        //     }
+        // }
 
-        // Default background color
-        if(urlParams.has('color')) {
-            let color = urlParams.get('color');
-            if(typeof(color) == 'string'){
-                color = color.replace('0x', '#');
-            }
-            this.sceneColor = color;
-            this.setBackPlaneColour(this.sceneColor);                                  
-        }
+        // // Default background
+        // if(urlParams.has('background')) {
+        //     let background = urlParams.get('background');
+        //     switch(background.toLocaleLowerCase()) {
+        //         case 'studio':
+        //             this.background = App.Backgrounds.STUDIO;
+        //             break;
+        //         case 'photocall':
+        //                 this.background = App.Backgrounds.PHOTOCALL;
+        //                 break;
+        //         default:
+        //             break;
+        //     }
+        //     this.setBackground(this.background);            
+        // }
 
-        if(urlParams.has('offset')) {
-            let offset = Number(urlParams.get('offset'));
-            this.changePhotocallOffset(offset);
-        }
+        // // Default background color
+        // if(urlParams.has('color')) {
+        //     let color = urlParams.get('color');
+        //     if(typeof(color) == 'string'){
+        //         color = color.replace('0x', '#');
+        //     }
+        //     this.sceneColor = color;
+        //     this.setBackPlaneColour(this.sceneColor);                                  
+        // }
 
-        // Default light color
-        if(urlParams.has('light')) {
-            let light = urlParams.get('light');   
-            if(typeof(light) == 'string'){
-                light = light.replace('0x', '#');
-            }
-            this.dirLight.color.set(light);                          
-        }
+        // if(urlParams.has('offset')) {
+        //     let offset = Number(urlParams.get('offset'));
+        //     this.changePhotocallOffset(offset);
+        // }
 
-        // Default light position
-        if(urlParams.has('lightpos')) {
-            let light = urlParams.get('lightpos');
-            light = light.split(',');
-            if(light.length == 3) {
-                this.dirLight.position.set(Number(light[0]), Number(light[1]), Number(light[2]));                  
-            }           
-        }
+        // // Default light color
+        // if(urlParams.has('light')) {
+        //     let light = urlParams.get('light');   
+        //     if(typeof(light) == 'string'){
+        //         light = light.replace('0x', '#');
+        //     }
+        //     this.dirLight.color.set(light);                          
+        // }
+
+        // // Default light position
+        // if(urlParams.has('lightpos')) {
+        //     let light = urlParams.get('lightpos');
+        //     light = light.split(',');
+        //     if(light.length == 3) {
+        //         this.dirLight.position.set(Number(light[0]), Number(light[1]), Number(light[2]));                  
+        //     }           
+        // }
         
         let view = false;
-        if(urlParams.has('restrictView')) {
-            view = (urlParams.get('restrictView') === "false");
-        }
+        // if(urlParams.has('restrictView')) {
+        //     view = (urlParams.get('restrictView') === "false");
+        // }
         // so the screen is not black while loading
         this.changeCameraMode( view ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.cameras[this.camera] );
         
         this.scriptApp.init(this.scene);
 
-        if(urlParams.has('applyIdle')) {
-            this.scriptApp.applyIdle = urlParams.get('applyIdle');
-        }
+        // if(urlParams.has('applyIdle')) {
+        //     this.scriptApp.applyIdle = urlParams.get('applyIdle');
+        // }
 
-        if(urlParams.has('srcEmbeddedTransforms')) {
-            this.keyframeApp.srcEmbedWorldTransforms = urlParams.get('srcEmbeddedTransforms');
-        }
-        if(urlParams.has('trgEmbeddedTransforms')) {
-            this.keyframeApp.trgEmbedWorldTransforms = urlParams.get('trgEmbeddedTransforms');
-        }
+        // if(urlParams.has('srcEmbeddedTransforms')) {
+        //     this.keyframeApp.srcEmbedWorldTransforms = urlParams.get('srcEmbeddedTransforms');
+        // }
+        // if(urlParams.has('trgEmbeddedTransforms')) {
+        //     this.keyframeApp.trgEmbedWorldTransforms = urlParams.get('trgEmbeddedTransforms');
+        // }
 
-        if(urlParams.has('srcReferencePose')) {
-            this.keyframeApp.srcPoseMode = urlParams.get('srcReferencePose');
-        }
-        if(urlParams.has('trgReferencePose')) {
-            this.keyframeApp.trgPoseMode = urlParams.get('trgReferencePose');
-        }
+        // if(urlParams.has('srcReferencePose')) {
+        //     this.keyframeApp.srcPoseMode = urlParams.get('srcReferencePose');
+        // }
+        // if(urlParams.has('trgReferencePose')) {
+        //     this.keyframeApp.trgPoseMode = urlParams.get('trgReferencePose');
+        // }
 
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
-            if(clothColor) {
-                this.setClothesColour(clothColor);
+            // if(clothColor) {
+            //     this.setClothesColour(clothColor);
+            // }
 
-            }
+            // if(urlParams.has('position')) {
+            //     let position = urlParams.get('position');
+            //     position = position.split(',');
+            //     this.currentCharacter.model.position.fromArray(position);
+            // }
+
+            // if(urlParams.has('scale')) {
+            //     let scale = urlParams.get('scale');
+            //     scale = Number(scale);
+            //     this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
+            // }
+            this.setConfiguration(settings);
+
             if ( typeof AppGUI != "undefined" && this.showControls) { 
                 this.gui = new AppGUI( this ); 
                 if(!this.gui.avatarOptions[modelToLoad[3]]) {
@@ -658,10 +704,10 @@ class App {
             this.isAppReady = true;
                         
             
-            // Default background image
-            if(urlParams.has('img')) {
-                this.setBackground( App.Backgrounds.PHOTOCALL);         
-            }
+            // // Default background image
+            // if(urlParams.has('img')) {
+            //     this.setBackground( App.Backgrounds.PHOTOCALL);         
+            // }
             if(this.pendingMessageReceived) {
                 this.onMessage( this.pendingMessageReceived );
                 this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
@@ -682,6 +728,192 @@ class App {
         window.addEventListener( "message", this.onMessage.bind(this) );
         window.addEventListener( 'resize', this.onWindowResize.bind(this) );
 
+    }
+
+    async setConfiguration(settings) {
+        const innerAvatarSettings = (settings) => {
+            if(settings.cloth) {
+                let clothColor = settings.cloth;
+                if(typeof(clothColor) == 'string'){
+                    clothColor = clothColor.replace('0x', '#');
+                }
+                this.setClothesColour(clothColor);
+            }
+
+            if(settings.position) {
+                let position = settings.position;
+                position = position.split(',');
+                this.currentCharacter.model.position.fromArray(position);
+            }
+
+            if(settings.scale) {
+                let scale = settings.scale;
+                scale = Number(scale);
+                this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
+            }
+        }
+
+        let rotation = null;
+        if(settings.rotation) {
+            rotation = settings.rotation;
+            rotation = rotation.split(',');            
+        }
+
+        if(settings.avatar) {
+            let avatar = settings.avatar;
+            const path = avatar.split(".");
+            let filename = path[path.length-2];
+            filename = filename.split("/");
+            filename = filename.pop();
+            
+            
+            $('#loading').fadeIn(); 
+            let thumbnail = null;
+            if( avatar.includes('models.readyplayer.me') ) {
+                avatar+= '?pose=T&morphTargets=ARKit&lod=1';
+                thumbnail =  "https://models.readyplayer.me/" + filename + ".png?background=68,68,68";
+            }
+            this.gui.avatarOptions[filename] = [avatar, settings.config, rotation || new THREE.Quaternion(), thumbnail];
+            this.loadAvatar(avatar, settings.config, rotation || new THREE.Quaternion(), filename, () => {
+                this.changeAvatar( filename );
+                innerAvatarSettings(settings);
+
+                $('#loading').fadeOut(); //hide();               
+            });
+        }
+        else {
+            innerAvatarSettings(settings);
+            if(settings.config) {
+                let name = this.currentCharacter.model.name;
+                try {
+                    const response = await fetch(settings.config);
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                    let config = await response.json();                        
+                    config._filename = settings.config; 
+                    this.gui.avatarOptions[name][1] = config._filename;
+                    this.currentCharacter.config = config;
+                    this.scriptApp.onLoadAvatar(this.currentCharacter.model, this.currentCharacter.config, this.currentCharacter.skeleton);
+                    this.currentCharacter.skeleton.pose();
+                    this.scriptApp.ECAcontroller.reset();                        
+                    this.changeMode(App.Modes.SCRIPT);
+                    if(this.gui.settingsActive) {
+                        this.gui.createSettingsPanel();             
+                    }
+                }
+                catch (error) {
+                    console.error(error.message, "File error!");
+                }
+            }
+            if(rotation) {
+                this.currentCharacter.model.quaternion.fromArray(rotation);
+            }
+        }
+
+        if(settings.controls != undefined) {
+            this.showControls = !(settings.controls === "false" || settings.controls === false);
+        }
+
+        // Default background
+        if(settings.background) {
+            let background = settings.background;
+            switch(background.toLocaleLowerCase()) {
+                case 'studio':
+                    this.background = App.Backgrounds.STUDIO;
+                    break;
+                case 'photocall':
+                        this.background = App.Backgrounds.PHOTOCALL;
+                        break;
+                default:
+                    break;
+            }
+            this.setBackground(this.background);            
+        }
+
+        if(settings.img) {
+            this.setBackground( App.Backgrounds.PHOTOCALL);         
+
+            let image =settings.img;
+            const imgCallback = ( event ) => {
+
+                this.logo = event.target;        
+                this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
+            }
+
+            const img = new Image();            
+            img.onload = imgCallback;    
+            fetch(image)
+            .then(function (response) {
+                if (response.ok) {
+                response.blob().then(function (miBlob) {
+                    var objectURL = URL.createObjectURL(miBlob);
+                    img.src = objectURL;
+                });
+                } else {
+                console.log("Bad request");
+                }
+            })
+            .catch(function (error) {
+                console.log("Error:" + error.message);
+            });        
+
+        }
+
+        // Default background color
+        if(settings.color) {
+            if(typeof(settings.color) == 'string'){
+                settings.color = settings.color.replace('0x', '#');
+            }
+            this.sceneColor = settings.color;
+            this.setBackPlaneColour(this.sceneColor);                                  
+        }
+
+        if(settings.offset) {
+            let offset = Number(settings.offset);
+            this.changePhotocallOffset(offset);
+        }
+
+        // Default light color
+        if(settings.light) {
+            let light = settings.light;
+            if(typeof(light) == 'string'){
+                light = light.replace('0x', '#');
+            }
+            this.dirLight.color.set(light);                          
+        }
+
+        // Default light position
+        if(settings.lightpos) {
+            let light = settings.lightpos;
+            light = light.split(',');
+            if(light.length == 3) {
+                this.dirLight.position.set(Number(light[0]), Number(light[1]), Number(light[2]));                  
+            }           
+        }
+        
+        if(settings.restrictView) {
+            let view = (settings.restrictView === "false" || settings.restrictView === false);
+            this.changeCameraMode( view ); //moved here because it needs the backplane to exist
+        }
+
+        if(settings.applyIdle != undefined) {
+            this.scriptApp.applyIdle = settings.applyIdle;
+        }
+
+        if(settings.srcEmbeddedTransforms != undefined) {
+            this.keyframeApp.srcEmbedWorldTransforms = settings.srcEmbeddedTransforms;
+        }
+        if(settings.trgEmbeddedTransforms != undefined) {
+            this.keyframeApp.trgEmbedWorldTransforms = settings.trgEmbeddedTransforms;
+        }
+
+        if(settings.srcReferencePose != undefined) {
+            this.keyframeApp.srcPoseMode = settings.srcReferencePose;
+        }
+        if(settings.trgReferencePose != undefined) {
+            this.keyframeApp.trgPoseMode = settings.trgReferencePose;
+        }
     }
 
     animate() {

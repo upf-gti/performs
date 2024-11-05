@@ -10,20 +10,23 @@ Insert Performs inside your application using the _iframe_ HTML element.
 |----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------|
 |  avatar                    | String  | Character file URL                                                                                                          |
 |  config                    | String  | Configuration file URL                                                                                                      |
+|  position                  | String  | Character world position                                                                                                    |
+|  rotation                  | String  | Character world rotation (quaternion)                                                                                       |
+|  scale                     | Integer | Character world scale                                                                                                       |
 |  cloth                     | String  | Top cloth color value                                                                                                       |
 |  color                     | String  | Background color                                                                                                            |
 |  background                | String  | _open_, _studio_ or _photocall_. Use _open_ as default                                                                      |
 |  img                       | String  | Image file URL for _photocall_                                                                                              |
-|  offset                    | Float   | [0, 1]. Space between images in the photocall.                                                                              |
+|  offset                    | Float   | [0, 1]. Space between images in the photocall                                                                               |
 |  light                     | String  | Light color                                                                                                                 |
 |  lightpos                  | String  | Direct light position                                                                                                       |
 |  restrictView              | Boolean | Restrict camera controls                                                                                                    |
-|  controls                  | Boolean | Show GUI controls.                                                                                                          |
-|  applyIdle                 | Boolean | Play idle animation for Script mode.                                                                                        |
-|  srcEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting.    |
-|  trgEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting.              |
-|  srcReferencePose          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting.                               |
-|  trgReferencePose          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting.                               |
+|  controls                  | Boolean | Show GUI controls                                                                                                           |
+|  applyIdle                 | Boolean | Play idle animation for Script mode                                                                                         |
+|  srcEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting     |
+|  trgEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
+|  srcReferencePose          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
+|  trgReferencePose          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
 
 > [!IMPORTANT]  
 > You can combine multiple parameters by concatenating with _&_.
@@ -54,6 +57,23 @@ URL of a JSON file with the configuration provided by [performs-atelier](https:/
 
 >[!IMPORTANT]
 > Without a config file, the **_Script Mode_** doesn't work. The default avatars have already had it.
+
+#### position (String)
+Control the character position in world space.
+##### Expected values
+- **`1,1.5,5`** - x,y,z.
+
+#### rotation (String)
+Control the character rotation with quaternion in world space.
+##### Expected values
+- **`0.707,0.0,0.0,0.707`** - x,y,z,w.
+
+#### scale (Integer)
+Apply an scale to the character.
+##### Expected values
+- min: **`0`**
+>[!IMPORTANT]
+> Use a decimal point as the seperator.
 
 #### cloth (String)
 Control the top cloth color by multipling it by the given color.
