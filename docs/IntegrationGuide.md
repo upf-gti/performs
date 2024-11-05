@@ -8,25 +8,25 @@ Insert Performs inside your application using the _iframe_ HTML element.
 
 | Name                       | Type    | Description                                                                                                                 |
 |----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------|
-|  avatar                    | String  | Character file URL                                                                                                          |
-|  config                    | String  | Configuration file URL                                                                                                      |
-|  position                  | String  | Character world position                                                                                                    |
-|  rotation                  | String  | Character world rotation (quaternion)                                                                                       |
-|  scale                     | Integer | Character world scale                                                                                                       |
-|  cloth                     | String  | Top cloth color value                                                                                                       |
-|  color                     | String  | Background color                                                                                                            |
-|  background                | String  | _open_, _studio_ or _photocall_. Use _open_ as default                                                                      |
-|  img                       | String  | Image file URL for _photocall_                                                                                              |
-|  offset                    | Float   | [0, 1]. Space between images in the photocall                                                                               |
-|  light                     | String  | Light color                                                                                                                 |
-|  lightpos                  | String  | Direct light position                                                                                                       |
-|  restrictView              | Boolean | Restrict camera controls                                                                                                    |
-|  controls                  | Boolean | Show GUI controls                                                                                                           |
-|  applyIdle                 | Boolean | Play idle animation for Script mode                                                                                         |
-|  srcEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting     |
-|  trgEmbeddedTransforms     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
-|  srcReferencePose          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
-|  trgReferencePose          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
+|  [avatar](#avatar)                    | String  | Character file URL                                                                                                          |
+|  [config](#config-string)                    | String  | Configuration file URL                                                                                                      |
+|  [position](#position-string)                  | String  | Character world position                                                                                                    |
+|  [rotation](#rotation-string)                  | String  | Character world rotation (quaternion)                                                                                       |
+|  [scale](#scale-integer)                     | Integer | Character world scale                                                                                                       |
+|  [cloth](#cloth-string)                     | String  | Top cloth color value                                                                                                       |
+|  [color](#color-string)                     | String  | Background color                                                                                                            |
+|  [background](#background-string)                | String  | _open_, _studio_ or _photocall_. Use _open_ as default                                                                      |
+|  [img](#img-string)                       | String  | Image file URL for _photocall_                                                                                              |
+|  [offset](#offset-float)                    | Float   | [0, 1]. Space between images in the photocall                                                                               |
+|  [light](#light-string)                     | String  | Light color                                                                                                                 |
+|  [lightpos](#lightpos-string)                  | String  | Direct light position                                                                                                       |
+|  [restrictView](#restrictview-boolean)              | Boolean | Restrict camera controls                                                                                                    |
+|  [controls](#controls-boolean)                  | Boolean | Show GUI controls                                                                                                           |
+|  [applyIdle](#applyidle-boolean)                 | Boolean | Play idle animation for Script mode                                                                                         |
+|  [srcEmbeddedTransforms](#srcembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting     |
+|  [trgEmbeddedTransforms](#trgembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
+|  [srcReferencePose](#srcreferencepose-number)          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
+|  [trgReferencePose](#trgreferencepose-number)          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
 
 > [!IMPORTANT]  
 > You can combine multiple parameters by concatenating with _&_.

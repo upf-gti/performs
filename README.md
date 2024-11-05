@@ -30,6 +30,8 @@ To run locally, host a server from the main project folder. You can also use the
 > [!IMPORTANT]  
 > To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
 
+You can load the customization features appending the URL params detailed in the [Integration Guide](./docs/IntegrationGuide.md) or loading a JSON file with the same params and calling _setConfiguration(settings)_ function from _App_ with the object data as a param.
+
 ## Adding avatars
 > [!IMPORTANT]  
 > Currently only **.gltf** and **.glb** are supported. If you happen to use another format, please convert it to the mentioned formats.
