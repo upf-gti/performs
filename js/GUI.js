@@ -9,7 +9,7 @@ class AppGUI {
     constructor( app ){
         this.app = app;
         this.randomSignAmount = 0;
-        // available model models paths - [model, config, rotation]
+        // available model models paths - [model, config, rotation, thumbnail]
         this.avatarOptions = {
             "EvaLow": ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.png'],
             "Witch": ['https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.glb', 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.json', 0, 'https://webglstudio.org/3Dcharacters/Eva_Witch/Eva_Witch.png'],
@@ -20,159 +20,7 @@ class AppGUI {
         // take canvas from dom, detach from dom, attach to lexgui 
         this.app.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.init();
-        this.mainArea.root.ondrop = (e) => {
-			e.preventDefault();
-			e.stopPropagation();
-           
-            let animations = [];
-            let config = null;
-            let gltfs = [];
-            let bml = null;
-
-            let files = e.dataTransfer.files;
-            for(let i = 0; i < files.length; i++) {
-                //load json (bml) file
-                const file = files[i];
-                const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
-                const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx', 'bml', 'sigml'];
-                if(formats.indexOf(extension) < 0) {
-                    alert(file.name +": Format not supported.\n\nFormats accepted:\n\t 'bml', 'sigml', 'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
-                    $("#loading").fadeOut();
-                    return;
-                }
-
-                if(extension == 'gltf' || extension == 'glb') {
-                    gltfs.push(file);
-                }
-                else if(extension == 'json') {
-                    config = file;
-                }
-                else if(extension == 'bml' ||extension == 'sigml') {
-                    bml = file;
-                }
-                else {
-                    animations.push(file);
-                }
-            }
-
-            if(gltfs.length) {
-                this.createImportDialog('.glb', (isAvatar) => {
-                    if(isAvatar) {
-                        this.uploadAvatar((value, config) => {
-                    
-                            if ( !this.app.loadedCharacters[value] ) {
-                                $('#loading').fadeIn(); //hide();
-                                let modelFilePath = this.avatarOptions[value][0]; 
-                                let configFilePath = this.avatarOptions[value][1]; 
-                                let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                                this.app.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
-                                    this.app.changeAvatar(value);
-                                    this.createAvatarsPanel();
-                                    if(this.app.currentCharacter.config) {
-                                        this.app.changeMode(App.Modes.SCRIPT);
-                                        
-                                        const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-                                        if(resetBtn) {
-                                            resetBtn.classList.remove("hidden");
-                                        }
-                                    }
-                                    $('#loading').fadeOut();
-                                }, (err) => {
-                                    $('#loading').fadeOut();
-                                    LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
-                                } );
-                                return;
-                            } 
-            
-                            // use controller if it has been already loaded in the past
-                            this.app.changeAvatar(value);
-                            this.createAvatarsPanel();
-                        });
-                        
-                        // Create a data transfer object
-                        let dataTransfer = new DataTransfer();
-                        // Add file to the file list of the object
-                        dataTransfer.items.add(gltfs[0]);
-                        // Save the file list to a new variable
-                        const fileList = dataTransfer.files;
-                        this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
-                        this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-                        
-                        if (config) { 
-                            // Create a data transfer object
-                            dataTransfer = new DataTransfer();
-                            // Add file to the file list of the object
-                            dataTransfer.items.add(config);
-                            // Save the file list to a new variable
-                            const fileList = dataTransfer.files;
-                            this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
-                            this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
-                        }
-                    }
-                    else {
-                        $("#loading").fadeIn();
-                        this.app.loadFiles(gltfs, (files) => {
-                            $("#loading").fadeOut();
-                            if(files.length) {
-                                this.createSettingsPanel();
-                            }
-                            else {
-                                LX.popup("This file doesn't contain any animation or a valid source avatar!");
-                            }
-                        });    
-                    }
-                });            
-            }
-            else if(config) {
-                let name = this.app.currentCharacter.model.name;
-                const reader = new FileReader();
-                reader.readAsText( config );
-                reader.onload = (event) => {
-                    const data = JSON.parse(event.currentTarget.result);
-                    if(data.boneMap) {
-                        this.avatarOptions[name][1] = config._filename;
-                        this.app.currentCharacter.config = data;
-                        this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
-                        this.app.currentCharacter.skeleton.pose();
-                        this.app.scriptApp.ECAcontroller.reset();                        
-                        this.app.changeMode(App.Modes.SCRIPT);
-                        if(this.settingsActive) {
-                            this.createSettingsPanel();             
-                        }
-                    }
-                    else {
-                        this.app.setConfiguration(data);
-                    }
-                }                
-            }
-
-            if(bml) {
-                if(config || this.app.currentCharacter.config) {
-                    const extension = bml.name.substr(bml.name.lastIndexOf(".") + 1).toLowerCase();
-                    const reader = new FileReader();
-                    reader.readAsText( bml );
-                    reader.onload = (event) => {
-                        const data = event.currentTarget.result;
-                        this.app.scriptApp.onMessage([{type: extension, data: data}]);
-                    }
-                }
-                else {
-                    alert("To use the Script mode, the current character's configuration file is needed.")
-                }
-            }
-            if(animations.length) {
-                $("#loading").fadeIn();
-                this.app.loadFiles(animations, (files) => {
-                    $("#loading").fadeOut();
-                    if(files.length) {
-                        this.createSettingsPanel();
-                    }
-                    else {
-                        LX.popup("This file doesn't contain any animation or a valid source avatar!");
-                    }
-                });      
-            }
-        };
+        this.mainArea.root.ondrop = this.onDropFiles.bind(this);
 
         this.mainArea.onresize = (bounding) => app.onCanvasResize(bounding.width, bounding.height);
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
@@ -503,7 +351,7 @@ class AppGUI {
                     panel.endLine();
 
                     panel.addNumber("Offset", this.app.repeatOffset, (v) => {
-                        this.app.changePhotocallOffset(v);
+                        this.app.setPhotocallOffset(v);
                     }, {min: 0, max: 1, step: 0.01})
                 })
             }, {icon: "fa fa-pen-to-square", className: "centered"});
@@ -1452,9 +1300,16 @@ class AppGUI {
             if(!files.length) {
                 return;
             }
-            this.app.loadFiles(files, ()=> {
-                if(refresh) {
-                    refresh();
+            this.app.keyframeApp.loadFiles(files, (animations)=> {
+                
+                if(animations.length) {
+                    this.app.changeMode(App.Modes.KEYFRAME);
+                    if(refresh) {
+                        refresh();
+                    }
+                }
+                else {
+                    LX.popup("This file doesn't contain any animation or a valid source avatar!");
                 }
             })
         }, {type: "url", multiple: "multiple"});
@@ -1961,6 +1816,177 @@ class AppGUI {
         return name;
     }
 
+    onDropFiles(e) {        
+        e.preventDefault();
+        e.stopPropagation();
+        
+        let animations = [];
+        let config = null;
+        let gltfs = [];
+        let bml = null;
+
+        // Supported formats
+        const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx', 'bml', 'sigml'];
+        
+        // Parse file formats
+        let files = e.dataTransfer.files;
+        for(let i = 0; i < files.length; i++) {
+   
+            const file = files[i];
+            const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
+            if(formats.indexOf(extension) < 0) {
+                alert(file.name +": Format not supported.\n\nFormats accepted:\n\t 'bml', 'sigml', 'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
+                $("#loading").fadeOut();
+                return;
+            }
+
+            if(extension == 'gltf' || extension == 'glb') {
+                gltfs.push(file);
+            }
+            else if(extension == 'json') {
+                config = file;
+            }
+            else if(extension == 'bml' ||extension == 'sigml') {
+                bml = file;
+            }
+            else {
+                animations.push(file);
+            }
+        }
+
+        if(gltfs.length) {
+            this.createImportDialog('.glb', (isAvatar) => {
+                if(isAvatar) {
+                    this.uploadAvatar((value, config) => {
+                
+                        if ( !this.app.loadedCharacters[value] ) {
+                            $('#loading').fadeIn(); //hide();
+                            let modelFilePath = this.avatarOptions[value][0]; 
+                            let configFilePath = this.avatarOptions[value][1]; 
+                            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
+                            this.app.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
+                                this.app.changeAvatar(value);
+                                this.createAvatarsPanel();
+                                if(this.app.currentCharacter.config) {
+                                    this.app.changeMode(App.Modes.SCRIPT);
+                                    
+                                    const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
+                                    if(resetBtn) {
+                                        resetBtn.classList.remove("hidden");
+                                    }
+                                }
+                                $('#loading').fadeOut();
+                            }, (err) => {
+                                $('#loading').fadeOut();
+                                LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
+                            } );
+                            return;
+                        } 
+        
+                        // use controller if it has been already loaded in the past
+                        this.app.changeAvatar(value);
+                        this.createAvatarsPanel();
+                    });
+                    
+                    // Create a data transfer object
+                    let dataTransfer = new DataTransfer();
+                    // Add file to the file list of the object
+                    dataTransfer.items.add(gltfs[0]);
+                    // Save the file list to a new variable
+                    const fileList = dataTransfer.files;
+                    this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
+                    this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                    
+                    if (config) { 
+                        // Create a data transfer object
+                        dataTransfer = new DataTransfer();
+                        // Add file to the file list of the object
+                        dataTransfer.items.add(config);
+                        // Save the file list to a new variable
+                        const fileList = dataTransfer.files;
+                        this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
+                        this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
+                    }
+                }
+                else {
+                    $("#loading").fadeIn();
+                    this.app.keyframeApp.loadFiles(gltfs, (files) => {
+                        $("#loading").fadeOut();
+                        if(files.length) {
+                            this.app.changeMode(App.Modes.KEYFRAME);
+                            this.createSettingsPanel();
+                        }
+                        else {
+                            LX.popup("This file doesn't contain any animation or a valid source avatar!");
+                        }
+                    });    
+                }
+            });            
+        }
+        else if(config) {
+            let name = this.app.currentCharacter.model.name;
+            const reader = new FileReader();
+            reader.readAsText( config );
+            reader.onload = (event) => {
+                const data = JSON.parse(event.currentTarget.result);
+                if(data.boneMap) {
+                    this.avatarOptions[name][1] = config._filename;
+                    this.app.currentCharacter.config = data;
+                    this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
+                    this.app.currentCharacter.skeleton.pose();
+                    this.app.scriptApp.ECAcontroller.reset();                        
+                    this.app.changeMode(App.Modes.SCRIPT);
+                    if(this.settingsActive) {
+                        this.createSettingsPanel();             
+                    }
+                }
+                else {
+                    this.app.setConfiguration(data);
+                }
+            }                
+        }
+
+        if(bml) {
+            if(config || this.app.currentCharacter.config) {
+                const extension = bml.name.substr(bml.name.lastIndexOf(".") + 1).toLowerCase();
+                const reader = new FileReader();
+                reader.readAsText( bml );
+                reader.onload = (event) => {
+                    const data = event.currentTarget.result;
+                    this.app.scriptApp.onMessage([{type: extension, data: data}], (result) => {
+                        if(extension == 'sigml') {
+                            this.setSIGMLInputText( data );
+                        }
+                        if(extension == 'bml' || extension == 'sigml') {
+                            this.setBMLInputText( 
+                                JSON.stringify(result.msg.data, function(key, val) {
+                                    return val.toFixed ? Number(val.toFixed(3)) : val;
+                                }) 
+                            );
+                        }
+                        
+                    });
+                }
+            }
+            else {
+                alert("To use the Script mode, the current character's configuration file is needed.")
+            }
+        }
+        if(animations.length) {
+            $("#loading").fadeIn();
+            this.app.keyframeApp.loadFiles(animations, (files) => {
+                $("#loading").fadeOut();
+                if(files.length) {
+                    this.app.changeMode(App.Modes.KEYFRAME);
+                    this.createSettingsPanel();
+                }
+                else {
+                    LX.popup("This file doesn't contain any animation or a valid source avatar!");
+                }
+            });      
+        }
+    }
+
     onDropAvatarFiles(files) {
         if(!files.length) {
             return;
@@ -1979,12 +2005,7 @@ class AppGUI {
                 const fileList = dataTransfer.files;
 
                 this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
-                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-                // model = v;
-                // if(!name) {
-                //     name = filename;
-                //     nameWidget.set(name)
-                // }
+                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
             }
             else if (extension == "json") { 
                 // Create a data transfer object
@@ -2002,6 +2023,11 @@ class AppGUI {
     setBMLInputText( text ){
         this.bmlInputData.prevInstanceText = text;
         if ( this.bmlInputData.codeObj ){ this.bmlInputData.codeObj.setText( text ); }
+    }
+
+    setSIGMLInputText( text ){
+        this.sigmlInputData.prevInstanceText = text;
+        if ( this.sigmlInputData.codeObj ){ this.sigmlInputData.codeObj.setText( text ); }
     }
 
     _stringToBML( str ){
@@ -2064,7 +2090,6 @@ class AppGUI {
     hideCaptureModal() {
         $("#loading").addClass("hidden");
     }
-
 
     showGuide() {
         const modal = document.getElementById("guide-modal");
@@ -2151,7 +2176,7 @@ class AppGUI {
             applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? JSON.parse(localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.app.scriptApp.applyIdle},
         }
 
-        let hasAnimations = this.app.keyframeApp.bindedAnimations[this.app.currentCharacter.model.name] ?? false;
+        let hasAnimations = this.app.keyframeApp.currentAnimation ?? false;
         const toExportKeyframe = {
             srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.app.keyframeApp.srcEmbedWorldTransforms},
             trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.app.keyframeApp.trgEmbedWorldTransforms},
@@ -2412,9 +2437,9 @@ class AppGUI {
                         json[key] = toExportScript[key].value;
                     }
                 }
-                for(let key in toExportScript) {
-                    if(toExportScript[key].state) {
-                        json[key] = toExportScript[key].value;
+                for(let key in toExportKeyframe) {
+                    if(toExportKeyframe[key].state) {
+                        json[key] = toExportKeyframe[key].value;
                     }
                 }
                 const data = JSON.stringify(json);
@@ -2423,21 +2448,10 @@ class AppGUI {
                 a.href = "data:text/json;charset=utf-8," + encodeURIComponent(data);
                 a.download = "performsSettings.json";
                 a.click();
-                // // writing the JSON string content to a file
-                // fs.writeFile("performsSettings.json", data, (error) => {
-                //     // throwing the error
-                //     // in case of a writing problem
-                //     if (error) {
-                //         // logging the error
-                //         console.error(error);
-                    
-                //         throw error;
-                //     }
-                    
-
-                //     console.log("data.json written correctly");
-                // });
-                if (callback) callback();
+              
+                if (callback) {
+                    callback();
+                }
                 dialog.close();
             }, {buttonClass: "accept", width: "auto"});
 

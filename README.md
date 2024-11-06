@@ -9,7 +9,7 @@ Performs is designed to visualize and synthesize humanoid animations for customi
 The application allows users to customize the following features:
 - Avatar:
     - [x] Character
-    - [x] Color
+    - [x] Cloth color
 - Background:
     - [x] Space: _Open space_, _Studio_, _Photocall_
     - [x] Color
@@ -30,19 +30,67 @@ To run locally, host a server from the main project folder. You can also use the
 > [!IMPORTANT]  
 > To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
 
-You can load the customization features appending the URL params detailed in the [Integration Guide](./docs/IntegrationGuide.md) or loading a JSON file with the same params and calling _setConfiguration(settings)_ function from _App_ with the object data as a param.
+You can load the customization features appending the URL params detailed in the [Integration Guide](./docs/IntegrationGuide.md) or loading a JSON file (it can be exported from Performs app) with the same params and calling _setConfiguration(settings)_ function from _App_ with the object data as a param.
 
-## Adding avatars
-> [!IMPORTANT]  
-> Currently only **.gltf** and **.glb** are supported. If you happen to use another format, please convert it to the mentioned formats.
+### Project structure
+Each project must include at least one HTML file for webpage definition and the JavaScript build files to execute Performs.
+- `index.html`
+```html
+<!DOCTYPE html>
+<html lang="eng">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>My app using Performs</title>
+        <link rel="icon" type="image/x-icon" href="./data/imgs/favicon.png">
+        <style>
+            html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
+        </style>
 
-To add a new avatar to Performs, you must follow this steps:
+        <script src="../external/jquery-3.6.0.min.js"></script>
+        <script async src="../external/es-module-shims.js"></script>
 
- 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
- 2. Check that your avatar has the correct scale and orientation.
- 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application (only required for Script mode), this will generate a configuration .json file containing all the needed information.
- 4. Select `upload yours` in  the application _Avatars_ panel and select your files or your URLs.
- 5. Change to your avatar in the panel. For a hosted file, you can load the avatar as default by adding the link to the _avatar_ parameter in the app's URL. See [Integration Guide](./docs/IntegrationGuide.md) to know the available parameters.
+        <script type="importmap">
+			{
+				"imports": {
+					"three": "../external/three/build/three.module.js",
+                    "three/addons/": "../external/three/jsm/"
+				}
+			}
+		</script>
+    </head>
+    <body>
+        <div id="loading" class="modal" style="background-color:rgba(51, 51, 51, 0.5); position: absolute; width: 100%; height: 100%; 
+                display: flex; justify-content: center; align-items: center; z-index: 100; color: white; font-size: larger;">
+			<p>Loading avatar, please wait...</p>
+		</div>
+
+        <script type="module" src="main.js"></script>
+
+    </body>
+</html>
+
+```
+- `main.js`
+
+By default, Performs generates the code for creating a fully functional web application with its built-in GUI ([_GUI.js_](./js/GUI.js) is required). However, the application can also be used without the GUI or with a custom interface. Configuration options can be set through the GUI, by loading a JSON file, or by appending URL parameters. For a complete list of available options, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
+
+```javascript
+import { App } from 'App.js'
+            
+const performs = new App();
+
+// Load customization options file
+fetch('performsSettings.json')
+.then(response => response)
+.then(response => response.json())
+.then(options => {
+    // Init performs with configuration options
+    performs.init(options);    
+})
+.catch(error => console.error(error));
+```
+
+The following sections provide examples of how to initialize the application without a GUI or configure it to initialize with a specific mode as the default.
 
 ## Keyframe animation
 This mode visualizes clip animations across different avatars. To ensure effective retargeting, certain options need to be adjusted for the _source_ animation and the _target_ avatar:
@@ -58,6 +106,39 @@ A detailed explanation of these options can be found in the [retargeting reposit
 > [!IMPORTANT]  
 > Currently only **.gltf**, **.glb** and **.bvh** are supported. If you happen to use another format, please convert it to the mentioned formats.
 
+### Code example
+
+- `main.js`
+
+By default, **Keyframe mode** is enabled. However, if a configuration file for **Script mode** is detected, the mode will automatically switch. When multiple animations are loaded, a crossfade blending is applied during transitions between animations. The blend time can be adjusted using the `blendTime` attribute of `keyframeApp`.
+
+```javascript
+import { App } from 'App.js'
+            
+const performs = new App();
+
+// Set customization options
+const options = {    
+    srcEmbeddedTransforms: true,
+    trgEmbeddedTransforms: true,
+    srcReferencePose: 0, // DEFAULT
+    trgReferencePose: 2, // TPOSE
+
+    animations = [{name: './data/animations/myAnimation.glb', data: './data/animations/myAnimation.glb'}], // Set keyframe animation files' URL. 'data' can be an already parsed file
+    
+    onReady = () => { // Function called after loading the application
+        // Change to Keyframe mode 
+        performs.changeMode(App.Modes.KEYFRAME);
+
+        // Play the animation after 1s
+        setTimeout(() => performs.keyframeApp.changePlayState(true), 1000);
+    }
+}
+
+// Init performs with the options
+performs.init(options);
+```
+
 ## Script animation
 This mode allows for the generation of procedural animations based on instructions. The system interprets the instructions based in **SiGML** (Signing Gesture Markup Language), and translates them into an extended version of BML (Behavior Markup Language), or directly into BML in **JSON** format. While the results may not match the quality of keyframe animations, this approach requires neither expensive equipment nor extensive manual labor, making it highly suitable for scalable sign synthesis. These instructions can be written manually or generated and exported using [Animics](https://webglstudio.org/projects/signon/animics)' script mode, which enables the creation and editing of this type of animation through a visual timeline-clip representation.
 
@@ -71,9 +152,57 @@ An example:
     relax: 1.5,
     end: 1.8,
     amount: 0.1,
-    lexeme: "NMF_ARCH"
+    lexeme: "ARCH"
 }
 ```
+
+### Code example
+- `main.js`
+
+Include [`./data/dictionaries/`](./data/dictionaries/) folder in your project to use the Idle animation and the NGT gloss dictionary.
+
+``` javascript
+import { App } from 'App.js'
+            
+const performs = new App();
+
+const options = {
+    config = './data/configFile.json', // Set required config file for Script mode
+
+    scripts = [ // Set script instruction files' URL and/or parsed data
+        {
+            type: 'sigml', 
+            name: './data/animations/scriptAnimation.sigml'
+            },
+        {
+            type: 'bml', 
+            data: {
+                behaviours: [{
+                    type: "faceLexeme",
+                    start: 4,
+                    attackPeak: 0.6,
+                    relax: 1.5,
+                    end: 1.8,
+                    amount: 1,
+                    lexeme: "ARCH"
+                }]
+            }
+        },
+    ],
+    applyIdle: true, // Enable Idle animation to blend with recieved instructions
+    
+    onReady = () => { // Function called after loading the application
+        setTimeout(() => {
+            // Play the animation after 1s
+            performs.scriptApp.replay();
+        }, 1000)                    
+    }
+};
+
+// Init performs with the options
+performs.init(options);
+```
+
 ### Examples
 Some examples on simple NGT (Dutch Sign Language) 
 
@@ -109,6 +238,16 @@ The files in this block: _BehaviourManager_, _BehavhourPlanner_ and _BehaviourRe
 - _BevahiourPlanner_: automatically generates some instructions such as blinking
 - _BehaviourManager_: deals with all instruction blocks. Is in charge of triggering instructions when their time comes.
 - _BehaviourRealizer_: a set of diverse functionalities to execute some particular instruction
+
+## Adding avatars
+> [!IMPORTANT]  
+> Currently only **.gltf** and **.glb** are supported. If you happen to use another format, please convert it to the mentioned formats.
+
+To add a new avatar to Performs, you must follow this steps:
+
+ 1. Make sure the avatar is rigged (if it is not rigged, we recommend using [Mixamo](https://www.mixamo.com)) 
+ 2. Check that your avatar has the correct scale and orientation.
+ 3. Use the [performs-atelier](https://github.com/upf-gti/performs-atelier) tool to configure all the parameters needed for the application (only required for **Script mode**), this will generate a configuration _.json file_ containing all the needed information.
 
 ## Collaborators
 - Jaume Pozo [@japopra](https://github.com/japopra)  

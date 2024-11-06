@@ -25,7 +25,7 @@ Example of objects inside the  "data" array
     "relax": 1.5,
     "end": 1.8,
     "amount": 0.1,
-    "lexeme": "NMF_ARCH"
+    "lexeme": "ARCH"
 }
 ```
 The attribute ```shift``` indicates whether the action should be interpreted as the default pose to which return.

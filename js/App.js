@@ -56,28 +56,6 @@ class App {
     }
 
     setSpeed( value ){ this.speed = value; }
-    getSpeed( ){ return this.speed; }
-
-    changeMode( mode ) {
-        this.mode = mode;
-        if(this.currentCharacter) {
-            this.currentCharacter.skeleton.pose();
-        }
-        if(this.scriptApp.ECAcontroller) {
-            this.scriptApp.ECAcontroller.reset();
-            this.scriptApp.ECAcontroller.update(0,0);
-        }
-
-        if(this.gui) {
-            this.gui.onChangeMode(mode);
-        }
-    }
-
-    // returns value (hex) with the colour in sRGB space
-    getBackPlaneColour(){
-       
-        return this.sceneColor; // css works in sRGB
-    }
     // value (hex colour) in sRGB space 
     setBackPlaneColour( value ){
         this.sceneColor = value;
@@ -156,8 +134,8 @@ class App {
                 break;
         }
     }
-
-    changePhotocallOffset(offset) {
+        
+    setPhotocallOffset(offset) {
         if(!this.backPlane.material.uniforms) {
             const shader = this.backPlane.material.userData.shader;
             if ( shader ) {
@@ -171,11 +149,6 @@ class App {
         this.repeatOffset = offset;
     }
 
-    // returns value (hex) with the colour in sRGB space
-    getClothesColour(){
-        if ( !this.avatarShirt ){ return 0; }   
-        return this.avatarShirt.material.color.getHexString(); // css works in sRGB
-    }
     // value (hex colour) in sRGB space 
     setClothesColour( value ){
         if ( !this.avatarShirt ){ return false; }
@@ -183,553 +156,8 @@ class App {
         return true;
     }
 
-    changeAvatar( avatarName ) {
-        if ( this.currentCharacter ) this.scene.remove( this.currentCharacter.model ); // delete from scene current model
-        this.currentCharacter = this.loadedCharacters[avatarName];
-        this.scene.add( this.currentCharacter.model ); // add model to scene
-        
-        const diffToGround = this.precomputeFeetOffset(avatarName);
-        this.loadedCharacters[avatarName].diffToGround = diffToGround;
-        this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
-        const LToePos = this.currentCharacter.skeleton.getBoneByName(this.currentCharacter.LToeName).getWorldPosition(new THREE.Vector3);
-        const RToePos = this.currentCharacter.skeleton.getBoneByName(this.currentCharacter.RToeName).getWorldPosition(new THREE.Vector3);
-        const diff = this.currentCharacter.LToePos.y - LToePos.y; 
-        
-        // this.currentCharacter.model.position.y -= (diffToGround + diff);
-          
-        this.scriptApp.onChangeAvatar(avatarName);
-        this.keyframeApp.onChangeAvatar(avatarName);
-        
-        if (this.currentCharacter.config) {
-            this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
-            this.controls.forEach((control) => {
-                control.target.copy(this.controls[this.camera].target); 
-                control.saveState();
-                control.update();
-            });
-            if(this.scriptApp.currentIdle) {
-                this.scriptApp.bindAnimationToCharacter(this.scriptApp.currentIdle, this.currentCharacter.model.name);
-            }
-        }
-        else {
-            this.changeMode(App.Modes.KEYFRAME);
-        }
-
-        this.currentCharacter.model.traverse((object) => {
-            if(object.isSkinnedMesh && object.name.includes("Top")) {
-                this.avatarShirt = object;
-            }
-        })
-        if ( this.gui ){ this.gui.refresh(); }
-    }
-
-    loadAvatar( modelFilePath, configFilePath, modelRotation, avatarName, callback = null, onerror = null ) {
-        this.loaderGLB.load( modelFilePath, async (glb) => {
-            let model = glb.scene;
-            model.quaternion.premultiply( modelRotation );
-            model.castShadow = true;
-            let skeleton = null;
-
-            if(avatarName == "Witch") {
-                model.traverse( (object) => {
-                    if ( object.isMesh || object.isSkinnedMesh ) {
-                        if (object.skeleton){
-                            skeleton = object.skeleton; 
-                        }                    
-                        if(!object.name.includes("Hat"))
-                           object.material.side = THREE.FrontSide;
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        if (object.name == "Eyelashes") // eva
-                        object.castShadow = false;
-                        if(object.material.map) 
-                        object.material.map.anisotropy = 16;
-                        if(object.name == "Hair") {
-                            object.material.map = null;
-                            object.material.color.set(0x6D1881);
-                        }
-                        if(object.name.includes("Bottom")) {
-                            object.material.map = null;
-                            object.material.color.set(0x000000);
-                        }
-                        if(object.name.includes("Top")) {
-                            object.material.map = null;
-                            object.material.color.set(0x000000);
-                        }
-                        if(object.name.includes("Shoes")) {
-                            object.material.map = null;
-                            object.material.color.set(0x19A7A3);
-                        }
-                } else if (object.isBone) {
-                    object.scale.set(1.0, 1.0, 1.0);
-                    }
-                } );
-            }else{
-                model.traverse( (object) => {
-                    if ( object.isMesh || object.isSkinnedMesh ) {
-                        if (object.skeleton){
-                            skeleton = object.skeleton; 
-                        }
-                        object.material.side = THREE.FrontSide;
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        if (object.name == "Eyelashes") // eva
-                            object.castShadow = false;
-                        if(object.material.map) 
-                            object.material.map.anisotropy = 16;
-                } else if (object.isBone) {
-                    object.scale.set(1.0, 1.0, 1.0);
-                    }
-                } );
     
-                this.avatarShirt = model.getObjectByName( "Tops" ) || model.getObjectByName( "Top" );
-            }
-
-            if ( avatarName == "Kevin" ){
-                let hair = model.getObjectByName( "Classic_short" );
-                if( hair && hair.children.length > 1 ){ hair.children[1].renderOrder = 1; }
-            }
-                        
-            model.name = avatarName;
-
-            this.loadedCharacters[avatarName] ={
-                model, skeleton, config: null
-            }
-
-
-            if (configFilePath) {
-                if(typeof(configFilePath) == 'string') {
-
-                    try {
-                        const response = await fetch( configFilePath );
-                        
-                        if(!response.ok) {
-                            if (callback) {
-                                callback();
-                            }
-                            throw new Error(`Response status: ${response.status}`);
-                            
-                        }
-                        
-                        const text = await response.text()                       
-                        
-                        let config = JSON.parse( text );
-                        config._filename = configFilePath;
-                        this.loadedCharacters[avatarName].config = config;
-                        this.scriptApp.onLoadAvatar(model, config, skeleton);
-                        this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
-                        if (callback) {
-                            callback();
-                        }
-                       
-                    }
-                    catch(err) {
-                        console.error(err);
-                        if(callback) {
-                            callback();
-                        }
-                    }
-                }
-                else {
-                    let config = configFilePath;
-                    this.loadedCharacters[avatarName].config = config;
-                    this.scriptApp.onLoadAvatar(model, config, skeleton);
-                    this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
-                    
-                    if (callback) {
-                        callback();
-                    }
-                }
-            }
-            else {
-                this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
-                if (callback) {
-                    callback();
-                }
-            }
-        }, null, (err) => {
-            if(onerror) {
-                onerror(err);
-            }
-        });
-    }
-
-    newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
-        let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
-        camera.record = true;
-        let controls = new OrbitControls( camera, this.renderer.domElement );
-
-        controls.target.set(0, 1.3, 0);
-        let newPos = new THREE.Vector3( 0, 1.5, Math.cos(5*Math.PI/180) );
-        let distance = newPos.distanceTo(controls.target);
-
-        let dir = new THREE.Vector3().subVectors(newPos, controls.target).normalize();
-        dir.applyAxisAngle(new THREE.Vector3(1,0,0), polarAngle * Math.PI / 180);
-        dir.applyAxisAngle(new THREE.Vector3(0,1,0), azimuthAngle * Math.PI / 180);
-        newPos.addVectors(controls.target, dir.multiplyScalar(distance));
-        newPos.add(new THREE.Vector3(0,0,depth));
-
-        controls.object.position.set(...newPos);
-
-        controls.enableDamping = true; // this requires controls.update() during application update
-        controls.dampingFactor = 0.1;
-        controls.enabled = controlsEnabled;
-        controls.update();
-
-        this.cameras.push(camera); 
-        this.controls.push(controls);
-        
-        return {camera: camera, controls: controls};
-    }
-
-    init() {        
-        this.scene = new THREE.Scene();
-        const sceneColor = this.sceneColor = window.debugMode ? 0x4f4f9c : 0x46c219;
-        this.scene.background = new THREE.Color( sceneColor );
-
-        // renderer
-        this.renderer = new THREE.WebGLRenderer( { antialias: true } );
-        this.renderer.setPixelRatio( window.devicePixelRatio );
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
-
-        this.renderer.toneMapping = THREE.LinearToneMapping;
-        this.renderer.toneMappingExposure = 1;
-        this.renderer.shadowMap.enabled = true;
-        // document.body.appendChild( this.renderer.domElement );
-        
-        this.newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
-        this.newCameraFrom({azimuthAngle: 25});
-        this.newCameraFrom({azimuthAngle: -25});
-    
-        this.camera = 0;
-
-        // IBL Light
-        // var that = this;
-
-        // new RGBELoader()
-        //     .setPath( 'data/hdrs/' )
-        //     .load( 'cafe.hdr', function ( texture ) {
-
-        //         texture.mapping = THREE.EquirectangularReflectionMapping;
-
-        //         // that.scene.background = texture;
-        //         that.scene.environment = texture;
-
-        //         that.renderer.render( that.scene, that.camera );
-        // } );
-
-        // include lights
-        let hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.5 );
-        this.scene.add( hemiLight );
-
-        let keySpotlight = new THREE.SpotLight( 0xffffff, 3.5, 0, 45 * (Math.PI/180), 0.5, 2 );
-        keySpotlight.position.set( 0.5, 2, 2 );
-        keySpotlight.target.position.set( 0, 1, 0 );
-        // keySpotlight.castShadow = true;
-        // keySpotlight.shadow.mapSize.width = 1024;
-        // keySpotlight.shadow.mapSize.height = 1024;
-        // keySpotlight.shadow.bias = 0.00001;
-        this.scene.add( keySpotlight.target );
-        this.scene.add( keySpotlight );
-
-        let fillSpotlight = new THREE.SpotLight( 0xffffff, 2.0, 0, 45 * (Math.PI/180), 0.5, 2 );
-        fillSpotlight.position.set( -0.5, 2, 1.5 );
-        fillSpotlight.target.position.set( 0, 1, 0 );
-        // fillSpotlight.castShadow = true;
-        this.scene.add( fillSpotlight.target );
-        this.scene.add( fillSpotlight );
-
-        let dirLight = this.dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
-        dirLight.position.set( 1.5, 5, 2 );
-        dirLight.shadow.mapSize.width = 1024;
-        dirLight.shadow.mapSize.height = 1024;
-        dirLight.shadow.camera.left= -5;
-        dirLight.shadow.camera.right= 5;
-        dirLight.shadow.camera.bottom= -5;
-        dirLight.shadow.camera.top= 5;
-        dirLight.shadow.camera.near= 1;
-        dirLight.shadow.camera.far= 20;
-        dirLight.shadow.bias = 0.00001;
-        dirLight.castShadow = true;
-        this.scene.add( dirLight );
-
-        // add entities
-        const ground = this.ground = new THREE.Mesh( new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial( { color: sceneColor, opacity: 0.1, transparent:true, depthWrite: true, roughness: 1, metalness: 0 } ) );
-        ground.name = 'Ground'
-        ground.rotation.x = -Math.PI / 2;
-        ground.receiveShadow = true;
-        this.scene.add( ground );
-        
-        this.logoTexture = new THREE.TextureLoader().load(this.logo);
-        this.logoTexture.wrapS = THREE.RepeatWrapping;
-
-        this.studioMaterial = new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
-        this.repeatOffset = 0;
-
-        this.photocallMaterial = new THREE.MeshStandardMaterial( { color: sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
-        this.photocallMaterial.onBeforeCompile = (shader) => {
-            shader.uniforms.textureMap = {value: this.logoTexture}; 
-            shader.uniforms.repeat = {value: [20,20]};
-            shader.uniforms.offset = {value: this.repeatOffset};
-            
-            shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;
-            
-            //prepend the input to the shader
-            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
-
-            shader.fragmentShader = 
-            shader.fragmentShader.replace(
-            'vec4 diffuseColor = vec4( diffuse, opacity );', 
-            'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
-            \ if (vWorldPosition.y > 0.0) { \n\
-                \ // Scale the UV coordinates by the repeat factor\n\
-                \ vec2 uvScaled = vUv * repeat;\n\n\
-                \ // Use mod to wrap the UVs for repeating the texture\n\
-                \ vec2 uvMod = mod(uvScaled, 1.0);\n\
-                \ // Shrink the UV space to account for the gaps\n\
-                \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
-                \ // Only apply the texture inside the non-gap area\n\
-                \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
-                    \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
-                    \ vec2 uv = fract(uvScaled);\n\
-                    \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
-                    \ vec2 smooth_uv = uvScaled;\n\
-                    \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-                    \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
-                    \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-                \ }\n\
-            \ }\n'
-            )
-            this.photocallMaterial.userData.shader = shader;
-            const urlParams = new URLSearchParams(queryString);
-            // Default background image
-            if(urlParams.has('img')) {
-                this.setBackground( App.Backgrounds.PHOTOCALL);         
-
-                let image = urlParams.get('img');
-                const imgCallback = ( event ) => {
-
-                    this.logo = event.target;        
-                    this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
-                }
-
-                const img = new Image();            
-                img.onload = imgCallback;    
-                fetch(image)
-                .then(function (response) {
-                    if (response.ok) {
-                    response.blob().then(function (miBlob) {
-                        var objectURL = URL.createObjectURL(miBlob);
-                        img.src = objectURL;
-                    });
-                    } else {
-                    console.log("Bad request");
-                    }
-                })
-                .catch(function (error) {
-                    console.log("Error:" + error.message);
-                });        
-
-            }
-
-        };
-
-        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
-        backPlane.name = 'Chroma';
-        backPlane.position.z = -1;
-        backPlane.receiveShadow = true;
-        backPlane.castShadow = true;
-        backPlane.visible=false;
-        this.scene.add( backPlane );
-
-        this.setBackground(this.background);
-
-
-        const queryString = window.location.search;
-        const urlParams = new URLSearchParams(queryString);
-        const settings = {};
-        for (const [key, value] of urlParams.entries()) {
-            if(key == 'avatar') {
-                continue;
-            }
-            settings[key] = value;
-        }
-
-        // if(urlParams.has('controls')) {
-        //     this.showControls = !(urlParams.get('controls') === "false");
-        // }
-
-        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
-        
-        // Default avatar & config file
-        if(urlParams.has('avatar')) {
-            let avatar = urlParams.get('avatar');
-            const path = avatar.split(".");
-            let filename = path[path.length-2];
-            filename = filename.split("/");
-            filename = filename.pop();
-            
-            avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
-
-            modelToLoad = [ avatar, urlParams.get('config'), new THREE.Quaternion(), filename];          
-        }
-
-        if(urlParams.has('rotation')) {
-            let rotation = urlParams.get('rotation');
-            rotation = rotation.split(',');
-            modelToLoad[2].fromArray(rotation);
-        }
-
-        // // Default top cloth color
-        // let clothColor = null;
-        // if(urlParams.has('cloth')) {
-        //     clothColor = urlParams.get('cloth');     
-        //     if(typeof(clothColor) == 'string'){
-        //         clothColor = clothColor.replace('0x', '#');
-        //     }
-        // }
-
-        // // Default background
-        // if(urlParams.has('background')) {
-        //     let background = urlParams.get('background');
-        //     switch(background.toLocaleLowerCase()) {
-        //         case 'studio':
-        //             this.background = App.Backgrounds.STUDIO;
-        //             break;
-        //         case 'photocall':
-        //                 this.background = App.Backgrounds.PHOTOCALL;
-        //                 break;
-        //         default:
-        //             break;
-        //     }
-        //     this.setBackground(this.background);            
-        // }
-
-        // // Default background color
-        // if(urlParams.has('color')) {
-        //     let color = urlParams.get('color');
-        //     if(typeof(color) == 'string'){
-        //         color = color.replace('0x', '#');
-        //     }
-        //     this.sceneColor = color;
-        //     this.setBackPlaneColour(this.sceneColor);                                  
-        // }
-
-        // if(urlParams.has('offset')) {
-        //     let offset = Number(urlParams.get('offset'));
-        //     this.changePhotocallOffset(offset);
-        // }
-
-        // // Default light color
-        // if(urlParams.has('light')) {
-        //     let light = urlParams.get('light');   
-        //     if(typeof(light) == 'string'){
-        //         light = light.replace('0x', '#');
-        //     }
-        //     this.dirLight.color.set(light);                          
-        // }
-
-        // // Default light position
-        // if(urlParams.has('lightpos')) {
-        //     let light = urlParams.get('lightpos');
-        //     light = light.split(',');
-        //     if(light.length == 3) {
-        //         this.dirLight.position.set(Number(light[0]), Number(light[1]), Number(light[2]));                  
-        //     }           
-        // }
-        
-        let view = false;
-        // if(urlParams.has('restrictView')) {
-        //     view = (urlParams.get('restrictView') === "false");
-        // }
-        // so the screen is not black while loading
-        this.changeCameraMode( view ); //moved here because it needs the backplane to exist
-        this.renderer.render( this.scene, this.cameras[this.camera] );
-        
-        this.scriptApp.init(this.scene);
-
-        // if(urlParams.has('applyIdle')) {
-        //     this.scriptApp.applyIdle = urlParams.get('applyIdle');
-        // }
-
-        // if(urlParams.has('srcEmbeddedTransforms')) {
-        //     this.keyframeApp.srcEmbedWorldTransforms = urlParams.get('srcEmbeddedTransforms');
-        // }
-        // if(urlParams.has('trgEmbeddedTransforms')) {
-        //     this.keyframeApp.trgEmbedWorldTransforms = urlParams.get('trgEmbeddedTransforms');
-        // }
-
-        // if(urlParams.has('srcReferencePose')) {
-        //     this.keyframeApp.srcPoseMode = urlParams.get('srcReferencePose');
-        // }
-        // if(urlParams.has('trgReferencePose')) {
-        //     this.keyframeApp.trgPoseMode = urlParams.get('trgReferencePose');
-        // }
-
-        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
-            this.changeAvatar( modelToLoad[3] );
-            // if(clothColor) {
-            //     this.setClothesColour(clothColor);
-            // }
-
-            // if(urlParams.has('position')) {
-            //     let position = urlParams.get('position');
-            //     position = position.split(',');
-            //     this.currentCharacter.model.position.fromArray(position);
-            // }
-
-            // if(urlParams.has('scale')) {
-            //     let scale = urlParams.get('scale');
-            //     scale = Number(scale);
-            //     this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
-            // }
-            this.setConfiguration(settings);
-
-            if ( typeof AppGUI != "undefined" && this.showControls) { 
-                this.gui = new AppGUI( this ); 
-                if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                    const name = modelToLoad[3];
-                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
-                    this.gui.avatarOptions[name] = modelToLoad;
-                    this.gui.refresh();
-                }
-            }
-            else {
-                window.document.body.appendChild(this.renderer.domElement);
-            }
-            this.animate();
-            $('#loading').fadeOut(); //hide();
-            this.isAppReady = true;
-                        
-            
-            // // Default background image
-            // if(urlParams.has('img')) {
-            //     this.setBackground( App.Backgrounds.PHOTOCALL);         
-            // }
-            if(this.pendingMessageReceived) {
-                this.onMessage( this.pendingMessageReceived );
-                this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
-            }
-        });
-
-        this.animationRecorder = new AnimationRecorder(this.cameras.length, this);
-        this.animationRecorder.onStartCapture = (v) => {
-            if(this.gui) {
-                this.gui.showCaptureModal(v);
-            }
-        };
-        this.animationRecorder.onStopCapture = () => {
-            if(this.gui) {
-                this.gui.hideCaptureModal();
-            }
-        };
-        window.addEventListener( "message", this.onMessage.bind(this) );
-        window.addEventListener( 'resize', this.onWindowResize.bind(this) );
-
-    }
-
+    // Change the default settings for the scene and the applications mode options
     async setConfiguration(settings) {
         const innerAvatarSettings = (settings) => {
             if(settings.cloth) {
@@ -751,6 +179,30 @@ class App {
                 scale = Number(scale);
                 this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
             }
+            
+            if(settings.animations) {
+                this.keyframeApp.processMessageFiles( settings.animations).then(
+                    (animations) => {
+                        this.keyframeApp.currentAnimation = animations[0];
+                        if(settings.onReady) {
+                            settings.onReady();
+                        }
+                    }
+                )
+            }
+            else if(settings.scripts) {
+                this.scriptApp.processMessageFiles(settings.scripts).then(
+                    (results) => {
+                        this.scriptApp.onMessage(results);
+                        if(settings.onReady) {
+                            settings.onReady();
+                        }
+                    }
+                );
+            }
+            else if(settings.onReady) {
+                settings.onReady();
+            }
         }
 
         let rotation = null;
@@ -758,7 +210,22 @@ class App {
             rotation = settings.rotation;
             rotation = rotation.split(',');            
         }
+        
+        if(settings.srcEmbeddedTransforms != undefined) {
+            this.keyframeApp.srcEmbedWorldTransforms = settings.srcEmbeddedTransforms;
+        }
+        if(settings.trgEmbeddedTransforms != undefined) {
+            this.keyframeApp.trgEmbedWorldTransforms = settings.trgEmbeddedTransforms;
+        }
 
+        if(settings.srcReferencePose != undefined) {
+            this.keyframeApp.srcPoseMode = settings.srcReferencePose;
+        }
+        if(settings.trgReferencePose != undefined) {
+            this.keyframeApp.trgPoseMode = settings.trgReferencePose;
+        }
+
+        let loadConfig = true;
         if(settings.avatar) {
             let avatar = settings.avatar;
             const path = avatar.split(".");
@@ -766,22 +233,27 @@ class App {
             filename = filename.split("/");
             filename = filename.pop();
             
-            
-            $('#loading').fadeIn(); 
-            let thumbnail = null;
-            if( avatar.includes('models.readyplayer.me') ) {
-                avatar+= '?pose=T&morphTargets=ARKit&lod=1';
-                thumbnail =  "https://models.readyplayer.me/" + filename + ".png?background=68,68,68";
+            if(!this.currentCharacter || this.currentCharacter && this.currentCharacter.model.name != filename) {
+                loadConfig = false;
+                $('#loading').fadeIn(); 
+                let thumbnail = null;
+                if( avatar.includes('models.readyplayer.me') ) {
+                    avatar+= '?pose=T&morphTargets=ARKit&lod=1';
+                    thumbnail =  "https://models.readyplayer.me/" + filename + ".png?background=68,68,68";
+                }
+                if(this.gui) {
+                    this.gui.avatarOptions[filename] = [avatar, settings.config, rotation || new THREE.Quaternion(), thumbnail];
+                }
+                this.loadAvatar(avatar, settings.config, rotation || new THREE.Quaternion(), filename, () => {
+                    this.changeAvatar( filename );
+                    innerAvatarSettings(settings);
+    
+                    $('#loading').fadeOut(); //hide();               
+                });
             }
-            this.gui.avatarOptions[filename] = [avatar, settings.config, rotation || new THREE.Quaternion(), thumbnail];
-            this.loadAvatar(avatar, settings.config, rotation || new THREE.Quaternion(), filename, () => {
-                this.changeAvatar( filename );
-                innerAvatarSettings(settings);
-
-                $('#loading').fadeOut(); //hide();               
-            });
+            
         }
-        else {
+        if(loadConfig) {
             innerAvatarSettings(settings);
             if(settings.config) {
                 let name = this.currentCharacter.model.name;
@@ -792,14 +264,17 @@ class App {
                     }
                     let config = await response.json();                        
                     config._filename = settings.config; 
-                    this.gui.avatarOptions[name][1] = config._filename;
+
                     this.currentCharacter.config = config;
                     this.scriptApp.onLoadAvatar(this.currentCharacter.model, this.currentCharacter.config, this.currentCharacter.skeleton);
                     this.currentCharacter.skeleton.pose();
                     this.scriptApp.ECAcontroller.reset();                        
                     this.changeMode(App.Modes.SCRIPT);
-                    if(this.gui.settingsActive) {
-                        this.gui.createSettingsPanel();             
+                    if(this.gui) {
+                        this.gui.avatarOptions[name][1] = config._filename;
+                        if(this.gui.settingsActive) {
+                            this.gui.createSettingsPanel();             
+                        }
                     }
                 }
                 catch (error) {
@@ -871,7 +346,7 @@ class App {
 
         if(settings.offset) {
             let offset = Number(settings.offset);
-            this.changePhotocallOffset(offset);
+            this.setPhotocallOffset(offset);
         }
 
         // Default light color
@@ -892,7 +367,7 @@ class App {
             }           
         }
         
-        if(settings.restrictView) {
+        if(settings.restrictView != undefined) {
             let view = (settings.restrictView === "false" || settings.restrictView === false);
             this.changeCameraMode( view ); //moved here because it needs the backplane to exist
         }
@@ -900,20 +375,438 @@ class App {
         if(settings.applyIdle != undefined) {
             this.scriptApp.applyIdle = settings.applyIdle;
         }
+    }
 
-        if(settings.srcEmbeddedTransforms != undefined) {
-            this.keyframeApp.srcEmbedWorldTransforms = settings.srcEmbeddedTransforms;
+    // Change app mode: Keyframe or Script
+    changeMode( mode ) {
+        this.mode = mode;
+        if(this.currentCharacter) {
+            this.currentCharacter.skeleton.pose();
         }
-        if(settings.trgEmbeddedTransforms != undefined) {
-            this.keyframeApp.trgEmbedWorldTransforms = settings.trgEmbeddedTransforms;
+        if(this.scriptApp.ECAcontroller) {
+            this.scriptApp.ECAcontroller.reset();
+            this.scriptApp.ECAcontroller.update(0,0);
         }
 
-        if(settings.srcReferencePose != undefined) {
-            this.keyframeApp.srcPoseMode = settings.srcReferencePose;
+        if(this.gui) {
+            this.gui.onChangeMode(mode);
         }
-        if(settings.trgReferencePose != undefined) {
-            this.keyframeApp.trgPoseMode = settings.trgReferencePose;
+        if(this.mode == App.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
+            this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation);
         }
+    }
+
+    getSpeed( ){ return this.speed; }
+
+    // returns value (hex) with the colour in sRGB space
+    getBackPlaneColour(){       
+        return this.sceneColor; // css works in sRGB
+    }
+
+    // returns value (hex) with the colour in sRGB space
+    getClothesColour(){
+        if ( !this.avatarShirt ){ return 0; }   
+        return this.avatarShirt.material.color.getHexString(); // css works in sRGB
+    }
+
+    init(options) {        
+        this.scene = new THREE.Scene();
+        const sceneColor = this.sceneColor = window.debugMode ? 0x4f4f9c : 0x46c219;
+        this.scene.background = new THREE.Color( sceneColor );
+
+        // renderer
+        this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+        this.renderer.setPixelRatio( window.devicePixelRatio );
+        this.renderer.setSize( window.innerWidth, window.innerHeight );
+
+        this.renderer.toneMapping = THREE.LinearToneMapping;
+        this.renderer.toneMappingExposure = 1;
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.VSMShadowMap;
+        
+        // camera views
+        this.createCameras();
+   
+        // lights
+        this.createLights();
+
+        // background
+        this.createBackgrounds();
+
+        // animation recorder
+        this.createRecorder();
+
+        // so the screen is not black while loading
+        this.changeCameraMode( false ); //moved here because it needs the backplane to exist
+        this.renderer.render( this.scene, this.cameras[this.camera] );        
+        this.scriptApp.init(this.scene);
+    
+        if(!options)  {
+            options = {};
+            // Get URL params to configurate the scene
+            const queryString = window.location.search;
+            const urlParams = new URLSearchParams(queryString);       
+            for (const [key, value] of urlParams.entries()) {
+                options[key] = value;
+            }
+        }
+
+        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
+        
+        // Default avatar & config file
+        if(options.avatar) {
+            let avatar = options.avatar;
+            const path = avatar.split(".");
+            let filename = path[path.length-2];
+            filename = filename.split("/");
+            filename = filename.pop();
+            
+            avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
+
+            modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
+        }
+
+        if(options.rotation) {
+            let rotation = options.rotation;
+            rotation = rotation.split(',');
+            modelToLoad[2].fromArray(rotation);
+        }
+        
+        // Load default avatar
+        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
+            this.changeAvatar( modelToLoad[3] );
+          
+            this.setConfiguration(options);
+            // Create the GUI only if the class exists or the showControls flag is true
+            if ( typeof AppGUI != "undefined" && this.showControls) { 
+                this.gui = new AppGUI( this ); 
+                if(!this.gui.avatarOptions[modelToLoad[3]]) {
+                    const name = modelToLoad[3];
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
+                    this.gui.avatarOptions[name] = modelToLoad;
+                    this.gui.refresh();
+                }
+            }
+            else {
+                window.document.body.appendChild(this.renderer.domElement);
+            }
+
+            $('#loading').fadeOut(); //hide();
+            this.animate();
+            this.isAppReady = true;
+                        
+            if(this.pendingMessageReceived) {
+                this.onMessage( this.pendingMessageReceived );
+                this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
+            }
+        });
+
+        // Create event listeners
+        window.addEventListener( "message", this.onMessage.bind(this) );
+        window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+    }
+    
+    newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
+        let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
+        camera.record = true;
+        let controls = new OrbitControls( camera, this.renderer.domElement );
+
+        controls.target.set(0, 1.3, 0);
+        let newPos = new THREE.Vector3( 0, 1.5, Math.cos(5*Math.PI/180) );
+        let distance = newPos.distanceTo(controls.target);
+
+        let dir = new THREE.Vector3().subVectors(newPos, controls.target).normalize();
+        dir.applyAxisAngle(new THREE.Vector3(1,0,0), polarAngle * Math.PI / 180);
+        dir.applyAxisAngle(new THREE.Vector3(0,1,0), azimuthAngle * Math.PI / 180);
+        newPos.addVectors(controls.target, dir.multiplyScalar(distance));
+        newPos.add(new THREE.Vector3(0,0,depth));
+
+        controls.object.position.set(...newPos);
+
+        controls.enableDamping = true; // this requires controls.update() during application update
+        controls.dampingFactor = 0.1;
+        controls.enabled = controlsEnabled;
+        controls.update();
+
+        this.cameras.push(camera); 
+        this.controls.push(controls);
+        
+        return {camera: camera, controls: controls};
+    }
+
+    createCameras() {
+        this.newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
+        this.newCameraFrom({azimuthAngle: 25});
+        this.newCameraFrom({azimuthAngle: -25});
+    
+        this.camera = 0;
+    }
+
+    createLights() {
+        const hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.5 );
+        this.scene.add( hemiLight );
+
+        const keySpotlight = new THREE.SpotLight( 0xffffff, 3.5, 0, 45 * (Math.PI/180), 0.5, 2 );
+        keySpotlight.position.set( 0.5, 2, 2 );
+        keySpotlight.target.position.set( 0, 1, 0 );
+        this.scene.add( keySpotlight.target );
+        this.scene.add( keySpotlight );
+
+        const fillSpotlight = new THREE.SpotLight( 0xffffff, 2.0, 0, 45 * (Math.PI/180), 0.5, 2 );
+        fillSpotlight.position.set( -0.5, 2, 1.5 );
+        fillSpotlight.target.position.set( 0, 1, 0 );
+        // fillSpotlight.castShadow = true;
+        this.scene.add( fillSpotlight.target );
+        this.scene.add( fillSpotlight );
+
+        const dirLight = this.dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
+        dirLight.position.set( 1.5, 5, 2 );
+        dirLight.shadow.mapSize.width = 512;
+        dirLight.shadow.mapSize.height = 512;
+        dirLight.shadow.camera.left= -5;
+        dirLight.shadow.camera.right= 5;
+        dirLight.shadow.camera.bottom= -5;
+        dirLight.shadow.camera.top= 5;
+        dirLight.shadow.camera.near= 0.5;
+        dirLight.shadow.camera.far= 20;
+        dirLight.shadow.blurSamples= 10;
+        dirLight.shadow.radius= 3;
+        dirLight.shadow.bias = 0.00001;
+        dirLight.castShadow = true;
+        this.scene.add( dirLight );
+    }
+
+    createBackgrounds() {
+        // Create transparent ground for Open space
+        const ground = this.ground = new THREE.Mesh( new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial( { color: this.sceneColor, opacity: 0.1, transparent:true, depthWrite: true, roughness: 1, metalness: 0 } ) );
+        ground.name = 'Ground'
+        ground.rotation.x = -Math.PI / 2;
+        ground.receiveShadow = true;
+        this.scene.add( ground );
+        
+        // Create an standard material for Studio space
+        this.studioMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
+        
+        // Create a customized standard material for Photocall space        
+        this.logoTexture = new THREE.TextureLoader().load(this.logo);
+        this.logoTexture.wrapS = THREE.RepeatWrapping;
+        this.repeatOffset = 0;
+        this.photocallMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
+        this.photocallMaterial.onBeforeCompile = async (shader) => {
+            shader.uniforms.textureMap = {value: this.logoTexture}; 
+            shader.uniforms.repeat = {value: [20,20]};
+            shader.uniforms.offset = {value: this.repeatOffset};
+            
+            shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;
+            
+            //prepend the input to the shader
+            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
+
+            shader.fragmentShader = 
+            shader.fragmentShader.replace(
+            'vec4 diffuseColor = vec4( diffuse, opacity );', 
+            'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+            \ if (vWorldPosition.y > 0.0) { \n\
+                \ // Scale the UV coordinates by the repeat factor\n\
+                \ vec2 uvScaled = vUv * repeat;\n\n\
+                \ // Use mod to wrap the UVs for repeating the texture\n\
+                \ vec2 uvMod = mod(uvScaled, 1.0);\n\
+                \ // Shrink the UV space to account for the gaps\n\
+                \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+                \ // Only apply the texture inside the non-gap area\n\
+                \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
+                    \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
+                    \ vec2 uv = fract(uvScaled);\n\
+                    \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
+                    \ vec2 smooth_uv = uvScaled;\n\
+                    \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+                    \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
+                    \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+                \ }\n\
+            \ }\n'
+            )
+            this.photocallMaterial.userData.shader = shader;
+            const urlParams = new URLSearchParams(window.location.search);
+            
+            // Default background image
+            if(urlParams.has('img')) {
+
+                const img = new Image();            
+                img.onload = ( event ) => {
+
+                    this.logo = event.target;        
+                    this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
+                };   
+                
+                // Load image
+                const imageURL = urlParams.get('img');
+                try {
+                    const response = await fetch(imageURL);
+                    if (!response.ok) {
+                        throw new Error(`Response status: ${response.status}`);
+                    }
+                    const blob = await response.blob();                    
+                    const objectURL = URL.createObjectURL(blob);
+                    img.src = objectURL;
+                                        
+                }
+                catch(error) {
+                    console.error(error.message, "File error!");
+                };        
+            }
+        };
+
+        // Create background mesh for Studio and Photocall space
+        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
+        backPlane.name = 'Chroma';
+        backPlane.position.z = -1;
+        backPlane.receiveShadow = true;
+        backPlane.castShadow = true;
+        backPlane.visible = false;
+        this.scene.add( backPlane );
+
+        this.setBackground(this.background);
+    }
+
+    createRecorder() {
+        
+        this.animationRecorder = new AnimationRecorder(this.cameras.length, this);
+        this.animationRecorder.onStartCapture = (v) => {
+            if(this.gui) {
+                this.gui.showCaptureModal(v);
+            }
+        };
+        this.animationRecorder.onStopCapture = () => {
+            if(this.gui) {
+                this.gui.hideCaptureModal();
+            }
+        };    
+    }
+    
+    loadAvatar( modelFilePath, configFile, modelRotation, avatarName, callback = null, onerror = null ) {
+        this.loaderGLB.load( modelFilePath, async (glb) => {
+            let model = glb.scene;
+            model.quaternion.premultiply( modelRotation );
+            model.castShadow = true;
+            let skeleton = null;
+
+            if(avatarName == "Witch") {
+                model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        if (object.skeleton){
+                            skeleton = object.skeleton; 
+                        }                    
+                        if(!object.name.includes("Hat")) {
+                            object.material.side = THREE.FrontSide;
+                        }
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        if (object.name == "Eyelashes") // eva
+                        object.castShadow = false;
+                        if(object.material.map) 
+                        object.material.map.anisotropy = 16;
+                        if(object.name == "Hair") {
+                            object.material.map = null;
+                            object.material.color.set(0x6D1881);
+                        }
+                        if(object.name.includes("Bottom")) {
+                            object.material.map = null;
+                            object.material.color.set(0x000000);
+                        }
+                        if(object.name.includes("Top")) {
+                            object.material.map = null;
+                            object.material.color.set(0x000000);
+                        }
+                        if(object.name.includes("Shoes")) {
+                            object.material.map = null;
+                            object.material.color.set(0x19A7A3);
+                        }
+                    } else if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
+                    }
+                } );
+            }
+            else {
+                model.traverse( (object) => {
+                    if ( object.isMesh || object.isSkinnedMesh ) {
+                        if (object.skeleton){
+                            skeleton = object.skeleton; 
+                        }
+                        object.material.side = THREE.FrontSide;
+                        object.frustumCulled = false;
+                        object.castShadow = true;
+                        object.receiveShadow = true;
+                        if (object.name == "Eyelashes") {
+                            object.castShadow = false;
+                        }
+                        if(object.material.map) {
+                            object.material.map.anisotropy = 16;
+                        }
+                    } else if (object.isBone) {
+                        object.scale.set(1.0, 1.0, 1.0);
+                    }
+                });
+    
+                this.avatarShirt = model.getObjectByName( "Tops" ) || model.getObjectByName( "Top" );
+            }
+
+            if ( avatarName == "Kevin" ){
+                let hair = model.getObjectByName( "Classic_short" );
+                if( hair && hair.children.length > 1 ){ 
+                    hair.children[1].renderOrder = 1; 
+                }
+            }
+                        
+            model.name = avatarName;
+
+            this.loadedCharacters[avatarName] ={
+                model, skeleton, config: null
+            }
+
+            // Load config file and set automatically the Script mode
+            if (configFile) {
+                // Read the file if it's a URL
+                if(typeof(configFile) == 'string') {                    
+                    const response = await fetch( configFile );
+                    
+                    if(response.ok) {
+                        const text = await response.text()                       
+                        
+                        let config = JSON.parse( text );
+                        config._filename = configFile;
+                        this.loadedCharacters[avatarName].config = config;
+                        this.scriptApp.onLoadAvatar(model, config, skeleton);
+                        this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
+                    }                        
+                    if (callback) {
+                        callback();
+                    }                                      
+                }
+                else {
+                    // Set the config file data if it's an object
+                    const config = configFile;
+                    this.loadedCharacters[avatarName].config = config;
+                    this.scriptApp.onLoadAvatar(model, config, skeleton);
+                    this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
+                    
+                    if (callback) {
+                        callback();
+                    }
+                }
+            }
+            else {
+                // If there isn't a config file, automatically set Keyframe mode as default
+                this.keyframeApp.onLoadAvatar(this.loadedCharacters[avatarName]);
+                if (callback) {
+                    callback();
+                }
+            }
+        }, null, (err) => {
+            if(onerror) {
+                onerror(err);
+            }
+        });
     }
 
     animate() {
@@ -957,6 +850,7 @@ class App {
         this.renderer.render( this.scene, this.cameras[this.camera] );
     }
 
+    // Force feet to touch the ground
     precomputeFeetOffset(avatarName) {
         const character = this.loadedCharacters[avatarName];
         const map = computeAutoBoneMap( character.skeleton );
@@ -966,13 +860,10 @@ class App {
         const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3);
       
         // Cast a ray downwards from the left toe's position
-      
         let dir = new THREE.Vector3(0, 1, 0);
         this.raycaster.layers.enableAll()
         this.raycaster.set( new THREE.Vector3(LtoePos.x, -1, LtoePos.z), dir);
               
-        // const obj = character.model.children[0].getObjectByName("Wolf3D_Outfit_Footwear");
-        // obj.material.side = THREE.DoubleSide;
         const intersects = this.raycaster.intersectObjects(character.model.children[0].children, true); // Adjust based on your scene setup
         let diff = 0;
         if (intersects.length > 0) {
@@ -1045,13 +936,59 @@ class App {
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
 
+        
+    changeAvatar( avatarName ) {
+        if ( this.currentCharacter ) {
+            this.scene.remove( this.currentCharacter.model ); // delete current model from scene
+        }
+
+        // Update the current character and add the model to the scene
+        this.currentCharacter = this.loadedCharacters[avatarName];
+        this.scene.add( this.currentCharacter.model ); 
+        
+        // Compute the distance between the feet bones and the mesh for force to touch the ground
+        const diffToGround = this.precomputeFeetOffset(avatarName);
+        this.loadedCharacters[avatarName].diffToGround = diffToGround;
+        this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
+          
+        // Set the avatars to each app mode
+        this.scriptApp.onChangeAvatar(avatarName);
+        this.keyframeApp.onChangeAvatar(avatarName);
+        
+        if (this.currentCharacter.config) {
+            this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );
+            this.controls.forEach((control) => {
+                control.target.copy(this.controls[this.camera].target); 
+                control.saveState();
+                control.update();
+            });
+            if(this.scriptApp.currentIdle) {
+                this.scriptApp.bindAnimationToCharacter(this.scriptApp.currentIdle, this.currentCharacter.model.name);
+            }
+        }
+        else {
+            this.changeMode(App.Modes.KEYFRAME);
+        }
+
+        // Search the top mesh
+        this.currentCharacter.model.traverse((object) => {
+            if(object.isSkinnedMesh && (object.name.includes("Top") || object.name.includes("Shirt"))) {
+                this.avatarShirt = object;
+            }
+        })
+        
+        if ( this.gui ){ 
+            this.gui.refresh(); 
+        }
+    }
+
     toggleCameraMode() { 
         this.changeCameraMode( !this.cameraMode ); 
     }
 
     changeCameraMode( mode ) {
 
-        if ( mode ) {
+        if ( mode ) { // Free camera controls
             this.controls[this.camera].enablePan = true;
             this.controls[this.camera].minDistance = 0.1;
             this.controls[this.camera].maxDistance = 10;
@@ -1059,7 +996,7 @@ class App {
             this.controls[this.camera].maxAzimuthAngle = THREE.Infinity;
             this.controls[this.camera].minPolarAngle = 0.0;
             this.controls[this.camera].maxPolarAngle = Math.PI;     
-        } else {
+        } else { // Restricted camera controls
             this.controls[this.camera].enablePan = false;
             this.controls[this.camera].minDistance = 0.7;
             this.controls[this.camera].maxDistance = 2;
@@ -1074,20 +1011,6 @@ class App {
         }
         this.controls[this.camera].update();
         this.cameraMode = mode; 
-    }
-
-    loadFiles( files, callback ) {
-               
-        this.keyframeApp.processMessageFiles(files).then((data) => {
-            if(data[0].length) {
-                this.changeMode(App.Modes.KEYFRAME);
-                let animation = typeof(data[0]) == 'string' ? data[0] : data[0][0];
-                this.keyframeApp.onChangeAnimation(animation);
-            }
-            if(callback) {
-                callback(data[0]);
-            }
-        });
     }
 
     openAtelier(name, model, config, fromFile = true, rotation = 0) {
@@ -1161,8 +1084,4 @@ function createBackdropGeometry(width = 5, height = 5, segments = 32) {
     return geometry;
 }
 
-
-let app = new App();
-app.init();
-window.global = {app:app};
 export { App };

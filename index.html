@@ -80,7 +80,12 @@
             </div>
         </div>
         <div id="bubble" class="bubble">Copied!</div>
-        <script src="./js/App.js" type="module"></script>
-
+        <!-- <script src="./js/App.js" type="module"></script> -->
+        <script type="module">
+            import {App} from './js/App.js'
+            let app = new App();
+            app.init();
+            window.global = {app:app};
+        </script>
     </body>
 </html>

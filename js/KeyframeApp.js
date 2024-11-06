@@ -45,7 +45,7 @@ class KeyframeApp {
         }
     }
 
-    changePlayState(state = !this.playing) {
+    changePlayState(state = !this.playing) {https://webglstudio.org/users/evalls/performs/demo/?avatar=https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb
         this.playing = state;
         if(this.playing && this.mixer) {
             this.mixer.setTime(0);                      
@@ -213,7 +213,7 @@ class KeyframeApp {
     * Given an array of animations of type { name: "", data: "" } where "data" is Blob of text/plain type 
     * 
     */
-     async processMessageFiles( files = []) {
+    async processMessageFiles( files = []) {
         let parsedFiles = {};
         let promises = [];
 
@@ -252,9 +252,8 @@ class KeyframeApp {
             }
             else {
                 filePromise = new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = () => {  
-                        loader.load( reader.result, (glb) => {
+                    const loadData = (dataFile) => {
+                        loader.load( dataFile, (glb) => {
                             let skeleton = null;
                             let model = glb.scene ? glb.scene : glb;
                             model.traverse( o => {                                    
@@ -286,7 +285,16 @@ class KeyframeApp {
                     }
                     
                     let data = file.data ?? file;
-                    reader.readAsDataURL(data);
+                    if(typeof(data) == 'string') {
+                        loadData(data);
+                    }
+                    else {
+                        const reader = new FileReader();
+                        reader.onload = () => {  
+                           loadData(reader.result);
+                        }
+                        reader.readAsDataURL(data);
+                    }
                 });
             }   
 
@@ -294,6 +302,25 @@ class KeyframeApp {
         }
        
         return Promise.all(promises);
+    }
+
+    loadFiles( files, callback ) {
+               
+        this.processMessageFiles(files).then((data) => {
+            if(data[0].length) {              
+                let animation = typeof(data[0]) == 'string' ? data[0] : data[0][0];
+                this.currentAnimation = animation;
+                if(callback) {
+                    callback(animation);
+                }
+            }
+            else {
+                if(callback)
+                {
+                    callback();
+                }
+            }
+        });
     }
 
     // load animation from bvhe file

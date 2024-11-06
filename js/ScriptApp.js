@@ -463,6 +463,34 @@ class ScriptApp {
         return target;
     }
 
+    async processMessageFiles( files = []) {
+        let promises = [];
+        for(let i = 0; i < files.length; i++) {
+            let filePromise = null;
+            const file = files[i];
+            if(file.data) {
+                if(file.type == 'bml' || file.type == 'sigml') {
+                    filePromise = new Promise(resolve => {
+                            resolve(file);
+                    });
+                }
+            }
+            else {
+                const extension = file.name.substr(file.name.lastIndexOf(".") + 1);;
+                if(extension == 'bml' || extension == 'sigml') {
+                    filePromise = new Promise(resolve => {
+                        fetch(file.name).then(response => response.text()).then((data) => {
+                            resolve({type: extension, data});
+                        })
+                        
+                    });
+                }
+            }
+            promises.push(filePromise); 
+        }
+        return Promise.all(promises);
+    }
+
     /* 
     * Given an array of blocks of type { type: "bml" || "sigml" || "glossName",  data: "" } where data contains the text instructions either in bml or sigml.
     * It computes the sequential union of all blocks.
