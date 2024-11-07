@@ -42,7 +42,7 @@ To run locally, host a server from the main project folder. You can also use the
 > [!IMPORTANT]  
 > To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
 
-You can load the customization features appending the URL params detailed in the [Integration Guide](./docs/IntegrationGuide.md) or loading a JSON file (it can be exported from Performs app) with the same params and calling _setConfiguration(settings)_ function from _App_ with the object data as a param.
+You can load the customization features by appending the URL params outlined in the [Integration Guide](./docs/IntegrationGuide.md) or by loading a JSON file (which can be exported from the Performs app) with containing the same parameters. Then, call the _setConfiguration(options)_ function from _App_ passing the JSON object with the options as a parameter.
 
 ### Project structure
 Each project must include at least one HTML file for webpage definition and the JavaScript build files to execute Performs.

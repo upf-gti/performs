@@ -271,6 +271,10 @@
 	color: #BB86FC;
 }
 
+.iframe-text textarea{
+	color: var(--global-text-secondary)!important;
+}
+
 /* Copy pop up feedback*/
 #bubble {
 	display: none; /* Initially hidden */

@@ -2203,8 +2203,7 @@ class AppGUI {
             pp.refresh = () => {
                 pp.clear();
                 pp.sameLine();
-                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true});
-    
+                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text"});                
                 pp.addButton(null, 'Copy', (value, event) => {
     
                     navigator.clipboard.writeText(url);
