@@ -1,10 +1,5 @@
 # Integration Guide
-
-## Iframe
-Insert Performs inside your application using the _iframe_ HTML element.
-```html
-<iframe src='https://webglstudio.org/projects/signon/performs'>
-```
+## Available options
 
 | Name                       | Type    | Description                                                                                                                 |
 |----------------------------|---------|-----------------------------------------------------------------------------------------------------------------------------|
@@ -27,14 +22,9 @@ Insert Performs inside your application using the _iframe_ HTML element.
 |  [trgEmbeddedTransforms](#trgembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
 |  [srcReferencePose](#srcreferencepose-number)          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
 |  [trgReferencePose](#trgreferencepose-number)          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
-
-> [!IMPORTANT]  
-> You can combine multiple parameters by concatenating with _&_.
->
-> So for example showing a custom avatar in a blue chroma would look like that:
->```html
-><iframe src='https://webglstudio.org/projects/signon/performs?avatar=https://models.readyplayer.me/67162be7608ab3c0a85ceb2d.glb&background=studio&color=rgb(54,54,190)'>
->```
+|  [animations](#animations)                    | Array  | Array of objects with animations' information                                                                                                          |
+|  [scripts](#scripts)                    | Array  | Array of objects with scripts' information or instructions                                                                                                          |
+|  [onReady]()                    | Function  | Callback function triggered after animations/scripts are loaded       
 
 ### Expected values
 
@@ -170,3 +160,31 @@ Pose of the target skeleton that will be used as the reference pose for the reta
 - **`0`** - [Default] Skeleton's actual bind pose. (default)
 - **`1`** - [Current] Skeleton's current pose.
 - **`2`** - [Tpose] Computes a Tpose from the skeleton's actual bind pose.
+
+#### animations
+Array of data with keyframe animations' information. _[{name: "", data: ""}]_
+
+##### Expected values (Array of objects)
+
+Object data:
+
+- _**`name`**_: **`'./data/animations/myAnimation.glb'`**
+- _**`data`**_: **`'./data/animations/myAnimation.glb'`** - Data can be an URL or an already parsed data. Only _glTF_, _BVH_ and _FBX_ formats are supported.
+
+
+#### scripts
+Array of data with script animations' information. _[{type: "", name: "", data: ""}]_
+
+- **`type`**: **`'sigml'`** or **`bml`**
+- **`name`**: **`'./data/animations/myAnimation.sigml`** or **`'./data/animations/myAnimation.bml`** - File URL
+- **`data`**: **`{
+                behaviours: [{
+                    type: "faceLexeme",
+                    start: 4,
+                    attackPeak: 0.6,
+                    relax: 1.5,
+                    end: 1.8,
+                    amount: 1,
+                    lexeme: "ARCH"
+                }]`**
+            } - Array of BML or SiGML Instructions
