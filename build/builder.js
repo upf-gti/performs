@@ -1,41 +1,6 @@
 let fs = require('fs');
 let path = require('path');
 
-/** ScriptApp.js includes: 
- * - ./js/bml/BehaviourManager.js
- * - ./js/bml/BehaviourPlanner.js
- * - ./js/bml/BehaviourRealizer.js 
- * 
- *  - ./js/sigml/Extfidir.js
- *  - ./js/sigml/HandShape.js
- *  - ./js/sigml/LocationArmIK.js
- *  - ./js/sigml/Motion.js
- *  - ./js/sigml/Palmor.js
- *  - ./js/sigml/sigmlUtils.js
- *  - ./js/sigml/BodyController.js 
- *  - ./js/sigml/GeometricArmIK.js (IKSolver)
- *  - ./js/sigml/SigmlToBML.js
- * 
- *  - ./js/controllers/CharacterController.js
- *  - ./js/controllers/FacialController.js
- * 
- * */
-
-/** KeyframeApp.js includes:
- *  - ./js/extendedBVHLoader.js
- *  - ./js/retargeting/retargeting.js
- */
-
-// /** CharacterController.js includes:
-//  * - ./js/controllers/CharacterController.js
-//  * - ./js/controllers/FacialController.js
-//  * - ./js/sigml/BodyController.js 
-//  * */
-
-// /** IKSolver.js --> Same as IKSolver.js */
-
-// /** SigmlToBML.js --> Same as SigmlToBML.js */
-
 function build() {
     
     let files = {
@@ -70,11 +35,11 @@ function build() {
         // ],
         // "IKSolver.js" : ["../js/sigml/GeometricArmIK.js"],
         // "SigmlToBML.js": [ "../js/sigml/SigmlToBML.js"],
-        "App.js": [
+        "Performs.js": [
             // "../js/ScriptApp.js",
             // "../js/KeyframeApp.js",
             "../js/recorder/recorder.js",
-            "../js/App.js"
+            "../js/Performs.js"
         ],
         // "Animation.js": [
         //     "../js/extendedBVHLoader.js",

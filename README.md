@@ -40,9 +40,9 @@ git clone https://github.com/upf-gti/performs.git
 ```
 To run locally, host a server from the main project folder. You can also use the [build](./build/) version without GUI.
 > [!IMPORTANT]  
-> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _App.js_. You can use the resources from the _/data_ folder or add your own.
+> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _Performs.js_. You can use the resources from the _/data_ folder or add your own.
 
-You can load the customization features by appending the URL params outlined in the [Integration Guide](./docs/IntegrationGuide.md) or by loading a JSON file (which can be exported from the Performs app) with containing the same parameters. Then, call the _setConfiguration(options)_ function from _App_ passing the JSON object with the options as a parameter.
+You can load the customization features by appending the URL params outlined in the [Integration Guide](./docs/IntegrationGuide.md) or by loading a JSON file (which can be exported from the Performs app) with containing the same parameters. Then, call the _setConfiguration(options)_ function from _Performs_ passing the JSON object with the options as a parameter.
 
 ### Project structure
 Each project must include at least one HTML file for webpage definition and the JavaScript build files to execute Performs.
@@ -84,12 +84,12 @@ Each project must include at least one HTML file for webpage definition and the 
 ```
 - `main.js`
 
-By default, Performs generates the code for creating a fully functional web application with its built-in GUI ([_GUI.js_](./js/GUI.js) is required). However, the application can also be used without the GUI or with a custom interface. Configuration options can be set through the GUI, by loading a JSON file, or by appending URL parameters. For a complete list of available options, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
+By default, Performs generates the code for creating a fully functional web application with its built-in GUI ([_GUI.js_](./js/GUI.js), [_style.css_](style.css), and [lexgui.js](https://github.com/jxarco/lexgui.js/) library are required). However, the application can also be used without the GUI or with a custom interface. Configuration options can be set through the GUI, by loading a JSON file, or by appending URL parameters. For a complete list of available options, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
 
 ```javascript
-import { App } from 'App.js'
+import { Performs } from 'Performs.js'
             
-const performs = new App();
+const performs = new Performs();
 
 // Load customization options file
 fetch('performsSettings.json')
@@ -125,9 +125,9 @@ A detailed explanation of these options can be found in the [retargeting reposit
 By default, **Keyframe mode** is enabled. However, if a configuration file for **Script mode** is detected, the mode will automatically switch. When multiple animations are loaded, a crossfade blending is applied during transitions between animations. The blend time can be adjusted using the `blendTime` attribute of `keyframeApp`.
 
 ```javascript
-import { App } from 'App.js'
+import { Performs } from 'Performs.js'
             
-const performs = new App();
+const performs = new Performs();
 
 // Set customization options
 const options = {    
@@ -140,7 +140,7 @@ const options = {
     
     onReady = () => { // Function called after loading the application
         // Change to Keyframe mode 
-        performs.changeMode(App.Modes.KEYFRAME);
+        performs.changeMode(Performs.Modes.KEYFRAME);
 
         // Play the animation after 1s
         setTimeout(() => performs.keyframeApp.changePlayState(true), 1000);
@@ -174,9 +174,9 @@ An example:
 Include [`./data/dictionaries/`](./data/dictionaries/) folder in your project to use the Idle animation and the NGT gloss dictionary.
 
 ``` javascript
-import { App } from 'App.js'
+import { Performs } from 'Performs.js'
             
-const performs = new App();
+const performs = new Performs();
 
 const options = {
     config = './data/configFile.json', // Set required config file for Script mode

@@ -3,7 +3,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
 import { AnimationRecorder } from './recorder/recorder.js';
-import { AppGUI } from './GUI.js';
+import { GUI } from './GUI.js';
 import { ScriptApp } from './ScriptApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
 import { findIndexOfBoneByName } from './sigml/Utils.js';
@@ -14,7 +14,7 @@ THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNor
 THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
-class App {
+class Performs {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
     static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
     static ATELIER_URL = "https://webglstudio.org/projects/signon/performs-atelier/";
@@ -38,7 +38,7 @@ class App {
         this.backPlane = null;
         this.avatarShirt = null;
 
-        this.mode = App.Modes.SCRIPT;
+        this.mode = Performs.Modes.SCRIPT;
         this.scriptApp = new ScriptApp();        
         this.keyframeApp = new KeyframeApp();   
         
@@ -47,7 +47,7 @@ class App {
         this.showControls = true;
 
         this.sceneColor = 0x46c219;
-        this.background = App.Backgrounds.OPEN;
+        this.background = Performs.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
         this._atelier = null;
@@ -82,11 +82,11 @@ class App {
         this.background = type;
 
         switch(type) {
-            case App.Backgrounds.OPEN:
+            case Performs.Backgrounds.OPEN:
                 this.backPlane.visible = false;
                 this.ground.visible = true;
                 break;
-            case App.Backgrounds.STUDIO:
+            case Performs.Backgrounds.STUDIO:
                 this.backPlane.visible = true;
                 // this.backPlane.material.map = null;        
                 this.backPlane.material = this.studioMaterial;                    
@@ -95,7 +95,7 @@ class App {
                 this.ground.visible = false;
                
                 break;
-            case App.Backgrounds.PHOTOCALL:
+            case Performs.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
                 // let texture = null;
@@ -269,7 +269,7 @@ class App {
                     this.scriptApp.onLoadAvatar(this.currentCharacter.model, this.currentCharacter.config, this.currentCharacter.skeleton);
                     this.currentCharacter.skeleton.pose();
                     this.scriptApp.ECAcontroller.reset();                        
-                    this.changeMode(App.Modes.SCRIPT);
+                    this.changeMode(Performs.Modes.SCRIPT);
                     if(this.gui) {
                         this.gui.avatarOptions[name][1] = config._filename;
                         if(this.gui.settingsActive) {
@@ -295,10 +295,10 @@ class App {
             let background = settings.background;
             switch(background.toLocaleLowerCase()) {
                 case 'studio':
-                    this.background = App.Backgrounds.STUDIO;
+                    this.background = Performs.Backgrounds.STUDIO;
                     break;
                 case 'photocall':
-                        this.background = App.Backgrounds.PHOTOCALL;
+                        this.background = Performs.Backgrounds.PHOTOCALL;
                         break;
                 default:
                     break;
@@ -307,13 +307,13 @@ class App {
         }
 
         if(settings.img) {
-            this.setBackground( App.Backgrounds.PHOTOCALL);         
+            this.setBackground( Performs.Backgrounds.PHOTOCALL);         
 
             let image =settings.img;
             const imgCallback = ( event ) => {
 
                 this.logo = event.target;        
-                this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
+                this.setBackground( Performs.Backgrounds.PHOTOCALL, this.logo);         
             }
 
             const img = new Image();            
@@ -391,7 +391,7 @@ class App {
         if(this.gui) {
             this.gui.onChangeMode(mode);
         }
-        if(this.mode == App.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
+        if(this.mode == Performs.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
             this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation);
         }
     }
@@ -478,11 +478,11 @@ class App {
           
             this.setConfiguration(options);
             // Create the GUI only if the class exists or the showControls flag is true
-            if ( typeof AppGUI != "undefined" && this.showControls) { 
-                this.gui = new AppGUI( this ); 
+            if ( typeof GUI != "undefined" && this.showControls) { 
+                this.gui = new GUI( this ); 
                 if(!this.gui.avatarOptions[modelToLoad[3]]) {
                     const name = modelToLoad[3];
-                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : AppGUI.THUMBNAIL;
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : GUI.THUMBNAIL;
                     this.gui.avatarOptions[name] = modelToLoad;
                     this.gui.refresh();
                 }
@@ -635,7 +635,7 @@ class App {
                 img.onload = ( event ) => {
 
                     this.logo = event.target;        
-                    this.setBackground( App.Backgrounds.PHOTOCALL, this.logo);         
+                    this.setBackground( Performs.Backgrounds.PHOTOCALL, this.logo);         
                 };   
                 
                 // Load image
@@ -833,10 +833,10 @@ class App {
         this.elapsedTime += delta;
         
         switch( this.mode ){
-            case App.Modes.SCRIPT: 
+            case Performs.Modes.SCRIPT: 
                 this.scriptApp.update(delta); 
                 break;
-            case App.Modes.KEYFRAME:
+            case Performs.Modes.KEYFRAME:
                 this.keyframeApp.update(delta); 
                 break;
             default:
@@ -902,7 +902,7 @@ class App {
         }
 
         if ( Array.isArray(data) ){
-            this.changeMode(App.Modes.SCRIPT);
+            this.changeMode(Performs.Modes.SCRIPT);
             this.scriptApp.onMessage(data, (processedData) => {
                 if(this.gui) {
                     this.gui.setBMLInputText( 
@@ -916,7 +916,7 @@ class App {
         } 
                         
         if(data.type == 'bvh' || data.type == 'bvhe') {
-            this.changeMode(App.Modes.KEYFRAME);
+            this.changeMode(Performs.Modes.KEYFRAME);
             this.keyframeApp.onMessage(data, () => {
                 if(this.gui) {
                     this.gui.refresh();
@@ -967,7 +967,7 @@ class App {
             }
         }
         else {
-            this.changeMode(App.Modes.KEYFRAME);
+            this.changeMode(Performs.Modes.KEYFRAME);
         }
 
         // Search the top mesh
@@ -1051,7 +1051,7 @@ class App {
         const atelierData = [name, model, rawConfig, rotation];        
         localStorage.setItem("atelierData", JSON.stringify(atelierData));
         if(!this._atelier || this._atelier.closed) {
-            this._atelier = window.open(App.ATELIER_URL, "Atelier");            
+            this._atelier = window.open(Performs.ATELIER_URL, "Atelier");            
         }
         else {
             this._atelier.location.reload();
@@ -1084,4 +1084,4 @@ function createBackdropGeometry(width = 5, height = 5, segments = 32) {
     return geometry;
 }
 
-export { App };
+export { Performs };

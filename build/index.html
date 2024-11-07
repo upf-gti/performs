@@ -26,10 +26,10 @@
 		</div>
 
         <script type="module">
-            import {App} from './js/App.js'
-            let app = new App();
-            app.init();
-            window.global = {app:app};
+            import { Performs } from './js/Performs.js'
+            const performs = new Performs();
+            performs.init();
+            window.global = {app: performs};
         </script>
 
     </body>

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { App } from '../App.js'
+import { Performs } from '../Performs.js'
 
 let zip = typeof JSZip != 'undefined' ? new JSZip() : null;
 
@@ -64,7 +64,7 @@ class AnimationRecorder {
     }
 
     manageCapture (animationName, timeLimit = null) {
-        if (this.app.mode == App.Modes.SCRIPT){
+        if (this.app.mode == Performs.Modes.SCRIPT){
             this.animationsCount = 1;
             if(this.onStartCapture) {
                 this.onStartCapture('');
@@ -77,7 +77,7 @@ class AnimationRecorder {
             }
             else { this.startCapture("BML"); }
         }
-        else if (this.app.mode == App.Modes.KEYFRAME) {
+        else if (this.app.mode == Performs.Modes.KEYFRAME) {
         
             return new Promise((resolve) => {
                 this.onCaptureComplete = resolve;
@@ -90,7 +90,7 @@ class AnimationRecorder {
         }
     }
 
-    startCapture (animationName,) {
+    startCapture (animationName) {
         this.isRecording = true;
         this.enabledCameras = 0;
         for( let i = 0; i < this.app.cameras.length; i++) {
@@ -119,10 +119,10 @@ class AnimationRecorder {
 
     handleStart (idx) {
         if (idx === 0) {
-            if (this.app.mode == App.Modes.SCRIPT){
+            if (this.app.mode == Performs.Modes.SCRIPT){
                 this.app.scriptApp.replay();
             }
-            else if (this.app.mode == App.Modes.KEYFRAME) {
+            else if (this.app.mode == Performs.Modes.KEYFRAME) {
                 this.app.keyframeApp.changePlayState(true); // start animation                
             }
         }
@@ -177,7 +177,7 @@ class AnimationRecorder {
 
         // refresh gui
         if (idx === 0) {
-            if (this.app.mode == App.Modes.SCRIPT) {
+            if (this.app.mode == Performs.Modes.SCRIPT) {
                 // reset avatar pose / stop animation
                 this.app.scriptApp.ECAcontroller.reset(true);
             }

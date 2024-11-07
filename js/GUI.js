@@ -1,13 +1,13 @@
 import * as THREE from "three"
 import { LX } from 'lexgui';
 import 'lexgui/components/codeeditor.js';
-import { App } from './App.js'
+import { Performs } from './Performs.js'
 
-class AppGUI {
+class GUI {
 
     static THUMBNAIL = "data/imgs/monster.png";
-    constructor( app ){
-        this.app = app;
+    constructor( performs ){
+        this.performs = performs;
         this.randomSignAmount = 0;
         // available model models paths - [model, config, rotation, thumbnail]
         this.avatarOptions = {
@@ -18,11 +18,11 @@ class AppGUI {
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
-        this.app.renderer.domElement.remove(); // removes from dom
+        this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.init();
         this.mainArea.root.ondrop = this.onDropFiles.bind(this);
 
-        this.mainArea.onresize = (bounding) => app.onCanvasResize(bounding.width, bounding.height);
+        this.mainArea.onresize = (bounding) => this.performs.onCanvasResize(bounding.width, bounding.height);
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
         this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
@@ -30,9 +30,9 @@ class AppGUI {
         this.gui = null;
         
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
-        canvasArea.attach( this.app.renderer.domElement );
+        canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
-        canvasArea.root.appendChild(app.renderer.domElement);
+        canvasArea.root.appendChild(this.performs.renderer.domElement);
 
         this.panel = panelArea.addPanel({height: "100%"});
         panelArea.addOverlayButtons([{
@@ -55,7 +55,7 @@ class AppGUI {
         if ( window.sessionStorage ){
             let text;
             text = window.sessionStorage.getItem( "msg" );
-            this.app.scriptApp.msg = text ? JSON.parse( text ) : null;
+            this.performs.scriptApp.msg = text ? JSON.parse( text ) : null;
             text = window.sessionStorage.getItem( "bmlInput" ); 
             this.bmlInputData.prevInstanceText = text ? text : "";
             text = window.sessionStorage.getItem( "sigmlInput" ); 
@@ -65,7 +65,7 @@ class AppGUI {
             
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
-                window.sessionStorage.setItem( "msg", JSON.stringify(this.app.scriptApp.msg) );
+                window.sessionStorage.setItem( "msg", JSON.stringify(this.performs.scriptApp.msg) );
                 if( this.bmlInputData && this.bmlInputData.codeObj ){
                     window.sessionStorage.setItem( "bmlInput", this.bmlInputData.codeObj.getText() );
                 }
@@ -79,23 +79,23 @@ class AppGUI {
 
             window.addEventListener("keyup", (event) => {
                 if(event.key == " ") {
-                    if(this.app.mode == App.Modes.KEYFRAME) {
-                        if(Object.keys(this.app.keyframeApp.loadedAnimations).length) {
-                            this.app.keyframeApp.changePlayState();
+                    if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                        if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
+                            this.performs.keyframeApp.changePlayState();
                             if(this.settingsActive) {
                                 this.createSettingsPanel();             
                             }
-                            this.changePlayButtons(this.app.keyframeApp.playing);
+                            this.changePlayButtons(this.performs.keyframeApp.playing);
                         }
                         else {
                             LX.popup("No animations to play!", null, {size:["200px", "auto"]})
                         }
                     }
-                    else if (this.app.mode == App.Modes.SCRIPT) {
+                    else if (this.performs.mode == Performs.Modes.SCRIPT) {
                         if(event.target.tagName == 'TEXTAREA') {
                             return;
                         }
-                        this.app.scriptApp.replay();
+                        this.performs.scriptApp.replay();
                         if(this.settingsActive) {
                             this.createSettingsPanel();             
                         }
@@ -122,11 +122,11 @@ class AppGUI {
     resize(width, height) {
         
         const aspect = width / height;
-        for(let i = 0; i < this.app.cameras.length; i++) {
-            this.app.cameras[i].aspect = aspect;
-            this.app.cameras[i].updateProjectionMatrix();
+        for(let i = 0; i < this.performs.cameras.length; i++) {
+            this.performs.cameras[i].aspect = aspect;
+            this.performs.cameras[i].updateProjectionMatrix();
         }
-        this.app.renderer.setSize(width, height);
+        this.performs.renderer.setSize(width, height);
     }
 
     refresh(){
@@ -149,14 +149,14 @@ class AppGUI {
         p.sameLine();
 
         let btn = p.addButton(null, "Script animation", (v, e) => {
-            if (this.app.currentCharacter.config) {
-                this.app.changeMode(App.Modes.SCRIPT);
-                if(this.app.scriptApp.currentIdle) {
-                    this.app.scriptApp.bindAnimationToCharacter(this.app.scriptApp.currentIdle, this.app.currentCharacter.model.name);
+            if (this.performs.currentCharacter.config) {
+                this.performs.changeMode(Performs.Modes.SCRIPT);
+                if(this.performs.scriptApp.currentIdle) {
+                    this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
                 }
             }
             else {
-                this.app.changeMode(-1);   
+                this.performs.changeMode(-1);   
             }
             this.createSettingsPanel();
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
@@ -166,11 +166,11 @@ class AppGUI {
 
         }, {icon: "fa fa-code"} );
 
-        if(this.app.mode == App.Modes.SCRIPT || this.app.mode == -1) {
+        if(this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1) {
             btn.children[0].classList.add("selected");
         }
         btn = p.addButton(null, "Keyframing animation",  (v, e) => {
-            this.app.changeMode(App.Modes.KEYFRAME);
+            this.performs.changeMode(Performs.Modes.KEYFRAME);
             this.createSettingsPanel(); 
             
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
@@ -179,7 +179,7 @@ class AppGUI {
             }
         }, {icon: "fa fa-film"} );
         
-        if(this.app.mode == App.Modes.KEYFRAME) {
+        if(this.performs.mode == Performs.Modes.KEYFRAME) {
             btn.children[0].classList.add("selected");
         }
 
@@ -192,7 +192,7 @@ class AppGUI {
         p.addSeparator();
 
         if(!force) {
-            if(this.app.mode == App.Modes.SCRIPT || this.app.mode == -1) {
+            if(this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1) {
                 this.createBMLPanel(p, this.createSettingsPanel.bind(this));
             }
             else {
@@ -202,7 +202,7 @@ class AppGUI {
 
         p.branch( "Transformations", { icon: "fa-solid fa-up-down-left-right", closed: !this.branchesOpened["Transformations"]} );
 
-        const model = this.app.currentCharacter.model;
+        const model = this.performs.currentCharacter.model;
         p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
             model.position.set(value[0], value[1], value[2]);
         }, {step:0.01});
@@ -228,39 +228,39 @@ class AppGUI {
         }
         p.clear();
         p.branch("Backgrounds");
-        let color = new THREE.Color(this.app.sceneColor);
+        let color = new THREE.Color(this.performs.sceneColor);
 
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
-            this.app.setBackPlaneColour(value);
+            this.performs.setBackPlaneColour(value);
         });
         
         // Open space
         let btn = p.addButton(null, "Open space", (value)=> {
-            this.app.setBackground( App.Backgrounds.OPEN);
+            this.performs.setBackground( Performs.Backgrounds.OPEN);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/open-space.png", className: "centered"});
         btn.children[0].classList.add("roundedbtn");
-        if(this.app.background == App.Backgrounds.OPEN) {
+        if(this.performs.background == Performs.Backgrounds.OPEN) {
             btn.children[0].classList.add('selected');
         }
 
         // Studio background
         btn = p.addButton(null, "Studio", (value)=> {
-            this.app.setBackground( App.Backgrounds.STUDIO);
+            this.performs.setBackground( Performs.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/studio-space.png", className: "centered"});
         btn.children[0].classList.add("roundedbtn");
-        if(this.app.background == App.Backgrounds.STUDIO) {
+        if(this.performs.background == Performs.Backgrounds.STUDIO) {
             btn.children[0].classList.add('selected');
         }
         // Photocall background
         btn = p.addButton(null, "Photocall", (value)=> {
-            this.app.setBackground( App.Backgrounds.PHOTOCALL);
+            this.performs.setBackground( Performs.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/photocall-space.png", className: "centered"});
         btn.children[0].classList.add("roundedbtn");
         
-        if(this.app.background == App.Backgrounds.PHOTOCALL) {
+        if(this.performs.background == Performs.Backgrounds.PHOTOCALL) {
             btn.children[0].classList.add('selected');
             const ebtn = p.addButton(null, "Edit logo", (e) => {
                 let dialog = new LX.Dialog("Upload logo", (panel) => {
@@ -277,8 +277,8 @@ class AppGUI {
                         if (extension == "png" || extension == "jpeg" || extension == "jpg") { 
                              const imgCallback = ( event ) => {
 
-                                this.app.logo = event.target;        
-                                this.app.setBackground( App.Backgrounds.PHOTOCALL, this.app.logo);            
+                                this.performs.logo = event.target;        
+                                this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
                             }
             
                             const img = new Image();            
@@ -302,8 +302,8 @@ class AppGUI {
                         
                         const imgCallback = ( event ) => {
 
-                            this.app.logo = event.target;        
-                            this.app.setBackground( App.Backgrounds.PHOTOCALL, this.app.logo);            
+                            this.performs.logo = event.target;        
+                            this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
                         }
         
                         const img = new Image();            
@@ -350,8 +350,8 @@ class AppGUI {
                     ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
                     panel.endLine();
 
-                    panel.addNumber("Offset", this.app.repeatOffset, (v) => {
-                        this.app.setPhotocallOffset(v);
+                    panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
+                        this.performs.setPhotocallOffset(v);
                     }, {min: 0, max: 1, step: 0.01})
                 })
             }, {icon: "fa fa-pen-to-square", className: "centered"});
@@ -371,16 +371,16 @@ class AppGUI {
         p.addButton( "Upload yours", "Upload Avatar", (v) => {
             this.uploadAvatar((value, config) => {
                     
-                if ( !this.app.loadedCharacters[value] ) {
+                if ( !this.performs.loadedCharacters[value] ) {
                     $('#loading').fadeIn(); //hide();
                     let modelFilePath = this.avatarOptions[value][0]; 
                     let configFilePath = this.avatarOptions[value][1]; 
                     let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                    this.app.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
-                        this.app.changeAvatar(value);
+                    this.performs.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
+                        this.performs.changeAvatar(value);
                         this.createAvatarsPanel();
-                        if(this.app.currentCharacter.config) {
-                            this.app.changeMode(App.Modes.SCRIPT);
+                        if(this.performs.currentCharacter.config) {
+                            this.performs.changeMode(Performs.Modes.SCRIPT);
                             
                             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
                             if(resetBtn) {
@@ -396,7 +396,7 @@ class AppGUI {
                 } 
 
                 // use controller if it has been already loaded in the past
-                this.app.changeAvatar(value);
+                this.performs.changeAvatar(value);
                 this.createAvatarsPanel();
             });
         } ,{ nameWidth: "100px", icon: "fa-solid fa-cloud-arrow-up" } );        
@@ -404,11 +404,11 @@ class AppGUI {
         p.addSeparator();
 
 
-        if ( this.app.avatarShirt ){
-            let topsColor = this.app.getClothesColour();
+        if ( this.performs.avatarShirt ){
+            let topsColor = this.performs.getClothesColour();
 
             p.addColor("Clothes", '#' + topsColor, (value, event) => {
-                this.app.setClothesColour(value);; // css works in sRGB
+                this.performs.setClothesColour(value);; // css works in sRGB
             });
         }
 
@@ -417,19 +417,19 @@ class AppGUI {
         for(let avatar in this.avatarOptions) {
             // p.sameLine();
             const btn = p.addButton(null, avatar, (value)=> {
-                this.app.scriptApp.mood = "Neutral";
-                if(this.app.scriptApp.ECAcontroller) {
-                    this.app.scriptApp.ECAcontroller.reset();
+                this.performs.scriptApp.mood = "Neutral";
+                if(this.performs.scriptApp.ECAcontroller) {
+                    this.performs.scriptApp.ECAcontroller.reset();
                 }
 
                 // load desired model
-                if ( !this.app.loadedCharacters[value] ) {
+                if ( !this.performs.loadedCharacters[value] ) {
                     $('#loading').fadeIn(); //hide();
                     let modelFilePath = this.avatarOptions[value][0]; 
                     let configFilePath = this.avatarOptions[value][1]; 
                     let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                    this.app.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
-                        this.app.changeAvatar(value);
+                    this.performs.loadAvatar(modelFilePath, configFilePath, modelRotation, value, ()=>{ 
+                        this.performs.changeAvatar(value);
                         this.createAvatarsPanel(); 
                         
                         $('#loading').fadeOut();
@@ -441,13 +441,13 @@ class AppGUI {
                 } 
     
                 // use controller if it has been already loaded in the past
-                this.app.changeAvatar(value);
+                this.performs.changeAvatar(value);
                 this.createAvatarsPanel();
 
-            }, {img: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL, className: "centered"});
+            }, {img: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL, className: "centered"});
 
             btn.children[0].classList.add("roundedbtn");
-            if(avatar == this.app.currentCharacter.model.name) {
+            if(avatar == this.performs.currentCharacter.model.name) {
                 btn.children[0].classList.add("selected");
 
                 let ebtn = p.addButton( null, "Edit Avatar", (v) => {
@@ -455,36 +455,36 @@ class AppGUI {
                 } ,{ icon: "fa-solid fa-user-pen", className: "centered" } );
                 ebtn.children[0].style.width = "40px";
             }
-            avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? AppGUI.THUMBNAIL});
+            avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL});
                 // p.endLine();
         }
     }
 
     createEditAvatarDialog() {
-        let name = this.app.currentCharacter.model.name;
+        let name = this.performs.currentCharacter.model.name;
         this.editAvatar(name, {
             callback: (newName, rotation, config) => {
                 if(name != newName) {
                     this.avatarOptions[newName] = [ this.avatarOptions[name][0], this.avatarOptions[name][1], this.avatarOptions[name][2], this.avatarOptions[name][3]]
                     delete this.avatarOptions[name];
                     name = newName;
-                    this.app.currentCharacter.model.name = name;
+                    this.performs.currentCharacter.model.name = name;
                     this.refresh();
                 }
                 this.avatarOptions[name][2] = rotation;
                 
                 const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation ); 
-                this.app.currentCharacter.model.quaternion.premultiply( modelRotation );
-                if(this.app.currentCharacter.config && this.app.currentCharacter.config == config) {
+                this.performs.currentCharacter.model.quaternion.premultiply( modelRotation );
+                if(this.performs.currentCharacter.config && this.performs.currentCharacter.config == config) {
                     return;
                 }
-                this.app.currentCharacter.config = config;
+                this.performs.currentCharacter.config = config;
                 if(config) {
                     this.avatarOptions[name][1] = config._filename;
-                    this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
-                    this.app.currentCharacter.skeleton.pose();
-                    this.app.scriptApp.ECAcontroller.reset();                        
-                    this.app.changeMode(App.Modes.SCRIPT);
+                    this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
+                    this.performs.currentCharacter.skeleton.pose();
+                    this.performs.scriptApp.ECAcontroller.reset();                        
+                    this.performs.changeMode(Performs.Modes.SCRIPT);
                     if(this.settingsActive) {
                         this.createSettingsPanel();             
                     }
@@ -508,13 +508,13 @@ class AppGUI {
         p.branch( "Recording", { icon: "fa-solid fa-video", closed: !this.branchesOpened["Recording"]} );
 
         let cameras = [];
-        for (let i = 0; i < this.app.cameras.length; i++) {
+        for (let i = 0; i < this.performs.cameras.length; i++) {
             const camera = {
                 value: (i + 1).toString(),
                 callback: (v,e) => {
-                    this.app.controls[this.app.camera].enabled = false; // disable controls from previous camera
-                    this.app.camera = v - 1; // update active camera
-                    this.app.controls[this.app.camera].enabled = true; // enable controls from current (new) camera
+                    this.performs.controls[this.performs.camera].enabled = false; // disable controls from previous camera
+                    this.performs.camera = v - 1; // update active camera
+                    this.performs.controls[this.performs.camera].enabled = true; // enable controls from current (new) camera
                 }
             }
 
@@ -522,9 +522,9 @@ class AppGUI {
         }
 
         p.sameLine();
-        p.addComboButtons("Camera", cameras, {selected: (this.app.camera + 1).toString(), width: "auto", nameWidth:"260px"});    
+        p.addComboButtons("Camera", cameras, {selected: (this.performs.camera + 1).toString(), width: "auto", nameWidth:"260px"});    
         p.addButton(null, "Reset", (V) => {
-            this.app.controls[this.app.camera].reset();
+            this.performs.controls[this.performs.camera].reset();
 
         }, { width: "30px", icon: "fa-solid fa-rotate-left"} ) 
         p.addComboButtons(null, [
@@ -532,7 +532,7 @@ class AppGUI {
                 value: "Restricted View",
                 icon: "fa-solid fa-camera",
                 callback: (v, e) => {
-                    this.app.toggleCameraMode(); 
+                    this.performs.toggleCameraMode(); 
                     this.createCameraPanel();
                 }
             },
@@ -540,11 +540,11 @@ class AppGUI {
                 value: "Free View",
                 icon: "fa-solid fa-up-down-left-right",
                 callback: (v, e) => {
-                    this.app.toggleCameraMode(); 
+                    this.performs.toggleCameraMode(); 
                     this.createCameraPanel();
                 }
             }
-        ], {selected: this.app.cameraMode ? "Free View" : "Restricted View"});
+        ], {selected: this.performs.cameraMode ? "Free View" : "Restricted View"});
         p.endLine("left");
 
         p.addSeparator();
@@ -564,44 +564,44 @@ class AppGUI {
         
         if(this.captureEnabled) {
 
-            // p.addButton("Capture", this.app.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
+            // p.addButton("Capture", this.performs.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
             //     // Replay animation - dont replay if stopping the capture
-            //     if(!this.app.animationRecorder.isRecording) {
+            //     if(!this.performs.animationRecorder.isRecording) {
             //         if(this.settingsActive || this.cameraActive || this.lightsActive) {
             //             this.mainArea._moveSplit(-100);
             //         }
             //         this.mainArea.extend();
             //         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
             //     }
-            //     if(this.app.mode == App.Modes.SCRIPT) {
-            //         this.app.scriptApp.ECAcontroller.reset(true);
-            //         this.app.animationRecorder.manageCapture();
+            //     if(this.performs.mode == Performs.Modes.SCRIPT) {
+            //         this.performs.scriptApp.ECAcontroller.reset(true);
+            //         this.performs.animationRecorder.manageCapture();
             //         this.createCameraPanel();
             //     }
             //     else { 
             //         this.showRecordingDialog(() => {
-            //             this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+            //             this.performs.animationRecorder.manageMultipleCapture(this.performs.keyframeApp);
             //             this.createCameraPanel();
             //         });
             //     }
-            // }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.app.animationRecorder.isRecording ? "-playing" : "")});
+            // }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.performs.animationRecorder.isRecording ? "-playing" : "")});
 
             p.addText(null, "Select cameras to be recorded:", null, {disabled: true});
             p.sameLine();
-            p.addCheckbox("1", this.app.cameras[0].record, (value, event) => {
-                this.app.cameras[0].record = value;
+            p.addCheckbox("1", this.performs.cameras[0].record, (value, event) => {
+                this.performs.cameras[0].record = value;
             });
-            p.addCheckbox("2", this.app.cameras[1].record, (value, event) => {
-                this.app.cameras[1].record = value;
+            p.addCheckbox("2", this.performs.cameras[1].record, (value, event) => {
+                this.performs.cameras[1].record = value;
             });
-            p.addCheckbox("3", this.app.cameras[2].record, (value, event) => {
-                this.app.cameras[2].record = value;
+            p.addCheckbox("3", this.performs.cameras[2].record, (value, event) => {
+                this.performs.cameras[2].record = value;
             });
             p.endLine();
 
             p.addTitle("Automatic exportation")
-            p.addCheckbox("Export as ZIP", this.app.animationRecorder.exportZip, (v) => {
-                this.app.animationRecorder.exportZip = v;
+            p.addCheckbox("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
+                this.performs.animationRecorder.exportZip = v;
                 this.createCameraPanel();            
             })
         }
@@ -613,13 +613,13 @@ class AppGUI {
         p.clear();
         p.branch( "Lights", { icon: "fa-solid fa-lightbulb"} );
 
-        p.addColor("Color", "#" + this.app.dirLight.color.getHexString(), (value, event) => {
-            this.app.dirLight.color.set(value);
+        p.addColor("Color", "#" + this.performs.dirLight.color.getHexString(), (value, event) => {
+            this.performs.dirLight.color.set(value);
         });
         
-        const position = [this.app.dirLight.position.x , this.app.dirLight.position.y, this.app.dirLight.position.z];
+        const position = [this.performs.dirLight.position.x , this.performs.dirLight.position.y, this.performs.dirLight.position.z];
         p.addVector3("Position", position, (v) => {
-            this.app.dirLight.position.set(v[0], v[1], v[2]);
+            this.performs.dirLight.position.set(v[0], v[1], v[2]);
         }, {min: -10, max: 10})
     }
 
@@ -869,9 +869,9 @@ class AppGUI {
                 class: "relative left",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.scriptApp.mood = "Neutral";
-                        this.app.scriptApp.ECAcontroller.reset();
+                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                        this.performs.scriptApp.mood = "Neutral";
+                        this.performs.scriptApp.ECAcontroller.reset();
                         this.createSettingsPanel();
                     }
                 }
@@ -884,27 +884,40 @@ class AppGUI {
                 class: "relative",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
-                    if(!this.app.animationRecorder.isRecording) {
+                    if(!this.performs.animationRecorder.isRecording) {
                         if(this.settingsActive || this.cameraActive || this.lightsActive) {
                             this.mainArea._moveSplit(-100);
                         }
                         this.mainArea.extend();
                         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
                     }
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.scriptApp.ECAcontroller.reset(true);
-                        this.app.animationRecorder.manageCapture();
-                        this.createCameraPanel();
+                    const recordBtn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Record video']");
+
+                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                        this.performs.scriptApp.ECAcontroller.reset(true);
+                        setTimeout(() => {
+                            this.performs.animationRecorder.manageCapture();
+                            this.createCameraPanel();
+                            if(recordBtn) {
+                                if(this.performs.animationRecorder.isRecording) {
+                                    recordBtn.classList.remove("floating-button");
+                                    recordBtn.classList.add("floating-button-playing");
+                                }
+                                else {
+                                    recordBtn.classList.remove("floating-button-playing");
+                                    recordBtn.classList.add("floating-button");
+                                }
+                            }
+                        }, 100)
                     }
                     else { 
                         this.showRecordingDialog(() => {
-                            this.app.animationRecorder.manageMultipleCapture(this.app.keyframeApp);
+                            this.performs.animationRecorder.manageMultipleCapture(this.performs.keyframeApp);
                             this.createCameraPanel();
                         });
                     }
-                    const recordBtn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Record video']");
                     if(recordBtn) {
-                        if(this.app.animationRecorder.isRecording) {
+                        if(this.performs.animationRecorder.isRecording) {
                             recordBtn.classList.remove("floating-button");
                             recordBtn.classList.add("floating-button-playing");
                         }
@@ -913,6 +926,7 @@ class AppGUI {
                             recordBtn.classList.add("floating-button");
                         }
                     }
+                    
                 }
             },
             {
@@ -920,12 +934,12 @@ class AppGUI {
                 icon: "fa fa-play",
                 class: "large",
                 callback: () => {
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.scriptApp.replay();
+                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                        this.performs.scriptApp.replay();
                     }
-                    else if(this.app.mode == App.Modes.KEYFRAME) {
-                        if(Object.keys(this.app.keyframeApp.loadedAnimations).length) {
-                            this.app.keyframeApp.changePlayState(true);
+                    else if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                        if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
+                            this.performs.keyframeApp.changePlayState(true);
                             this.changePlayButtons(true);
                         }
                         else {
@@ -939,11 +953,11 @@ class AppGUI {
                 icon: "fa fa-stop",
                 class: "large",
                 callback: () => {
-                    if(this.app.mode == App.Modes.SCRIPT) {
-                        this.app.scriptApp.ECAcontroller.reset(true);
+                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                        this.performs.scriptApp.ECAcontroller.reset(true);
                     }
-                    else if(this.app.mode == App.Modes.KEYFRAME) {
-                        this.app.keyframeApp.changePlayState(false);
+                    else if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                        this.performs.keyframeApp.changePlayState(false);
                     }
                     this.changePlayButtons(false);
                 }
@@ -967,7 +981,7 @@ class AppGUI {
         if(resetBtn) {
             resetBtn.classList.add("floating-button");
         }
-        if(this.app.mode != App.Modes.SCRIPT) {
+        if(this.performs.mode != Performs.Modes.SCRIPT) {
             resetBtn.classList.add("hidden");
         }
     }
@@ -988,22 +1002,22 @@ class AppGUI {
     }
 
     onChangeMode(mode) {
-        if(mode == App.Modes.SCRIPT) {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.scriptApp.mood.toUpperCase(), amount: this.app.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
+        if(mode == Performs.Modes.SCRIPT) {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
             
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
             if(resetBtn) {
                 resetBtn.classList.remove("hidden");
             }
             this.changePlayButtons(false);
-            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
         }
-        else if(mode == App.Modes.KEYFRAME) {
+        else if(mode == Performs.Modes.KEYFRAME) {
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
             if(resetBtn) {
                 resetBtn.classList.add("hidden");
             }           
-            this.changePlayButtons( this.app.keyframeApp.playing);
+            this.changePlayButtons( this.performs.keyframeApp.playing);
         }
         else {
             const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
@@ -1018,7 +1032,7 @@ class AppGUI {
         
         this.bmlGui = panel;
 
-        if (!this.app.currentCharacter.config) {
+        if (!this.performs.currentCharacter.config) {
             this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true});
             this.bmlGui.addButton(null, "Edit avatar", () => { 
                 this.createEditAvatarDialog();                
@@ -1026,20 +1040,20 @@ class AppGUI {
             return;
         }
                 
-        this.bmlGui.addNumber("Speed", this.app.scriptApp.speed, (value, event) => {
-            // this.app.speed = Math.pow( Math.E, (value - 1) );
-            this.app.scriptApp.speed = value;
+        this.bmlGui.addNumber("Speed", this.performs.scriptApp.speed, (value, event) => {
+            // this.performs.speed = Math.pow( Math.E, (value - 1) );
+            this.performs.scriptApp.speed = value;
         }, { min: 0.1, max: 2, step: 0.01});
 
         this.bmlGui.sameLine();
         this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
-            this.app.scriptApp.mood = "Neutral";
-            this.app.scriptApp.ECAcontroller.reset();
+            this.performs.scriptApp.mood = "Neutral";
+            this.performs.scriptApp.ECAcontroller.reset();
             refresh();
         }, {icon: "fa-solid fa-person", width: "40px", class:"floating-button"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
-            this.app.scriptApp.replay();         
+            this.performs.scriptApp.replay();         
             this.changePlayButtons(false);    
         }, {icon: "fa-solid fa-play"});
 
@@ -1087,7 +1101,7 @@ class AppGUI {
                     
                     if ( !msg.data.length ){ return; }
 
-                    this.app.scriptApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
+                    this.performs.scriptApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
                 });
 
                 p.addButton(null, "Edit on Animics", () => {
@@ -1102,7 +1116,7 @@ class AppGUI {
 
                                 this.animics.app.global.createApp({mode:"bml"});
                                 this.animics.app.global.app.editor.realizer = window;
-                                this.animics.app.global.app.editor.performsApp = this.app;
+                                this.animics.app.global.app.editor.performsApp = this.performs;
                             }
 
                             let msg = {
@@ -1167,7 +1181,7 @@ class AppGUI {
     
                 p.addButton(null, "Send", () => {
                     let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
-                    this.app.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
+                    this.performs.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                 });
     
             }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true});
@@ -1175,14 +1189,14 @@ class AppGUI {
 
         });
 
-        let languages = Object.keys(this.app.scriptApp.languageDictionaries);
+        let languages = Object.keys(this.performs.scriptApp.languageDictionaries);
         let glossesDictionary = {};
         this.language = languages[0];
 
         for(let i = 0; i < languages.length; i++) {
             let lang = languages[i];
             glossesDictionary[lang] = [];
-            for(let glossa in this.app.scriptApp.languageDictionaries[lang].glosses) {
+            for(let glossa in this.performs.scriptApp.languageDictionaries[lang].glosses) {
                 glossesDictionary[lang].push(glossa.replaceAll(".sigml", ""));
             }
         }
@@ -1199,8 +1213,8 @@ class AppGUI {
                     const area = new LX.Area({ height: "85%" });
                     p.attach( area.root );
                     
-                    p.addDropdown("Language", languages, this.app.scriptApp.selectedLanguage, (value, event) => {
-                        this.app.scriptApp.selectedLanguage = value;
+                    p.addDropdown("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
+                        this.performs.scriptApp.selectedLanguage = value;
                         p.refresh();
                     } );
 
@@ -1225,7 +1239,7 @@ class AppGUI {
                             glosses[i] = { type: "glossName", data: glosses[i].toUpperCase() };
                         }
                         if(!glosses.length) alert("Please, write or select at least one gloss");
-                        this.app.scriptApp.processMessageRawBlocks(glosses);    
+                        this.performs.scriptApp.processMessageRawBlocks(glosses);    
                     });
                 }
                 p.refresh();
@@ -1237,43 +1251,43 @@ class AppGUI {
         this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"fa-solid fa-dice", nameWidth: "200px" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
             if (!this.randomSignAmount ){ return; }
-            let k = Object.keys( this.app.scriptApp.languageDictionaries[this.app.scriptApp.selectedLanguage]["glosses"] );
+            let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
             
             let m = [];
             for( let i = 0; i < this.randomSignAmount; ++i ){
                 m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
             }
             console.log( JSON.parse(JSON.stringify(m)));
-            this.app.scriptApp.processMessageRawBlocks( m );
+            this.performs.scriptApp.processMessageRawBlocks( m );
         }, { width: "40px", icon: "fa-solid fa-share"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
-        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.app.scriptApp.mood, (value, event) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.app.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
-            this.app.scriptApp.mood = value;
-            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
+        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.performs.scriptApp.mood, (value, event) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
+            this.performs.scriptApp.mood = value;
+            this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
         });
 
-        this.bmlGui.addNumber("Mood intensity", this.app.scriptApp.moodIntensity, (v) => {
-            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.app.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
-            this.app.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
-            this.app.scriptApp.moodIntensity = v;
+        this.bmlGui.addNumber("Mood intensity", this.performs.scriptApp.moodIntensity, (v) => {
+            let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
+            this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            this.performs.scriptApp.moodIntensity = v;
         }, {min: 0.1, max: 1.0, step: 0.01})
 
-        this.bmlGui.addCheckbox("Apply idle animation", this.app.scriptApp.applyIdle, (v) => {
-            this.app.scriptApp.applyIdle = v;            
+        this.bmlGui.addCheckbox("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
+            this.performs.scriptApp.applyIdle = v;            
             if(refresh) {
                 refresh();
             }
         }, {nameWidth: "115px"});
-        if(this.app.scriptApp.applyIdle) {
+        if(this.performs.scriptApp.applyIdle) {
    
-            this.bmlGui.addDropdown("Animations", Object.keys(this.app.scriptApp.loadedIdleAnimations), this.app.scriptApp.currentIdle, (v) => {
-                this.app.scriptApp.bindAnimationToCharacter(v, this.app.currentCharacter.model.name);
+            this.bmlGui.addDropdown("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
+                this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
             })
-            this.bmlGui.addNumber("Intensity", this.app.scriptApp.intensity, (v) => {
-                this.app.scriptApp.setIntensity(v);
+            this.bmlGui.addNumber("Intensity", this.performs.scriptApp.intensity, (v) => {
+                this.performs.scriptApp.setIntensity(v);
             }, {min: 0.1, max: 1.0, step: 0.01})
         }
         this.bmlGui.merge(); // random signs
@@ -1284,15 +1298,15 @@ class AppGUI {
       
         this.keyframeGui = panel;
   
-        this.keyframeGui.addNumber("Speed", this.app.keyframeApp.speed, (value, event) => {
-            // this.app.speed = Math.pow( Math.E, (value - 1) );
-            this.app.keyframeApp.speed = value;
+        this.keyframeGui.addNumber("Speed", this.performs.keyframeApp.speed, (value, event) => {
+            // this.performs.speed = Math.pow( Math.E, (value - 1) );
+            this.performs.keyframeApp.speed = value;
         }, { min: -2, max: 2, step: 0.01});
 
         this.keyframeGui.sameLine();
-        const animations = Object.keys(this.app.keyframeApp.loadedAnimations);
-        this.keyframeGui.addDropdown("Animation", animations, this.app.keyframeApp.currentAnimation, (v) => {
-            this.app.keyframeApp.onChangeAnimation(v);
+        const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);
+        this.keyframeGui.addDropdown("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
+            this.performs.keyframeApp.onChangeAnimation(v);
         }, {nameWidth:"70px"});
 
         const fileinput = this.keyframeGui.addFile("Animation File", (v, e) => {
@@ -1300,10 +1314,10 @@ class AppGUI {
             if(!files.length) {
                 return;
             }
-            this.app.keyframeApp.loadFiles(files, (animations)=> {
+            this.performs.keyframeApp.loadFiles(files, (animations)=> {
                 
                 if(animations.length) {
-                    this.app.changeMode(App.Modes.KEYFRAME);
+                    this.performs.changeMode(Performs.Modes.KEYFRAME);
                     if(refresh) {
                         refresh();
                     }
@@ -1322,9 +1336,9 @@ class AppGUI {
            
         }, { icon: "fa fa-upload", width: "40px", className:"no-padding"});
 
-        this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.app.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
-            this.app.keyframeApp.changePlayState();
-            this.changePlayButtons(this.app.keyframeApp.playing );
+        this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.performs.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
+            this.performs.keyframeApp.changePlayState();
+            this.changePlayButtons(this.performs.keyframeApp.playing );
             if(refresh) {
                 refresh();
             }
@@ -1332,34 +1346,34 @@ class AppGUI {
         this.keyframeGui.endLine(); 
 
         if(animations.length > 1) {
-            this.keyframeGui.addNumber("Blend time", this.app.keyframeApp.blendTime, (v) => {
-                this.app.keyframeApp.blendTime = v;
+            this.keyframeGui.addNumber("Blend time", this.performs.keyframeApp.blendTime, (v) => {
+                this.performs.keyframeApp.blendTime = v;
             }, {min: 0.0, step: 0.01});
         }
 
         this.keyframeGui.branch("Retargeting")
            
-        this.keyframeGui.addCheckbox("Source embedded transforms", this.app.keyframeApp.srcEmbedWorldTransforms, (v) => {
-            this.app.keyframeApp.srcEmbedWorldTransforms = v;
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
+        this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
+            this.performs.keyframeApp.srcEmbedWorldTransforms = v;
+            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
         },{nameWidth: "auto"})
             
-        this.keyframeGui.addCheckbox("Target embedded transforms", this.app.keyframeApp.trgEmbedWorldTransforms, (v) => {
-            this.app.keyframeApp.trgEmbedWorldTransforms = v;
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
+        this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
+            this.performs.keyframeApp.trgEmbedWorldTransforms = v;
+            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "auto"})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
-        this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.app.keyframeApp.srcPoseMode], (v) => {
+        this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
     
-            this.app.keyframeApp.srcPoseMode = poseModes.indexOf(v);
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
+            this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
+            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px"});
 
-        this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.app.keyframeApp.trgPoseMode], (v) => {
+        this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             
-            this.app.keyframeApp.trgPoseMode = poseModes.indexOf(v);
-            this.app.keyframeApp.onChangeAnimation(this.app.keyframeApp.currentAnimation, true);
+            this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
+            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px"});
     }
 
@@ -1367,7 +1381,7 @@ class AppGUI {
         const dialog = new LX.Dialog("Record all animations", p => {
 
             let assetData = [];
-            let animations = this.app.keyframeApp.loadedAnimations;
+            let animations = this.performs.keyframeApp.loadedAnimations;
             for (let animationName in animations) {
                 let animation = animations[animationName];
                 animation.record = animation.record === undefined ? true : animation.record;
@@ -1582,7 +1596,7 @@ class AppGUI {
                 }
                 
                 const editConfigBtn = panel.addButton(null, "Edit config file", () => {
-                    this.app.openAtelier(name, model, config, true, rotation);
+                    this.performs.openAtelier(name, model, config, true, rotation);
 
                 }, {icon: "fa fa-user-gear", width: "40px"});
                 
@@ -1623,12 +1637,12 @@ class AppGUI {
             
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
-                this.app.openAtelier(name, model, config, true, rotation);
+                this.performs.openAtelier(name, model, config, true, rotation);
             })
             panel.addButton(null, "Upload", () => {
                 if (name && model) {
                     if (this.avatarOptions[name]) { LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); return; }
-                    let thumbnail = AppGUI.THUMBNAIL;
+                    let thumbnail = GUI.THUMBNAIL;
                     if( model.includes('models.readyplayer.me') ) {
                         model+= '?pose=T&morphTargets=ARKit&lod=1';
                         thumbnail =  "https://models.readyplayer.me/" + name + ".png?background=68,68,68";
@@ -1671,7 +1685,7 @@ class AppGUI {
     }
 
     editAvatar(name, options = {}) {
-        const data = this.app.currentCharacter;
+        const data = this.performs.currentCharacter;
         const callback = options.callback;
         let config = data.config;
         let rotation = 0;
@@ -1739,7 +1753,7 @@ class AppGUI {
 
             if(config) {
                 panel.addButton(null, "Edit config file", () => {
-                    this.app.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                  
+                    this.performs.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                  
                 }, {icon: "fa fa-user-gear", width: "40px"});
             }
             panel.addComboButtons(null, [
@@ -1774,7 +1788,7 @@ class AppGUI {
             
             panel.sameLine(2);
             panel.addButton(null, (config ? "Edit": "Create") + " Config File", () => {
-                this.app.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                                       
+                this.performs.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                                       
             })
             panel.addButton(null, "Update", () => {
                 if (name) {
@@ -1859,16 +1873,16 @@ class AppGUI {
                 if(isAvatar) {
                     this.uploadAvatar((value, config) => {
                 
-                        if ( !this.app.loadedCharacters[value] ) {
+                        if ( !this.performs.loadedCharacters[value] ) {
                             $('#loading').fadeIn(); //hide();
                             let modelFilePath = this.avatarOptions[value][0]; 
                             let configFilePath = this.avatarOptions[value][1]; 
                             let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
-                            this.app.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
-                                this.app.changeAvatar(value);
+                            this.performs.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
+                                this.performs.changeAvatar(value);
                                 this.createAvatarsPanel();
-                                if(this.app.currentCharacter.config) {
-                                    this.app.changeMode(App.Modes.SCRIPT);
+                                if(this.performs.currentCharacter.config) {
+                                    this.performs.changeMode(Performs.Modes.SCRIPT);
                                     
                                     const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
                                     if(resetBtn) {
@@ -1884,7 +1898,7 @@ class AppGUI {
                         } 
         
                         // use controller if it has been already loaded in the past
-                        this.app.changeAvatar(value);
+                        this.performs.changeAvatar(value);
                         this.createAvatarsPanel();
                     });
                     
@@ -1910,10 +1924,10 @@ class AppGUI {
                 }
                 else {
                     $("#loading").fadeIn();
-                    this.app.keyframeApp.loadFiles(gltfs, (files) => {
+                    this.performs.keyframeApp.loadFiles(gltfs, (files) => {
                         $("#loading").fadeOut();
                         if(files.length) {
-                            this.app.changeMode(App.Modes.KEYFRAME);
+                            this.performs.changeMode(Performs.Modes.KEYFRAME);
                             this.createSettingsPanel();
                         }
                         else {
@@ -1924,36 +1938,36 @@ class AppGUI {
             });            
         }
         else if(config) {
-            let name = this.app.currentCharacter.model.name;
+            let name = this.performs.currentCharacter.model.name;
             const reader = new FileReader();
             reader.readAsText( config );
             reader.onload = (event) => {
                 const data = JSON.parse(event.currentTarget.result);
                 if(data.boneMap) {
                     this.avatarOptions[name][1] = config._filename;
-                    this.app.currentCharacter.config = data;
-                    this.app.scriptApp.onLoadAvatar(this.app.currentCharacter.model, this.app.currentCharacter.config, this.app.currentCharacter.skeleton);
-                    this.app.currentCharacter.skeleton.pose();
-                    this.app.scriptApp.ECAcontroller.reset();                        
-                    this.app.changeMode(App.Modes.SCRIPT);
+                    this.performs.currentCharacter.config = data;
+                    this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
+                    this.performs.currentCharacter.skeleton.pose();
+                    this.performs.scriptApp.ECAcontroller.reset();                        
+                    this.performs.changeMode(Performs.Modes.SCRIPT);
                     if(this.settingsActive) {
                         this.createSettingsPanel();             
                     }
                 }
                 else {
-                    this.app.setConfiguration(data);
+                    this.performs.setConfiguration(data);
                 }
             }                
         }
 
         if(bml) {
-            if(config || this.app.currentCharacter.config) {
+            if(config || this.performs.currentCharacter.config) {
                 const extension = bml.name.substr(bml.name.lastIndexOf(".") + 1).toLowerCase();
                 const reader = new FileReader();
                 reader.readAsText( bml );
                 reader.onload = (event) => {
                     const data = event.currentTarget.result;
-                    this.app.scriptApp.onMessage([{type: extension, data: data}], (result) => {
+                    this.performs.scriptApp.onMessage([{type: extension, data: data}], (result) => {
                         if(extension == 'sigml') {
                             this.setSIGMLInputText( data );
                         }
@@ -1974,10 +1988,10 @@ class AppGUI {
         }
         if(animations.length) {
             $("#loading").fadeIn();
-            this.app.keyframeApp.loadFiles(animations, (files) => {
+            this.performs.keyframeApp.loadFiles(animations, (files) => {
                 $("#loading").fadeOut();
                 if(files.length) {
-                    this.app.changeMode(App.Modes.KEYFRAME);
+                    this.performs.changeMode(Performs.Modes.KEYFRAME);
                     this.createSettingsPanel();
                 }
                 else {
@@ -2064,7 +2078,7 @@ class AppGUI {
                     resultSpeechtext += strSplit[j]; // everything before are phonemes
                     j++;
                     if ( j < ( strSplit.length - 1 ) ){ // word to translate
-                        resultSpeechtext += this.app.scriptApp.wordsToArpa( strSplit[j], "NGT" );
+                        resultSpeechtext += this.performs.scriptApp.wordsToArpa( strSplit[j], "NGT" );
                     }
                     j++;
                 }
@@ -2139,55 +2153,55 @@ class AppGUI {
     showExportDialog(callback) {
 
         // Avatar URL
-        const currentCharacterInfo = this.avatarOptions[this.app.currentCharacter.model.name];
+        const currentCharacterInfo = this.avatarOptions[this.performs.currentCharacter.model.name];
         let avatar = currentCharacterInfo[0];
         avatar = avatar.split('?')[0];
         
         // Background color
-        let color = this.app.getBackPlaneColour();
+        let color = this.performs.getBackPlaneColour();
         if(typeof(color) == 'string') {
             color = color.replace("#", "0x");
         }
 
         // Background type 
-        const backgrounds = Object.keys(App.Backgrounds);
+        const backgrounds = Object.keys(Performs.Backgrounds);
         
         // Photocall image
-        let img = this.app.logo;
+        let img = this.performs.logo;
         if(typeof(img) != 'string') {
             img = img.src;
         }
 
         const toExport = {
             avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : true, text: "Character file URL", value: avatar},
-            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.app.getClothesColour()},
+            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColour()},
             color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
-            background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.app.background]},
+            background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
             img         : {state: localStorage.getItem("img") != undefined ? JSON.parse(localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},
-            offset      : {state: localStorage.getItem("offset") != undefined ? JSON.parse(localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.app.repeatOffset},
-            light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.app.dirLight.color.getHexString()},
-            lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.app.dirLight.position.x + ',' + this.app.dirLight.position.y + ',' + this.app.dirLight.position.z},
-            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.app.cameraMode ?? false},
-            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.app.showControls},
+            offset      : {state: localStorage.getItem("offset") != undefined ? JSON.parse(localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.performs.repeatOffset},
+            light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
+            lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
+            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.performs.cameraMode ?? false},
+            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
         }
 
         const toExportScript = {
             config      : {state: localStorage.getItem("config") != undefined ? JSON.parse(localStorage.getItem("config")) : (currentCharacterInfo[1] ?? false), text: "Configuration file URL", value: currentCharacterInfo[1]},
-            applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? JSON.parse(localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.app.scriptApp.applyIdle},
+            applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? JSON.parse(localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.performs.scriptApp.applyIdle},
         }
 
-        let hasAnimations = this.app.keyframeApp.currentAnimation ?? false;
+        let hasAnimations = this.performs.keyframeApp.currentAnimation ?? false;
         const toExportKeyframe = {
-            srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.app.keyframeApp.srcEmbedWorldTransforms},
-            trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.app.keyframeApp.trgEmbedWorldTransforms},
-            srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.app.keyframeApp.srcPoseMode},
-            trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.app.keyframeApp.trgPoseMode},
+            srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.performs.keyframeApp.srcEmbedWorldTransforms},
+            trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.performs.keyframeApp.trgEmbedWorldTransforms},
+            srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.performs.keyframeApp.srcPoseMode},
+            trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
         }
 
         const toExportTransform = {
-            position: {state: localStorage.getItem("position") != undefined ? JSON.parse(localStorage.getItem("position")) : false, text: "Character position", value: this.app.currentCharacter.model.position.x + ',' + this.app.currentCharacter.model.position.y + ',' + this.app.currentCharacter.model.position.z},
-            rotation: {state: localStorage.getItem("rotation") != undefined ? JSON.parse(localStorage.getItem("rotation")) : false, text: "Character rotation", value: this.app.currentCharacter.model.quaternion.x + ',' + this.app.currentCharacter.model.quaternion.y + ',' + this.app.currentCharacter.model.quaternion.z + ',' + this.app.currentCharacter.model.quaternion.w},
-            scale:    {state: localStorage.getItem("scale") != undefined ? JSON.parse(localStorage.getItem("scale")) : false, text: "Character scale", value: this.app.currentCharacter.model.scale.x}
+            position: {state: localStorage.getItem("position") != undefined ? JSON.parse(localStorage.getItem("position")) : false, text: "Character position", value: this.performs.currentCharacter.model.position.x + ',' + this.performs.currentCharacter.model.position.y + ',' + this.performs.currentCharacter.model.position.z},
+            rotation: {state: localStorage.getItem("rotation") != undefined ? JSON.parse(localStorage.getItem("rotation")) : false, text: "Character rotation", value: this.performs.currentCharacter.model.quaternion.x + ',' + this.performs.currentCharacter.model.quaternion.y + ',' + this.performs.currentCharacter.model.quaternion.z + ',' + this.performs.currentCharacter.model.quaternion.w},
+            scale:    {state: localStorage.getItem("scale") != undefined ? JSON.parse(localStorage.getItem("scale")) : false, text: "Character scale", value: this.performs.currentCharacter.model.scale.x}
         }
 
         const dialog = new LX.Dialog("Export configuration", p => {
@@ -2459,7 +2473,7 @@ class AppGUI {
     }
 }
 
-export { AppGUI };
+export { GUI };
 
 LX.setThemeColor("global-selected", "#6200EA");
 LX.setThemeColor("global-selected-light", "#bb86fc");
