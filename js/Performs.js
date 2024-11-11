@@ -37,6 +37,7 @@ class Performs {
         this.speed = 1;
         this.backPlane = null;
         this.avatarShirt = null;
+        this.autoplay = false;
 
         this.mode = Performs.Modes.SCRIPT;
         this.scriptApp = new ScriptApp();        
@@ -185,6 +186,9 @@ class Performs {
                     (animations) => {
                         this.keyframeApp.currentAnimation = animations[0];
                         this.changeMode(Performs.Modes.KEYFRAME);
+                        if(this.autoplay) {
+                            this.keyframeApp.changePlayState(true);
+                        }
                         if(settings.onReady) {
                             settings.onReady();
                         }
@@ -196,6 +200,9 @@ class Performs {
                     (results) => {
                         this.scriptApp.onMessage(results);
                         this.changeMode(Performs.Modes.SCRIPT);
+                        if(this.autoplay) {
+                            this.scriptApp.replay();
+                        }
                         if(settings.onReady) {
                             settings.onReady();
                         }
@@ -213,6 +220,14 @@ class Performs {
             rotation = rotation.split(',');            
         }
         
+        if(settings.autoplay != undefined) {
+            this.autoplay = settings.autoplay;
+        }
+        
+        if(settings.crossfade != undefined) {
+            this.keyframeApp.useCrossFade = settings.crossfade;
+        }
+
         if(settings.srcEmbeddedTransforms != undefined) {
             this.keyframeApp.srcEmbedWorldTransforms = settings.srcEmbeddedTransforms;
         }
@@ -395,6 +410,9 @@ class Performs {
         }
         if(this.mode == Performs.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
             this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation);
+            if(this.autoplay) {
+                this.keyframeApp.changePlayState(true);
+            }
         }
     }
 
@@ -906,12 +924,17 @@ class Performs {
         if ( Array.isArray(data) ){
             this.changeMode(Performs.Modes.SCRIPT);
             this.scriptApp.onMessage(data, (processedData) => {
+                
                 if(this.gui) {
                     this.gui.setBMLInputText( 
                         JSON.stringify(this.scriptApp.msg.data, function(key, val) {
                             return val.toFixed ? Number(val.toFixed(3)) : val;
                         }) 
                     );
+                }
+                
+                if(this.autoplay) {
+                    this.scriptApp.replay();
                 }
             }); 
             return;
@@ -920,8 +943,12 @@ class Performs {
         if(data.type == 'bvh' || data.type == 'bvhe' || data.type == "glb" || data.type == "gltf" || data.type == "fbx") {
             this.changeMode(Performs.Modes.KEYFRAME);
             this.keyframeApp.onMessage(data, () => {
+                
                 if(this.gui) {
                     this.gui.refresh();
+                }
+                if(this.autoplay) {
+                    this.keyframeApp.changePlayState(true);
                 }
             });
         }

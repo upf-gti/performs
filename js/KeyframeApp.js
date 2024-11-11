@@ -28,6 +28,7 @@ class KeyframeApp {
         this.playing = false;
         this.speed = 1.0;
         this.blendTime = 1.0;
+        this.useCrossFade = false;
 
         // For retargeting
         this.srcPoseMode = AnimationRetargeting.BindPoseModes.DEFAULT; 
@@ -109,7 +110,7 @@ class KeyframeApp {
 
         else {
             bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
-            if(this.mixer._actions.length) {
+            if(this.mixer._actions.length && this.useCrossFade) {
                 let action = this.mixer.clipAction(bindedAnim.mixerBodyAnimation);
                 action.setEffectiveWeight(1.0);
                 action.play();
@@ -123,8 +124,11 @@ class KeyframeApp {
                 }
             }
             else {
-                // if(!(mixer._actions.length && mixer._actions[0].name == animationName)) {
-                // }
+                
+                while(this.mixer._actions.length){
+                    this.mixer.uncacheClip(this.mixer._actions[0]._clip); // removes action
+                }
+            
                 this.mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
                 this.mixer.update(0);
                 this.currentAnimation = animationName;
@@ -201,7 +205,7 @@ class KeyframeApp {
                 }
                 this.currentAnimation = processedAnimationNames[0];
             }
-
+            
             if(callback) {
                 callback(processedAnimationNames);
             }
@@ -240,13 +244,34 @@ class KeyframeApp {
                     const reader = new FileReader();
                     reader.onload = () => {         
                         let data = null;
-                            data = this.BVHLoader.parseExtended(reader.result);
-                            this.loadBVHAnimation( file.name, data );
+                        data = this.BVHLoader.parseExtended(reader.result);
+                        this.loadBVHAnimation( file.name, data );
 
                         resolve( file.name ); // this is what is returned by promise.all.then
                     }
                     let data = file.data ?? file;
-                    reader.readAsText(data);
+                   
+                    if(!file.data && file.name) {
+                        fetch(file.name)
+                        .then( (response) => {
+                            if (response.ok) {
+                            response.text().then( (text) => {
+                                data = this.BVHLoader.parseExtended(text);
+                                this.loadBVHAnimation( file.name, data );
+        
+                                resolve( file.name ); // this is what is returned by promise.all.then
+                            });
+                            } else {
+                                console.log("Not found");
+                            }
+                        })
+                        .catch(function (error) {
+                            console.log("Error:" + error.message);
+                        });        
+                    } 
+                    else {
+                        reader.readAsText(data);
+                    }
                 });
             }
             else {
@@ -284,8 +309,9 @@ class KeyframeApp {
                     }
                     
                     let data = file.data ?? file;
-                    if(typeof(data) == 'string') {
-                        loadData(data);
+
+                    if(!file.data && file.name) {
+                        loadData(file.name);
                     }
                     else {
                         const reader = new FileReader();

@@ -17,13 +17,16 @@
 |  [lightpos](#lightpos-string)                  | String  | Direct light position                                                                                                       |
 |  [restrictView](#restrictview-boolean)              | Boolean | Restrict camera controls                                                                                                    |
 |  [controls](#controls-boolean)                  | Boolean | Show GUI controls                                                                                                           |
+|  [autoplay](#autoplay)                 | Boolean | "Automatically play the animation after loading                                                                                         |
 |  [applyIdle](#applyidle-boolean)                 | Boolean | Play idle animation for Script mode                                                                                         |
 |  [srcEmbeddedTransforms](#srcembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of source skeleton animation for retargeting     |
 |  [trgEmbeddedTransforms](#trgembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
 |  [srcReferencePose](#srcreferencepose-number)          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
 |  [trgReferencePose](#trgreferencepose-number)          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
-|  [animations](#animations)                    | Array  | Array of objects with animations' information                                                                                                          |
-|  [scripts](#scripts)                    | Array  | Array of objects with scripts' information or instructions                                                                                                          |
+|  [animations](#animations-array-of-objects)                    | Array  | Array of objects with animations' information (Keyframe mode)                                                                                                         |
+|  [crossfade](#crossfade-boolean)                    | Boolean  | Concatenate multiple keyframe animations and apply blending between them                                                                                                          |
+|  [blendTime](#blendtime-float)                    | Float  | Time inverval between animations when _crossfade_ is _true_                                                                                                          |
+|  [scripts](#scripts-array-of-objects)                    | Array  | Array of objects with scripts' information or instructions  (Script mode)                                                                                                        |
 |  [onReady]()                    | Function  | Callback function triggered after animations/scripts are loaded       
 
 ### Expected values
@@ -129,6 +132,12 @@ Toogle GUI controls visibility.
 - **`true`** - Show GUI (default).
 - **`false`** - Hide GUI.
 
+#### autoplay (Boolean)
+"Automatically play the animation after loading
+##### Expected values
+- **`true`** - Play last loaded animation.
+- **`false`** - Manually play animations.
+
 #### applyIdle (Boolean)
 Play Idle animation as a base for Script animation mode.
 ##### Expected values
@@ -161,19 +170,30 @@ Pose of the target skeleton that will be used as the reference pose for the reta
 - **`1`** - [Current] Skeleton's current pose.
 - **`2`** - [Tpose] Computes a Tpose from the skeleton's actual bind pose.
 
-#### animations
+#### animations (Array of objects)
 Array of data with keyframe animations' information. _[{name: "", data: ""}]_
-
-##### Expected values (Array of objects)
-
+##### Expected values 
 Object data:
 
 - _**`name`**_: **`'./data/animations/myAnimation.glb'`**
-- _**`data`**_: **`'./data/animations/myAnimation.glb'`** - Data can be an URL or an already parsed data. Only _glTF_, _BVH_ and _FBX_ formats are supported.
+- _**`data`**_: **`{}`** - Optional. Parsed data as an Object. Only _glTF_, _BVH_ and _FBX_ formats are supported.
 
+#### crossfade (Boolean)
+Concatenate multiple keyframe animations and apply blending between them.
+##### Expected values 
+- **`true`** -  Wait until animation finishes and blend to the next one when selected
+- **`false`** -  Overwrite the current animation with the new selected animation (default)
 
-#### scripts
+#### blendTime (Float)
+Animation blending duration time.
+##### Expected values 
+-- min: **`0`**
+>[!IMPORTANT]
+> Use a decimal point as the seperator.
+
+#### scripts (Array of objects)
 Array of data with script animations' information. _[{type: "", name: "", data: ""}]_
+##### Expected values 
 
 - **`type`**: **`'sigml'`** or **`bml`**
 - **`name`**: **`'./data/animations/myAnimation.sigml`** or **`'./data/animations/myAnimation.bml`** - File URL
@@ -187,4 +207,4 @@ Array of data with script animations' information. _[{type: "", name: "", data: 
                     amount: 1,
                     lexeme: "ARCH"
                 }]`**
-            } - Array of BML or SiGML Instructions
+            } - Optional. Array of BML or SiGML Instructions

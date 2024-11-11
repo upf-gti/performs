@@ -316,11 +316,11 @@ class GUI {
                                 img.src = objectURL;
                             });
                             } else {
-                            console.log("Respuesta de red OK pero respuesta HTTP no OK");
+                            console.log("Not found");
                             }
                         })
                         .catch(function (error) {
-                            console.log("Hubo un problema con la petición Fetch:" + error.message);
+                            console.log("Error:" + error.message);
                         });        
 
                     }, {nameWidth: "43%", read: true});
@@ -1345,10 +1345,19 @@ class GUI {
         }, { width: "40px", className:"no-padding"});
         this.keyframeGui.endLine(); 
 
-        if(animations.length > 1) {
-            this.keyframeGui.addNumber("Blend time", this.performs.keyframeApp.blendTime, (v) => {
-                this.performs.keyframeApp.blendTime = v;
-            }, {min: 0.0, step: 0.01});
+        if( animations.length > 1 ) {
+            this.keyframeGui.addCheckbox("Blend animations", this.performs.keyframeApp.useCrossFade, (v) => {
+                this.performs.keyframeApp.useCrossFade = v;
+                if(refresh) {
+                    refresh();
+                }
+            },{nameWidth: "auto"})
+    
+            if(this.performs.keyframeApp.useCrossFade) {
+                this.keyframeGui.addNumber("Blend time", this.performs.keyframeApp.blendTime, (v) => {
+                    this.performs.keyframeApp.blendTime = v;
+                }, {min: 0.0, step: 0.01});
+            }
         }
 
         this.keyframeGui.branch("Retargeting")
@@ -2183,6 +2192,7 @@ class GUI {
             lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
             restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.performs.cameraMode ?? false},
             controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
+            autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
         }
 
         const toExportScript = {
@@ -2196,6 +2206,8 @@ class GUI {
             trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.performs.keyframeApp.trgEmbedWorldTransforms},
             srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.performs.keyframeApp.srcPoseMode},
             trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
+            crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.trgPoseMode},
+            blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? JSON.parse(localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
         }
 
         const toExportTransform = {
@@ -2298,6 +2310,12 @@ class GUI {
                 }
                 if(toExport.controls.state) {
                     url.searchParams.append('controls', toExport.controls.value);
+                }
+                if(toExport.autoplay.state) {
+                    url.searchParams.append('autoplay', toExport.autoplay.value);
+                }
+                if(toExport.blendTime.state) {
+                    url.searchParams.append('blendTime', toExport.blendTime.value);
                 }
                 panel.addSeparator();                
                 pp.refresh();

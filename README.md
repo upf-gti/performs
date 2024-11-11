@@ -135,8 +135,8 @@ const options = {
     trgEmbeddedTransforms: true,
     srcReferencePose: 0, // DEFAULT
     trgReferencePose: 2, // TPOSE
-
-    animations = [{name: './data/animations/myAnimation.glb', data: './data/animations/myAnimation.glb'}], // Set keyframe animation files' URL. 'data' can be an already parsed file
+    autoplay: true,
+    animations = [{name: './data/animations/myAnimation.glb', data: null}], // Set keyframe animation files' URL. 'data' can be an already parsed file
     
     onReady = () => { // Function called after loading the application
         // Change to Keyframe mode 
@@ -202,7 +202,6 @@ const options = {
         },
     ],
     applyIdle: true, // Enable Idle animation to blend with recieved instructions
-    
     onReady = () => { // Function called after loading the application
         setTimeout(() => {
             // Play the animation after 1s
