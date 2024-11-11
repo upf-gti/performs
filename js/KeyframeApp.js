@@ -245,21 +245,35 @@ class KeyframeApp {
                     reader.onload = () => {         
                         let data = null;
                         data = this.BVHLoader.parseExtended(reader.result);
-                        this.loadBVHAnimation( file.name, data );
+                        let name = file.name;
+                        if(this.loadedAnimations[name]) {
+                            let filename = file.name.split(".");
+                            filename.pop();
+                            filename.join('.');
+                            name = name + "_"+ filename;
+                        }
+                        this.loadBVHAnimation( name, data );
 
-                        resolve( file.name ); // this is what is returned by promise.all.then
+                        resolve( name ); // this is what is returned by promise.all.then
                     }
                     let data = file.data ?? file;
                    
-                    if(!file.data && file.name) {
-                        fetch(file.name)
+                    if(file.constructor.name != File.name) {
+                        fetch(file.name || file)
                         .then( (response) => {
                             if (response.ok) {
                             response.text().then( (text) => {
                                 data = this.BVHLoader.parseExtended(text);
-                                this.loadBVHAnimation( file.name, data );
+                                let name = file.name;
+                                if(this.loadedAnimations[name]) {
+                                    let filename = file.name.split(".");
+                                    filename.pop();
+                                    filename.join('.');
+                                    name = name + "_"+ filename;
+                                }
+                                this.loadBVHAnimation( name, data );
         
-                                resolve( file.name ); // this is what is returned by promise.all.then
+                                resolve( name ); // this is what is returned by promise.all.then
                             });
                             } else {
                                 console.log("Not found");
@@ -301,8 +315,15 @@ class KeyframeApp {
                             }
 
                             for(let i = 0; i < glb.animations.length; i++) {
-                                this.loadGLTFAnimation(glb.animations[i].name, glb.animations[i], skeleton);
-                                animationsNames.push(glb.animations[i].name);
+                                let name = glb.animations[i].name;
+                                if(this.loadedAnimations[name]) {
+                                    let filename = file.name.split(".");
+                                    filename.pop();
+                                    filename.join('.');
+                                    name = name + "_"+ filename;
+                                }
+                                this.loadGLTFAnimation(name, glb.animations[i], skeleton);
+                                animationsNames.push(name);
                             }
                             resolve( animationsNames ); // this is what is returned by promise.all.then
                         }); 
@@ -310,8 +331,8 @@ class KeyframeApp {
                     
                     let data = file.data ?? file;
 
-                    if(!file.data && file.name) {
-                        loadData(file.name);
+                    if(file.constructor.name != File.name) {
+                        loadData(file.name || file);
                     }
                     else {
                         const reader = new FileReader();
