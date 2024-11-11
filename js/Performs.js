@@ -184,6 +184,7 @@ class Performs {
                 this.keyframeApp.processMessageFiles( settings.animations).then(
                     (animations) => {
                         this.keyframeApp.currentAnimation = animations[0];
+                        this.changeMode(Performs.Modes.KEYFRAME);
                         if(settings.onReady) {
                             settings.onReady();
                         }
@@ -194,6 +195,7 @@ class Performs {
                 this.scriptApp.processMessageFiles(settings.scripts).then(
                     (results) => {
                         this.scriptApp.onMessage(results);
+                        this.changeMode(Performs.Modes.SCRIPT);
                         if(settings.onReady) {
                             settings.onReady();
                         }
@@ -915,7 +917,7 @@ class Performs {
             return;
         } 
                         
-        if(data.type == 'bvh' || data.type == 'bvhe') {
+        if(data.type == 'bvh' || data.type == 'bvhe' || data.type == "glb" || data.type == "gltf" || data.type == "fbx") {
             this.changeMode(Performs.Modes.KEYFRAME);
             this.keyframeApp.onMessage(data, () => {
                 if(this.gui) {

@@ -90,9 +90,8 @@ class KeyframeApp {
         let bindedAnim = null;
         if(needsUpdate) {
             for(let animation in this.loadedAnimations) {
-                if(this.bindedAnimations[animation][this.currentCharacter]) {
-                    this.bindAnimationToCharacter(animation, this.currentCharacter, true);
-                }
+                
+                this.bindAnimationToCharacter(animation, this.currentCharacter, true);                
             }
             bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
             // Remove current animation clip
@@ -198,7 +197,7 @@ class KeyframeApp {
             if( processedAnimationNames) {
                 for(let i = 0; i < processedAnimationNames.length; i++) {
 
-                    this.bindAnimationToCharacter(this.loadedAnimations[processedAnimationNames[i]], this.currentCharacter);
+                    this.bindAnimationToCharacter(processedAnimationNames[i], this.currentCharacter);
                 }
                 this.currentAnimation = processedAnimationNames[0];
             }
@@ -399,6 +398,7 @@ class KeyframeApp {
             let trgPoseMode = this.trgPoseMode;
 
             if(this.trgPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.trgPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
+                currentCharacter.skeleton.pose();
                 const skeleton = applyTPose(currentCharacter.skeleton).skeleton;
                 if(skeleton)
                 {
@@ -431,6 +431,7 @@ class KeyframeApp {
                 bodyAnimation.tracks = tracks;            
                 
                 if(this.srcPoseMode != AnimationRetargeting.BindPoseModes.CURRENT && this.srcPoseMode != AnimationRetargeting.BindPoseModes.DEFAULT) {
+                    animation.skeleton.pose();
                     const skeleton = applyTPose(animation.skeleton).skeleton;
                     if(skeleton)
                     {
