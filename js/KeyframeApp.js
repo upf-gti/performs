@@ -240,11 +240,10 @@ class KeyframeApp {
             }
             let filePromise = null;
             if(type == 'bvh') {
+               
                 filePromise = new Promise(resolve => {
-                    const reader = new FileReader();
-                    reader.onload = () => {         
-                        let data = null;
-                        data = this.BVHLoader.parseExtended(reader.result);
+                    const loadData = (dataFile) => {
+                        let data = this.BVHLoader.parseExtended(dataFile);
                         let name = file.name;
                         if(this.loadedAnimations[name]) {
                             let filename = file.name.split(".");
@@ -253,27 +252,29 @@ class KeyframeApp {
                             name = name + "_"+ filename;
                         }
                         this.loadBVHAnimation( name, data );
-
+    
                         resolve( name ); // this is what is returned by promise.all.then
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = () => {     
+                        loadData(reader.result);    
+                        
                     }
                     let data = file.data ?? file;
                    
-                    if(file.constructor.name != File.name) {
+                    if(file.constructor.name == File.name) {
+                        reader.readAsText(data);
+                    }
+                    else if(file.data && typeof(file.data) == 'string') {
+                        loadData(file.data);
+                    }
+                    else {
                         fetch(file.name || file)
                         .then( (response) => {
                             if (response.ok) {
                             response.text().then( (text) => {
-                                data = this.BVHLoader.parseExtended(text);
-                                let name = file.name;
-                                if(this.loadedAnimations[name]) {
-                                    let filename = file.name.split(".");
-                                    filename.pop();
-                                    filename.join('.');
-                                    name = name + "_"+ filename;
-                                }
-                                this.loadBVHAnimation( name, data );
-        
-                                resolve( name ); // this is what is returned by promise.all.then
+                                loadData(text)
                             });
                             } else {
                                 console.log("Not found");
@@ -283,9 +284,7 @@ class KeyframeApp {
                             console.log("Error:" + error.message);
                         });        
                     } 
-                    else {
-                        reader.readAsText(data);
-                    }
+                    
                 });
             }
             else {
@@ -307,9 +306,11 @@ class KeyframeApp {
                                     model = model.parent;
                                 }
                                 model.skeleton = skeleton;
-                            }else if ( this.loadedAnimations[this.currentAnimation] ){
+                            }
+                            else if ( this.loadedAnimations[this.currentAnimation] ){
                                 skeleton = this.loadedAnimations[this.currentAnimation].skeleton;
-                            }else{
+                            }
+                            else{
                                 resolve( animationsNames ); // this is what is returned by promise.all.then
                                 return;
                             }
