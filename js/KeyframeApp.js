@@ -263,7 +263,7 @@ class KeyframeApp {
                     }
                     let data = file.data ?? file;
                    
-                    if(file.constructor.name == File.name) {
+                    if(file.constructor.name == File.name || file.data && typeof(file.data) == 'object') {
                         reader.readAsText(data);
                     }
                     else if(file.data && typeof(file.data) == 'string') {
