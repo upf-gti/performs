@@ -273,7 +273,7 @@ class GUI {
                         }
                         const path = files[0].name.split(".");
                         const filename = path[0];
-                        const extension = path[1];
+                        const extension = path[1].toLowerCase();
                         if (extension == "png" || extension == "jpeg" || extension == "jpg") { 
                              const imgCallback = ( event ) => {
 
@@ -2314,9 +2314,7 @@ class GUI {
                 if(toExport.autoplay.state) {
                     url.searchParams.append('autoplay', toExport.autoplay.value);
                 }
-                if(toExport.blendTime.state) {
-                    url.searchParams.append('blendTime', toExport.blendTime.value);
-                }
+                
                 panel.addSeparator();                
                 pp.refresh();
             };
@@ -2398,6 +2396,12 @@ class GUI {
                 }
                 if(toExportKeyframe.trgReferencePose.state) {
                     url.searchParams.append('trgReferencePose', toExportKeyframe.trgReferencePose.value);
+                }
+                if(toExportKeyframe.crossfade.state) {
+                    url.searchParams.append('crossfade', toExportKeyframe.crossfade.value);
+                }
+                if(toExportKeyframe.blendTime.state) {
+                    url.searchParams.append('blendTime', toExportKeyframe.blendTime.value);
                 }
                 pp.refresh();
             }
