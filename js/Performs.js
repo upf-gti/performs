@@ -172,6 +172,7 @@ class Performs {
             if(settings.position) {
                 let position = settings.position;
                 position = position.split(',');
+                position = position.map(v => v = Number(v));
                 this.currentCharacter.model.position.fromArray(position);
             }
 
@@ -217,7 +218,8 @@ class Performs {
         let rotation = null;
         if(settings.rotation) {
             rotation = settings.rotation;
-            rotation = rotation.split(',');            
+            rotation = rotation.split(',');    
+            rotation = rotation.map(v => v = Number(v));        
         }
         
         if(settings.autoplay != undefined) {
