@@ -86,8 +86,15 @@ class KeyframeApp {
             console.warn(animationName + 'not found');
             return;
         }
-        this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y;
+        const currentCharacter = this.loadedCharacters[this.currentCharacter];
+        currentCharacter.model.position.y = this.loadedCharacters[this.currentCharacter].position.y;
         
+        currentCharacter.rotation = currentCharacter.model.quaternion.clone();
+        currentCharacter.scale = currentCharacter.model.scale.clone();
+        // currentCharacter.model.position.set(0,0,0);
+        currentCharacter.model.quaternion.set(0,0,0,1);
+        currentCharacter.model.scale.set(1,1,1);
+
         let bindedAnim = null;
         if(needsUpdate) {
             for(let animation in this.loadedAnimations) {
@@ -141,6 +148,10 @@ class KeyframeApp {
         let diff = this.loadedCharacters[this.currentCharacter].LToePos.y - LToePos.y; 
         
         this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y - this.loadedCharacters[this.currentCharacter].diffToGround + diff;
+        // let pos = currentCharacter.model.position.clone();
+        // currentCharacter.model.position.set(0,0,0);
+        currentCharacter.model.quaternion.copy(currentCharacter.rotation);
+        currentCharacter.model.scale.copy(currentCharacter.scale);
 
     }
     
@@ -472,7 +483,7 @@ class KeyframeApp {
                         continue;
                     }
                     tracks.push(bodyAnimation.tracks[i]);
-                    tracks[tracks.length - 1].name = tracks[tracks.length - 1].name.replace( /[\[\]`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "").replace(".bones", "");
+                    tracks[tracks.length - 1].name = tracks[tracks.length - 1].name.replace(".bones", "");//tracks[tracks.length - 1].name.replace( /[\[\]`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "").replace(".bones", "");
                 }
 
                 //tracks.forEach( b => { b.name = b.name.replace( /[`~!@#$%^&*()_|+\-=?;:'"<>\{\}\\\/]/gi, "") } );
@@ -496,7 +507,7 @@ class KeyframeApp {
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);
-
+               
                 bodyAnimation.name = "bodyAnimation";   // mixer
             }
                 

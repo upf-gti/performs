@@ -391,6 +391,14 @@ class ScriptApp {
     }
 
     onLoadAvatar(newAvatar, config, skeleton){
+        let position = newAvatar.position;
+        let rotation = newAvatar.quaternion;
+        let scale = newAvatar.scale;
+  
+        newAvatar.position.set(0,0,0);
+        newAvatar.quaternion.set(0,0,0,1);
+        newAvatar.scale.set(1,1,1);
+
         newAvatar.eyesTarget = this.eyesTarget;
         newAvatar.headTarget = this.headTarget;
         newAvatar.neckTarget = this.neckTarget;
@@ -446,6 +454,10 @@ class ScriptApp {
         else {
             this.bindAnimationToCharacter(this.currentIdle, newAvatar.name);
         }
+
+        newAvatar.position.copy(position);
+        newAvatar.quaternion.copy(rotation);
+        newAvatar.scale.copy(scale);
     }
 
     onChangeAvatar(avatarName) {

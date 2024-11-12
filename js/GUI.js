@@ -213,6 +213,9 @@ class GUI {
             model.scale.set(value, value, value);
         }, {step:0.01});      
 
+        if(p.getBranch("Export")) {
+            this.branchesOpened["Export"] = !p.getBranch("Export").content.parentElement.classList.contains("closed");
+        }
         p.branch( "Export", { icon: "fa-solid fa-file-export", closed: !this.branchesOpened["Export"]} );
         p.addButton(null, "Export", (v) => {
             this.showExportDialog();
@@ -1365,11 +1368,17 @@ class GUI {
         this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            if(refresh) {
+                refresh();
+            }
         },{nameWidth: "auto"})
             
         this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            if(refresh) {
+                refresh();
+            }
         }, {nameWidth: "auto"})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
@@ -1377,12 +1386,18 @@ class GUI {
     
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            if(refresh) {
+                refresh();
+            }
         }, {nameWidth: "200px"});
 
         this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            if(refresh) {
+                refresh();
+            }
         }, {nameWidth: "200px"});
     }
 
@@ -1964,7 +1979,11 @@ class GUI {
                     }
                 }
                 else {
-                    this.performs.setConfiguration(data);
+                    this.performs.setConfiguration(data, () => {
+                        if(this.settingsActive) {
+                            this.createSettingsPanel();             
+                        }
+                    });
                 }
             }                
         }
@@ -2182,7 +2201,7 @@ class GUI {
         }
 
         const toExport = {
-            avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : true, text: "Character file URL", value: avatar},
+            avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : avatar.includes('https'), text: "Character file URL", value: avatar},
             cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColour()},
             color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
             background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
@@ -2206,7 +2225,7 @@ class GUI {
             trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.performs.keyframeApp.trgEmbedWorldTransforms},
             srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.performs.keyframeApp.srcPoseMode},
             trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
-            crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.trgPoseMode},
+            crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.useCrossFade},
             blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? JSON.parse(localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
         }
 

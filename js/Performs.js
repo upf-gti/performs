@@ -159,7 +159,31 @@ class Performs {
 
     
     // Change the default settings for the scene and the applications mode options
-    async setConfiguration(settings) {
+    async setConfiguration(settings, callback) {
+
+        let rotation = null;
+        if(settings.rotation) {
+            rotation = settings.rotation;
+            rotation = rotation.split(',');    
+            rotation = rotation.map(v => v = Number(v));        
+        }
+
+        let position = null;
+        if(settings.position) {
+            position = settings.position;
+            position = position.split(',');
+            position = position.map(v => v = Number(v));
+            // this.currentCharacter.model.position.fromArray(position);
+        }
+
+        let scale = null;
+        if(settings.scale) {
+            scale = settings.scale;
+            scale = Number(scale);
+            scale = [scale, scale, scale];
+            // this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
+        }
+
         const innerAvatarSettings = (settings) => {
             if(settings.cloth) {
                 let clothColor = settings.cloth;
@@ -168,20 +192,16 @@ class Performs {
                 }
                 this.setClothesColour(clothColor);
             }
-
-            if(settings.position) {
-                let position = settings.position;
-                position = position.split(',');
-                position = position.map(v => v = Number(v));
-                this.currentCharacter.model.position.fromArray(position);
+            if(rotation) {
+                this.currentCharacter.rotation = new THREE.Quaternion().fromArray(rotation);
+            }
+            if(position) {
+                this.currentCharacter.position = new THREE.Vector3().fromArray(position);
+            }
+            if(scale) {
+                this.currentCharacter.scale = new THREE.Vector3().fromArray(scale);
             }
 
-            if(settings.scale) {
-                let scale = settings.scale;
-                scale = Number(scale);
-                this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
-            }
-            
             if(settings.animations) {
                 this.keyframeApp.processMessageFiles( settings.animations).then(
                     (animations) => {
@@ -190,8 +210,25 @@ class Performs {
                         if(this.autoplay) {
                             this.keyframeApp.changePlayState(true);
                         }
+
+                        if(rotation) {
+                            this.currentCharacter.model.quaternion.fromArray(rotation);
+                        }
+
+                        if(position) {                           
+                            this.currentCharacter.model.position.fromArray(position);
+                        }
+
+                        if(scale) {
+
+                            this.currentCharacter.model.scale.fromArray(scale);
+                        }
+
                         if(settings.onReady) {
                             settings.onReady();
+                        }
+                        if(callback) {
+                            callback();
                         }
                     }
                 )
@@ -204,24 +241,53 @@ class Performs {
                         if(this.autoplay) {
                             this.scriptApp.replay();
                         }
+
+                        if(rotation) {
+                            this.currentCharacter.model.quaternion.fromArray(rotation);
+                        }
+
+                        if(position) {                           
+                            this.currentCharacter.model.position.fromArray(position);
+                        }
+
+                        if(scale) {
+
+                            this.currentCharacter.model.scale.fromArray(scale);
+                        }
+                        
                         if(settings.onReady) {
                             settings.onReady();
+                        }
+                        if(callback) {
+                            callback();
                         }
                     }
                 );
             }
-            else if(settings.onReady) {
-                settings.onReady();
+            else {
+                if(rotation) {
+                    this.currentCharacter.model.quaternion.fromArray(rotation);
+                }
+
+                if(position) {                           
+                    this.currentCharacter.model.position.fromArray(position);
+                }
+
+                if(scale) {
+
+                    this.currentCharacter.model.scale.fromArray(scale);
+                }
+    
+                if(settings.onReady) {
+                    settings.onReady();
+                }
+                if(callback) {
+                    callback();
+                }
             }
         }
 
-        let rotation = null;
-        if(settings.rotation) {
-            rotation = settings.rotation;
-            rotation = rotation.split(',');    
-            rotation = rotation.map(v => v = Number(v));        
-        }
-        
+       
         if(settings.autoplay != undefined) {
             this.autoplay = settings.autoplay;
         }
@@ -261,9 +327,9 @@ class Performs {
                     thumbnail =  "https://models.readyplayer.me/" + filename + ".png?background=68,68,68";
                 }
                 if(this.gui) {
-                    this.gui.avatarOptions[filename] = [avatar, settings.config, rotation || new THREE.Quaternion(), thumbnail];
+                    this.gui.avatarOptions[filename] = [avatar, settings.config, new THREE.Quaternion(), thumbnail];
                 }
-                this.loadAvatar(avatar, settings.config, rotation || new THREE.Quaternion(), filename, () => {
+                this.loadAvatar(avatar, settings.config, new THREE.Quaternion(), filename, () => {
                     this.changeAvatar( filename );
                     innerAvatarSettings(settings);
     
@@ -411,7 +477,7 @@ class Performs {
             this.gui.onChangeMode(mode);
         }
         if(this.mode == Performs.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
-            this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation);
+            this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation, true);
             if(this.autoplay) {
                 this.keyframeApp.changePlayState(true);
             }
