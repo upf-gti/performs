@@ -334,7 +334,10 @@ class Performs {
                     innerAvatarSettings(settings);
     
                     $('#loading').fadeOut(); //hide();               
-                });
+                }, (err) => {
+                    $('#loading').fadeOut();
+                    alert("There was an error loading the avatar", "Avatar not loaded");
+                } );
             }
             
         }
@@ -587,7 +590,10 @@ class Performs {
                 this.onMessage( this.pendingMessageReceived );
                 this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
             }
-        });
+        }, (err) => {
+            $('#loading').fadeOut();
+            alert("There was an error loading the avatar", "Avatar not loaded");
+        } );
 
         // Create event listeners
         window.addEventListener( "message", this.onMessage.bind(this) );
@@ -893,7 +899,7 @@ class Performs {
         }, null, (err) => {
             if(onerror) {
                 onerror(err);
-            }
+            }                 
         });
     }
 
