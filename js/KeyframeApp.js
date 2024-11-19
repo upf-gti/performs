@@ -475,10 +475,15 @@ class KeyframeApp {
             let bodyAnimation = animation.bodyAnimation;        
             if(bodyAnimation) {
             
-                let tracks = [];        
+                let tracks = [];
+                const otherTracks = []; // blendshapes
                 // Remove position changes (only keep i == 0, hips)
                 for (let i = 0; i < bodyAnimation.tracks.length; i++) {
 
+                    if(bodyAnimation.tracks[i].constructor.name == THREE.NumberKeyframeTrack.name ) {
+                        otherTracks.push(bodyAnimation.tracks[i]);
+                        continue;
+                    }
                     if(i && bodyAnimation.tracks[i].name.includes('position')) {
                         continue;
                     }
@@ -508,6 +513,8 @@ class KeyframeApp {
                 
                 this.validateAnimationClip(bodyAnimation);
                
+                bodyAnimation.tracks = bodyAnimation.tracks.concat(otherTracks);
+                this.loadedAnimations[animationName].bodyAnimation.tracks = this.loadedAnimations[animationName].bodyAnimation.tracks.concat(otherTracks);
                 bodyAnimation.name = "bodyAnimation";   // mixer
             }
                 
