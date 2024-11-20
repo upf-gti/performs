@@ -133,6 +133,9 @@ class GUI {
         if(this.gui) {
             this.gui.refresh();
         }
+        if(this.settingsActive) {
+            this.createSettingsPanel();             
+        }
     }
 
     createSettingsPanel(force = false) {

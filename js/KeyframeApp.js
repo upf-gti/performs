@@ -109,7 +109,6 @@ class KeyframeApp {
                 this.mixer.uncacheClip(this.mixer._actions[0]._clip); // removes action
             }
             this.mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
-            this.mixer.update(0);
             this.currentAnimation = animationName;
 
         }
@@ -137,12 +136,13 @@ class KeyframeApp {
                 }
             
                 this.mixer.clipAction(bindedAnim.mixerBodyAnimation).setEffectiveWeight(1.0).play();
-                this.mixer.update(0);
                 this.currentAnimation = animationName;
 
             }
         }
-        
+        this.mixer.update(0.1);
+        this.mixer.update(0);
+
         const LToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].LToeName).getWorldPosition(new THREE.Vector3);
         const RToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].RToeName).getWorldPosition(new THREE.Vector3);
         let diff = this.loadedCharacters[this.currentCharacter].LToePos.y - LToePos.y; 

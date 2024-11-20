@@ -349,6 +349,10 @@ class ScriptApp {
         const animatedSkeleton = this.ECAcontroller.originalSkeleton;
         // Apply additive blending animation to the bml animation
         if(this.applyIdle && this.baseSkeleton && this.mixer) {
+            if(!this.bindedIdleAnimations[this.currentIdle]) {
+                this.bindAnimationToCharacter(this.currentIdle, this.ECAcontroller.character.name);
+            }
+
             if(this.mixer) {
                 this.mixer.update(deltaTime/this.speed);           
             }
@@ -448,7 +452,6 @@ class ScriptApp {
             this.loadIdleAnimations(["./data/animations/Idle.bvh", "./data/animations/SitIdle.bvh", "./data/animations/standingIdle.bvh"]).then((v) => {
                 if(!Object.keys(this.loadedIdleAnimations).length) {return;}
                 this.currentIdle = Object.keys(this.loadedIdleAnimations)[0].replace("./data/animations/", "");
-                this.bindAnimationToCharacter(this.currentIdle, newAvatar.name);
             })
         }
         else {

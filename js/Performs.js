@@ -476,14 +476,14 @@ class Performs {
             this.scriptApp.ECAcontroller.update(0,0);
         }
 
-        if(this.gui) {
-            this.gui.onChangeMode(mode);
-        }
         if(this.mode == Performs.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
             this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation, true);
             if(this.autoplay) {
                 this.keyframeApp.changePlayState(true);
             }
+        }
+        if(this.gui) {
+            this.gui.onChangeMode(mode);
         }
     }
 
@@ -996,9 +996,9 @@ class Performs {
         }
 
         if ( Array.isArray(data) ){
-            this.changeMode(Performs.Modes.SCRIPT);
             this.scriptApp.onMessage(data, (processedData) => {
                 
+                this.changeMode(Performs.Modes.SCRIPT);
                 if(this.gui) {
                     this.gui.setBMLInputText( 
                         JSON.stringify(this.scriptApp.msg.data, function(key, val) {
@@ -1015,9 +1015,9 @@ class Performs {
         } 
                         
         if(data.type == 'bvh' || data.type == 'bvhe' || data.type == "glb" || data.type == "gltf" || data.type == "fbx") {
-            this.changeMode(Performs.Modes.KEYFRAME);
             this.keyframeApp.onMessage(data, () => {
                 
+                this.changeMode(Performs.Modes.KEYFRAME);
                 if(this.gui) {
                     this.gui.refresh();
                 }
