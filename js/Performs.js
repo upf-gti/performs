@@ -513,7 +513,8 @@ class Performs {
         this.renderer.toneMapping = THREE.LinearToneMapping;
         this.renderer.toneMappingExposure = 1;
         this.renderer.shadowMap.enabled = true;
-        this.renderer.shadowMap.type = THREE.VSMShadowMap;
+        this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        // this.renderer.shadowMap.type = THREE.VSMShadowMap; // Produces artifacts, camera has to be close to objects and negative bias
         
         // camera views
         this.createCameras();
@@ -655,19 +656,21 @@ class Performs {
 
         const dirLight = this.dirLight = new THREE.DirectionalLight( 0xffffff, 2 );
         dirLight.position.set( 1.5, 5, 2 );
-        dirLight.shadow.mapSize.width = 512;
-        dirLight.shadow.mapSize.height = 512;
-        dirLight.shadow.camera.left= -5;
-        dirLight.shadow.camera.right= 5;
-        dirLight.shadow.camera.bottom= -5;
-        dirLight.shadow.camera.top= 5;
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 1024;
+        dirLight.shadow.mapSize.height = 1024;
+        dirLight.shadow.camera.left= -2;
+        dirLight.shadow.camera.right= 2;
+        dirLight.shadow.camera.bottom= -2;
+        dirLight.shadow.camera.top= 2;
         dirLight.shadow.camera.near= 0.5;
         dirLight.shadow.camera.far= 20;
-        dirLight.shadow.blurSamples= 10;
-        dirLight.shadow.radius= 3;
         dirLight.shadow.bias = 0.00001;
-        dirLight.castShadow = true;
         this.scene.add( dirLight );
+        
+        const dirLightTarget = new THREE.Object3D();
+        this.scene.add( dirLightTarget );
+        dirLight.target = dirLightTarget;
     }
 
     createBackgrounds() {
