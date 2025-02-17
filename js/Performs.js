@@ -18,6 +18,9 @@ class Performs {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
     static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
     static ATELIER_URL = "https://webglstudio.org/projects/signon/performs-atelier/";
+    static ANIMICS_URL = "https://webglstudio.org/projects/signon/animics/";
+    static AVATARS_URL = "https://webglstudio.org/projects/3Dcharacters/";
+
     constructor() {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
@@ -543,7 +546,7 @@ class Performs {
             }
         }
 
-        let modelToLoad = ['https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.glb', 'https://webglstudio.org/3Dcharacters/Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
+        let modelToLoad = [Performs.AVATARS_URL+'Eva_Low/Eva_Low.glb', Performs.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
         
         // Default avatar & config file
         if(options.avatar) {

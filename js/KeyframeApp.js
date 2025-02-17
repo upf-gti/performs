@@ -46,7 +46,7 @@ class KeyframeApp {
         }
     }
 
-    changePlayState(state = !this.playing) {https://webglstudio.org/users/evalls/performs/demo/?avatar=https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb
+    changePlayState(state = !this.playing) {
         this.playing = state;
         if(this.playing && this.mixer) {
             this.mixer.setTime(0);                      
