@@ -232,9 +232,9 @@ THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transform
 class Performs {
     static Modes = { SCRIPT: 0, KEYFRAME: 1 };
     static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
-    static ATELIER_URL = "https://webglstudio.org/projects/signon/performs-atelier/";
-    static ANIMICS_URL = "https://webglstudio.org/projects/signon/animics/";
-    static AVATARS_URL = "https://webglstudio.org/projects/3Dcharacters/";
+    static ATELIER_URL = "https://atelier.gti.upf.edu/";
+    static ANIMICS_URL = "https://animics.gti.upf.edu/";
+    static AVATARS_URL = "https://resources.gti.upf.edu/3Dcharacters/";
 
     constructor() {
         

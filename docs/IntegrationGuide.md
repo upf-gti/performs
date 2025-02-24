@@ -46,7 +46,7 @@ URL of a JSON file with the configuration provided by [performs-atelier](https:/
 
 ##### Expected values
 - **`../3Dcharacters/ReadyEva/ReadyEva.json`** - Relative URL.
-- **`https://webglstudio.org/3Dcharacters/ReadyEva/ReadyEva.json`**
+- **`https://resources.gti.upf.edu/3Dcharacters/ReadyEva/ReadyEva.json`**
 
 >[!IMPORTANT]
 > Without a config file, the **_Script Mode_** doesn't work. The default avatars have already had it.
@@ -97,7 +97,7 @@ Specify which background preset to display.
 Specify the image or logo to be used on the photocall wall. If this is set, the default background will be the photocall design. Supported formats are _jpg_, _jpeg_ and _png_.
 ##### Expected values
 - **`../data/imgs/performs2.png`** - Relative URL
-- **`https://webglstudio.org/projects/signon/performs/data/imgs/performs.png`**
+- **`https://performs.gti.upf.edu/data/imgs/performs.png`**
 
 #### offset (Float)
 Defines the spacing between the repeated logo or image in the photocall background. Default offset is **`0.0`**.

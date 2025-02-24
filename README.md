@@ -23,14 +23,14 @@ It can be easily integrated into other applications by using inserting an HTML i
 ## Performs as an Iframe
 Insert Performs inside your application using the _iframe_ HTML element.
 ```html
-<iframe src='https://webglstudio.org/projects/signon/performs'>
+<iframe src='https://performs.gti.upf.edu'>
 ```
 > [!IMPORTANT]  
 > You can customize the default settings combining the [available options](./docs/IntegrationGuide.md) with multiple parameters by concatenating them with _&_.
 >
 > So for example showing a custom avatar in a blue chroma would look like that:
 >```html
-><iframe src='https://webglstudio.org/projects/signon/performs?avatar=https://models.readyplayer.me/67162be7608ab3c0a85ceb2d.glb&background=studio&color=rgb(54,54,190)'>
+><iframe src='https://performs.gti.upf.edu?avatar=https://models.readyplayer.me/67162be7608ab3c0a85ceb2d.glb&background=studio&color=rgb(54,54,190)'>
 >```
 
 ## Installation and Running
@@ -152,7 +152,7 @@ performs.init(options);
 ```
 
 ## Script animation
-This mode allows for the generation of procedural animations based on instructions. The system interprets the instructions based in **SiGML** (Signing Gesture Markup Language), and translates them into an extended version of BML (Behavior Markup Language), or directly into BML in **JSON** format. While the results may not match the quality of keyframe animations, this approach requires neither expensive equipment nor extensive manual labor, making it highly suitable for scalable sign synthesis. These instructions can be written manually or generated and exported using [Animics](https://webglstudio.org/projects/signon/animics)' script mode, which enables the creation and editing of this type of animation through a visual timeline-clip representation.
+This mode allows for the generation of procedural animations based on instructions. The system interprets the instructions based in **SiGML** (Signing Gesture Markup Language), and translates them into an extended version of BML (Behavior Markup Language), or directly into BML in **JSON** format. While the results may not match the quality of keyframe animations, this approach requires neither expensive equipment nor extensive manual labor, making it highly suitable for scalable sign synthesis. These instructions can be written manually or generated and exported using [Animics](https://animics.gti.upf.edu)' script mode, which enables the creation and editing of this type of animation through a visual timeline-clip representation.
 
 The current supported instructions are explained in detail in [BML Instructions](./docs/InstructionsBML.md).
 An example:
