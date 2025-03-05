@@ -243,26 +243,19 @@ class AnimationRetargeting {
     */
     computeProportionRatio(){
         let srcLength = 0;        
-        // // Compute source sum of bone lengths
-        // for(let i = 1; i < this.srcBindPose.bones.length; i++) {
-        //     if( !this.srcBindPose.bones[i].parent ) {
-        //         continue;
-        //     }
-        //     let dist = this.srcBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.srcBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
-        //     srcLength += dist;
-        // }
+        // Compute source sum of bone lengths
+        for(let i = 1; i < this.srcBindPose.bones.length; i++) {
+            let dist = this.srcBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.srcBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
+            srcLength += dist;
+        }
 
-        // let trgLength = 0;
-        // // Compute target sum of bone lengths
-        // for(let i = 1; i < this.trgBindPose.bones.length; i++) {
-        //     if( !this.trgBindPose.bones[i].parent ) {
-        //         continue;
-        //     }
-        //     let dist = this.trgBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.trgBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
-        //     trgLength += dist;
-        // }        
-        // return trgLength / srcLength
-        return 1;
+        let trgLength = 0;
+        // Compute target sum of bone lengths
+        for(let i = 1; i < this.trgBindPose.bones.length; i++) {
+            let dist = this.trgBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.trgBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
+            trgLength += dist;
+        }        
+        return trgLength / srcLength
     }
 
     precomputeRetargetingQuats(){
