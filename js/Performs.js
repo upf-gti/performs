@@ -789,6 +789,7 @@ class Performs {
             model.quaternion.premultiply( modelRotation );
             model.castShadow = true;
             let skeleton = null;
+            const morphTargets = {};
 
             if(avatarName == "Witch") {
                 model.traverse( (object) => {
@@ -822,6 +823,9 @@ class Performs {
                             object.material.map = null;
                             object.material.color.set(0x19A7A3);
                         }
+                        if(object.morphTargetDictionary) {
+                            morphTargets[object.name] = object.morphTargetDictionary;
+                        }
                     } else if (object.isBone) {
                         object.scale.set(1.0, 1.0, 1.0);
                     }
@@ -843,12 +847,13 @@ class Performs {
                         if(object.material.map) {
                             object.material.map.anisotropy = 16;
                         }
+                        if(object.morphTargetDictionary) {
+                            morphTargets[object.name] = object.morphTargetDictionary;
+                        }
                     } else if (object.isBone) {
                         object.scale.set(1.0, 1.0, 1.0);
                     }
                 });
-    
-                this.avatarShirt = model.getObjectByName( "Tops" ) || model.getObjectByName( "Top" );
             }
 
             if ( avatarName == "Kevin" ){
@@ -861,7 +866,7 @@ class Performs {
             model.name = avatarName;
 
             this.loadedCharacters[avatarName] ={
-                model, skeleton, config: null
+                model, skeleton, config: null, morphTargets
             }
 
             // Load config file and set automatically the Script mode

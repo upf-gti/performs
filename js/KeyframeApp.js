@@ -519,6 +519,56 @@ class KeyframeApp {
                 
             let faceAnimation = animation.faceAnimation;        
 
+            if( faceAnimation ) {
+
+                const morphTargets = currentCharacter.morphTargets;
+                const morphTargetMeshes = Object.keys(morphTargets);
+                const morphTargetNames = Object.values(morphTargets);
+                const morphTargetMap = currentCharacter.config ? currentCharacter.config.faceController.blendshapeMap : null;
+                const tracks = [];
+                const trackNames = [];
+
+                for(let i = 0; i < faceAnimation.tracks.length; i++) {
+
+                    const track = faceAnimation.tracks[i];
+                    const times = track.times;
+                    const values = track.values;
+                    const meshName = track.name.split('.morphTargetInfluences[')[0]; // Mesh name
+                    const morphTargetName = track.name.split('[')[1].split(']')[0]; // Morph target name
+                    
+                    if( morphTargetNames.indexOf(morphTargetName) < 0 && morphTargetMap) {
+                        // Search the AU mapped to this morph target
+                        for ( let actionUnit in morphTargetMap ) {
+                            const mappedMorphs = morphTargetMap[actionUnit];
+                            // If the morph target is mapped to the AU, assign the weight
+                            if ( Array.isArray(mappedMorphs) ) {
+                                if ( mappedMorphs.includes(morphTargetName) ) {
+                                    
+                                    const newName = actionUnit
+                                    if(!newName || trackNames.indexOf( newName ) > -1) {
+                                        continue;
+                                    }
+                                    trackNames.push(newName);
+                                    
+                                    tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
+                                    break;
+                                }
+                            } else if (mappedMorphs === morphTargetName) {
+
+                                const newName = actionUnit
+                                if(!newName || trackNames.indexOf( newName ) > -1) {
+                                    continue;
+                                }
+                                trackNames.push(newName);
+                                
+                                tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             if(!this.bindedAnimations[animationName]) {
                 this.bindedAnimations[animationName] = {};
             }
