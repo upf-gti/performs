@@ -69,9 +69,9 @@ class KeyframeApp {
         }
 
         this.currentCharacter = avatarName;
-        this.changePlayState(this.playing);
         this.mixer = this.loadedCharacters[avatarName].mixer;          
         this.onChangeAnimation(this.currentAnimation, true);
+        this.changePlayState(this.playing);
         const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3);
         const RToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3);
         let diff = this.loadedCharacters[avatarName].LToePos.y - LToePos.y; 
@@ -97,8 +97,7 @@ class KeyframeApp {
 
         let bindedAnim = null;
         if(needsUpdate) {
-            for(let animation in this.loadedAnimations) {
-                
+            for(let animation in this.loadedAnimations) {               
                 this.bindAnimationToCharacter(animation, this.currentCharacter, true);                
             }
             bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
