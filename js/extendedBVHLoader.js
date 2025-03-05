@@ -205,9 +205,7 @@ BVHLoader.prototype.parseExtended = function(text) {
 
 		for( let i = 0; i < bs.length; i++ ) {
 			// add keyframe
-			if(!data.length) {
-				return;
-			}
+
 			const keyframe = {
 				time: frameTime,
 				weight: 0
@@ -216,7 +214,8 @@ BVHLoader.prototype.parseExtended = function(text) {
 			bs[i].frames.push( keyframe );
 			// parse values in node
 			keyframe.weight = parseFloat( data.shift().trim() );
-		}		
+		}
+
 	}
 
 	/*
