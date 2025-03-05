@@ -448,7 +448,7 @@ class KeyframeApp {
         let mixer = currentCharacter.mixer;
         this.mixer = mixer;
         
-        let bindedAnim = null;
+        let faceAnimation = null;
 
         // if not yet binded, create it. Otherwise just change to the existing animation
         if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][characterName] || force) {
@@ -511,13 +511,17 @@ class KeyframeApp {
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
                 
                 this.validateAnimationClip(bodyAnimation);
-               
-                bodyAnimation.tracks = bodyAnimation.tracks.concat(otherTracks);
-                this.loadedAnimations[animationName].bodyAnimation.tracks = this.loadedAnimations[animationName].bodyAnimation.tracks.concat(otherTracks);
+                if(otherTracks.length) {
+                    faceAnimation = new THREE.AnimationClip("faceAnimation", bodyAnimation.duration, otherTracks);
+                }
+                // bodyAnimation.tracks = bodyAnimation.tracks.concat(otherTracks);
+                // this.loadedAnimations[animationName].bodyAnimation.tracks = this.loadedAnimations[animationName].bodyAnimation.tracks.concat(otherTracks);
                 bodyAnimation.name = "bodyAnimation";   // mixer
             }
-                
-            let faceAnimation = animation.faceAnimation;        
+            
+            if( animation.faceAnimation ) {
+                faceAnimation = faceAnimation ? animation.faceAnimation.tracks.concat(faceAnimation.tracks) : animation.faceAnimation;
+            }                   
 
             if( faceAnimation ) {
 
@@ -533,8 +537,9 @@ class KeyframeApp {
                     const track = faceAnimation.tracks[i];
                     const times = track.times;
                     const values = track.values;
-                    const meshName = track.name.split('.morphTargetInfluences[')[0]; // Mesh name
-                    const morphTargetName = track.name.split('[')[1].split(']')[0]; // Morph target name
+                    const meshName = track.name.split('.morphTargetInfluences')[0]; // Mesh name
+                    const tmp = track.name.split('[');
+                    const morphTargetName = tmp.length > 1 ? track.name.split('[')[1].split(']')[0] : null; // Morph target name
                     
                     if( morphTargetNames.indexOf(morphTargetName) < 0 && morphTargetMap) {
                         // Search the AU mapped to this morph target
@@ -542,16 +547,18 @@ class KeyframeApp {
                             const mappedMorphs = morphTargetMap[actionUnit];
                             // If the morph target is mapped to the AU, assign the weight
                             if ( Array.isArray(mappedMorphs) ) {
-                                if ( mappedMorphs.includes(morphTargetName) ) {
-                                    
-                                    const newName = actionUnit
-                                    if(!newName || trackNames.indexOf( newName ) > -1) {
-                                        continue;
+                                for(let m = 0; m < mappedMorphs.length; m++) {
+                                    if ( mappedMorphs[m][0] == morphTargetName ) {
+                                        
+                                        const newName = actionUnit
+                                        if(!newName || trackNames.indexOf( newName ) > -1) {
+                                            continue;
+                                        }
+                                        trackNames.push(newName);
+                                        
+                                        tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
+                                        break;
                                     }
-                                    trackNames.push(newName);
-                                    
-                                    tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
-                                    break;
                                 }
                             } else if (mappedMorphs === morphTargetName) {
 

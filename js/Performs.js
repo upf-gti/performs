@@ -784,6 +784,9 @@ class Performs {
     }
     
     loadAvatar( modelFilePath, configFile, modelRotation, avatarName, callback = null, onerror = null ) {
+        if(modelFilePath.includes("models.readyplayer.me")) {
+            modelFilePath+= "?morphTargets=ARKit"
+        }
         this.loaderGLB.load( modelFilePath, async (glb) => {
             let model = glb.scene;
             model.quaternion.premultiply( modelRotation );

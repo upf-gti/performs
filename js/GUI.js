@@ -380,8 +380,8 @@ class GUI {
                     
                 if ( !this.performs.loadedCharacters[value] ) {
                     $('#loading').fadeIn(); //hide();
-                    let modelFilePath = this.avatarOptions[value][0]; 
-                    let configFilePath = this.avatarOptions[value][1]; 
+                    let modelFilePath = this.avatarOptions[value][0];                    
+                    let configFilePath = this.avatarOptions[value][1];
                     let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[value][2] ); 
                     this.performs.loadAvatar(modelFilePath, config || configFilePath, modelRotation, value, ()=>{ 
                         this.performs.changeAvatar(value);
