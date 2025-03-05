@@ -1068,7 +1068,7 @@ class Performs {
                 control.saveState();
                 control.update();
             });
-            if(this.scriptApp.currentIdle) {
+            if(this.mode == Performs.Modes.SCRIPT && this.scriptApp.currentIdle) {
                 this.scriptApp.bindAnimationToCharacter(this.scriptApp.currentIdle, this.currentCharacter.model.name);
             }
         }

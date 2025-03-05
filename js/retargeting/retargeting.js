@@ -243,19 +243,26 @@ class AnimationRetargeting {
     */
     computeProportionRatio(){
         let srcLength = 0;        
-        // Compute source sum of bone lengths
-        for(let i = 1; i < this.srcBindPose.bones.length; i++) {
-            let dist = this.srcBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.srcBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
-            srcLength += dist;
-        }
+        // // Compute source sum of bone lengths
+        // for(let i = 1; i < this.srcBindPose.bones.length; i++) {
+        //     if( !this.srcBindPose.bones[i].parent ) {
+        //         continue;
+        //     }
+        //     let dist = this.srcBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.srcBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
+        //     srcLength += dist;
+        // }
 
-        let trgLength = 0;
-        // Compute target sum of bone lengths
-        for(let i = 1; i < this.trgBindPose.bones.length; i++) {
-            let dist = this.trgBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.trgBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
-            trgLength += dist;
-        }        
-        return trgLength / srcLength
+        // let trgLength = 0;
+        // // Compute target sum of bone lengths
+        // for(let i = 1; i < this.trgBindPose.bones.length; i++) {
+        //     if( !this.trgBindPose.bones[i].parent ) {
+        //         continue;
+        //     }
+        //     let dist = this.trgBindPose.bones[i].getWorldPosition(new THREE.Vector3()).distanceTo(this.trgBindPose.bones[i].parent.getWorldPosition(new THREE.Vector3()))
+        //     trgLength += dist;
+        // }        
+        // return trgLength / srcLength
+        return 1;
     }
 
     precomputeRetargetingQuats(){
@@ -626,7 +633,7 @@ function applyTPose(skeleton, map) {
     
     // Compute perpendicular axis between left leg and left foot
     leftLegBasePos = leftLegEnd.getWorldPosition(new THREE.Vector3());
-    let child = leftLegEnd.children[0].children[0];
+    let child = leftLegEnd.children[0].children.length ? leftLegEnd.children[0].children[0] : leftLegEnd.children[0];
     let childPos = child.getWorldPosition(new THREE.Vector3());  
 
     // Compute leg direction (foot-to-footend)
@@ -699,7 +706,7 @@ function applyTPose(skeleton, map) {
 
     // Compute perpendicular axis between right leg and right foot
     rightLegBasePos = rightLegEnd.getWorldPosition(new THREE.Vector3());
-    child = rightLegEnd.children[0].children[0];
+    child = rightLegEnd.children[0].children.length ? rightLegEnd.children[0].children[0] : rightLegEnd.children[0];
     childPos = child.getWorldPosition(new THREE.Vector3());  
 
     // Compute leg direction (foot-to-footend)

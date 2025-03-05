@@ -46,7 +46,7 @@ class KeyframeApp {
         }
     }
 
-    changePlayState(state = !this.playing) {https://webglstudio.org/users/evalls/performs/demo/?avatar=https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb
+    changePlayState(state = !this.playing) { //https://webglstudio.org/users/evalls/performs/demo/?avatar=https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb
         this.playing = state;
         if(this.playing && this.mixer) {
             this.mixer.setTime(0);                      
@@ -69,9 +69,9 @@ class KeyframeApp {
         }
 
         this.currentCharacter = avatarName;
-        this.changePlayState(this.playing);
         this.mixer = this.loadedCharacters[avatarName].mixer;          
         this.onChangeAnimation(this.currentAnimation, true);
+        this.changePlayState(this.playing);
         const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3);
         const RToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3);
         let diff = this.loadedCharacters[avatarName].LToePos.y - LToePos.y; 
@@ -97,8 +97,7 @@ class KeyframeApp {
 
         let bindedAnim = null;
         if(needsUpdate) {
-            for(let animation in this.loadedAnimations) {
-                
+            for(let animation in this.loadedAnimations) {               
                 this.bindAnimationToCharacter(animation, this.currentCharacter, true);                
             }
             bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
