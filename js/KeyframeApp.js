@@ -425,6 +425,10 @@ class KeyframeApp {
             type: "glb"
         };
 
+        if( this.onLoadGLTFAnimation ) {
+            this.onLoadGLTFAnimation(this.loadedAnimations[name]);
+        }
+
         this.bindAnimationToCharacter(name, this.currentCharacter);
     }
 
@@ -449,7 +453,7 @@ class KeyframeApp {
         this.mixer = mixer;
         
         let faceAnimation = null;
-
+        let bodyAnimation = null;
         // if not yet binded, create it. Otherwise just change to the existing animation
         if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][characterName] || force) {
             let srcPoseMode = this.srcPoseMode;
@@ -471,7 +475,7 @@ class KeyframeApp {
                 currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
             }
                
-            let bodyAnimation = animation.bodyAnimation;        
+            bodyAnimation = Object.assign({}, animation.bodyAnimation);       
             if(bodyAnimation) {
             
                 let tracks = [];
@@ -529,6 +533,9 @@ class KeyframeApp {
                 const morphTargetMeshes = Object.keys(morphTargets);
                 const morphTargetNames = Object.values(morphTargets);
                 const morphTargetMap = currentCharacter.config ? currentCharacter.config.faceController.blendshapeMap : null;
+                
+                const meshes = currentCharacter.config ? currentCharacter.config.faceController.parts : null;
+
                 const tracks = [];
                 const trackNames = [];
 
@@ -537,43 +544,78 @@ class KeyframeApp {
                     const track = faceAnimation.tracks[i];
                     const times = track.times;
                     const values = track.values;
+                    
                     const meshName = track.name.split('.morphTargetInfluences')[0]; // Mesh name
                     const tmp = track.name.split('[');
-                    const morphTargetName = tmp.length > 1 ? track.name.split('[')[1].split(']')[0] : null; // Morph target name
-                    
-                    if( morphTargetNames.indexOf(morphTargetName) < 0 && morphTargetMap) {
+                    let morphTargetName = tmp.length > 1 ? track.name.split('[')[1].split(']')[0] : null; // Morph target name
+
+                    if(!morphTargetName) {
+
+                        // for( let mesh in morphTargets ) {
+                        //     if(trackNames.includes(mesh)) {
+                        //         continue;
+                        //     }
+                        //     tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences", times, values ));                                            
+                        //     trackNames.push(mesh);
+                        //     break;
+                        // }
+
+                        tracks.push(track);
+                        continue;
+                    }
+
+                    if(tracks.length <= i && morphTargetNames.indexOf(morphTargetName) < 0 && morphTargetMap) {
+
                         // Search the AU mapped to this morph target
                         for ( let actionUnit in morphTargetMap ) {
+
                             const mappedMorphs = morphTargetMap[actionUnit];
                             // If the morph target is mapped to the AU, assign the weight
-                            if ( Array.isArray(mappedMorphs) ) {
+                            if ( actionUnit == morphTargetName ) {
                                 for(let m = 0; m < mappedMorphs.length; m++) {
-                                    if ( mappedMorphs[m][0] == morphTargetName ) {
-                                        
-                                        const newName = actionUnit
-                                        if(!newName || trackNames.indexOf( newName ) > -1) {
-                                            continue;
-                                        }
-                                        trackNames.push(newName);
-                                        
-                                        tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
-                                        break;
+
+                                    const newName = mappedMorphs[m][0]
+
+                                    if(!newName || trackNames.indexOf( newName ) > -1) {
+                                        continue;
                                     }
+                                    trackNames.push(newName);
+
+                                    for( let mesh in meshes ) {
+                                        tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences[" + newName + "]", times, values ));
+                                    }
+
+                                    break;
                                 }
-                            } else if (mappedMorphs === morphTargetName) {
+                            }
+                            else if (mappedMorphs === morphTargetName) {
 
                                 const newName = actionUnit
                                 if(!newName || trackNames.indexOf( newName ) > -1) {
                                     continue;
                                 }
                                 trackNames.push(newName);
-                                
-                                tracks.push( new THREE.NumberKeyframeTrack(newName, times, values ));
+
+                                for( let mesh in meshes ) {
+                                    tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences[" + newName + "]", times, values ));
+                                }
                                 break;
                             }
                         }
                     }
+
+                    if(tracks.length <= i) {
+                        tracks.push(track);
+                    }
+
                 }
+
+                if( tracks ) {
+                    faceAnimation.tracks = tracks;
+                }
+
+                bodyAnimation.tracks = bodyAnimation.tracks.concat(faceAnimation.tracks);
+
             }
 
             if(!this.bindedAnimations[animationName]) {
