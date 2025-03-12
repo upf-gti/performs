@@ -691,40 +691,76 @@ class Performs {
         this.logoTexture = new THREE.TextureLoader().load(this.logo);
         this.logoTexture.wrapS = THREE.RepeatWrapping;
         this.repeatOffset = 0;
+        this.expandBackground = false;
+
         this.photocallMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
         this.photocallMaterial.onBeforeCompile = async (shader) => {
             shader.uniforms.textureMap = {value: this.logoTexture}; 
             shader.uniforms.repeat = {value: [20,20]};
             shader.uniforms.offset = {value: this.repeatOffset};
-            
+            shader.uniforms.expand = {value: this.expandBackground}
             shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;
             
             //prepend the input to the shader
-            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
+            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; uniform bool expand; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
 
             shader.fragmentShader = 
+            // shader.fragmentShader.replace(
+            // 'vec4 diffuseColor = vec4( diffuse, opacity );', 
+            // 'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+            // \ if (vWorldPosition.y > 0.0) { \n\
+            //     \ // Scale the UV coordinates by the repeat factor\n\
+            //     \ vec2 uvScaled = vUv * repeat;\n\n\
+            //     \ // Use mod to wrap the UVs for repeating the texture\n\
+            //     \ vec2 uvMod = mod(uvScaled, 1.0);\n\
+            //     \ // Shrink the UV space to account for the gaps\n\
+            //     \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+            //     \ // Only apply the texture inside the non-gap area\n\
+            //     \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
+            //         \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
+            //         \ vec2 uv = fract(uvScaled);\n\
+            //         \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
+            //         \ vec2 smooth_uv = uvScaled;\n\
+            //         \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+            //         \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
+            //         \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+            //     \ }\n\
+            // \ }\n'
+            // )
             shader.fragmentShader.replace(
-            'vec4 diffuseColor = vec4( diffuse, opacity );', 
-            'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
-            \ if (vWorldPosition.y > 0.0) { \n\
-                \ // Scale the UV coordinates by the repeat factor\n\
-                \ vec2 uvScaled = vUv * repeat;\n\n\
-                \ // Use mod to wrap the UVs for repeating the texture\n\
-                \ vec2 uvMod = mod(uvScaled, 1.0);\n\
-                \ // Shrink the UV space to account for the gaps\n\
-                \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
-                \ // Only apply the texture inside the non-gap area\n\
-                \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
-                    \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
-                    \ vec2 uv = fract(uvScaled);\n\
-                    \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
-                    \ vec2 smooth_uv = uvScaled;\n\
-                    \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-                    \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
-                    \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-                \ }\n\
-            \ }\n'
-            )
+                'vec4 diffuseColor = vec4( diffuse, opacity );', 
+                'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+                \ if (vWorldPosition.y > 0.0) { \n\
+                    \ if (expand) { \n\
+                        \ // Compute derivatives for mipmapping\n\
+                        \ vec2 smooth_uv = vUv;\n\
+                        \ smooth_uv.y = 2.0 * (smooth_uv.y) - 1.0; \n\
+                        \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+                        \ //vec4 texColor = textureGrad(textureMap, vUv, duv.xy, duv.zw);\n\
+                        \ vec4 texColor = texture2D(textureMap, smooth_uv);\n\
+                        \ //diffuseColor = vec4(smooth_uv, 0, 1); \n\
+                        \ diffuseColor =mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+                    \ }\n\
+                    \ else {\n\
+                        \ // Scale the UV coordinates by the repeat factor\n\
+                        \ vec2 uvScaled = vUv * repeat;\n\n\
+                        \ // Use mod to wrap the UVs for repeating the texture\n\
+                        \ vec2 uvMod = mod(uvScaled, 1.0);\n\
+                        \ // Shrink the UV space to account for the gaps\n\
+                        \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+                        \ // Only apply the texture inside the non-gap area\n\
+                        \ if ( uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
+                            \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
+                            \ vec2 uv = fract(uvScaled);\n\
+                            \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
+                            \ vec2 smooth_uv = uvScaled;\n\
+                            \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+                            \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
+                            \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+                        \ }\n\
+                    \ }\n\
+                \ }\n'
+                )
             this.photocallMaterial.userData.shader = shader;
             const urlParams = new URLSearchParams(window.location.search);
             
@@ -1178,7 +1214,7 @@ class Performs {
 }
 
 // Function to create a curved backdrop geometry
-function createBackdropGeometry(width = 5, height = 5, segments = 32) {
+function createBackdropGeometry(width = 5, height = 5, segments = 2) {
     // Create a geometry object
     const geometry = new THREE.PlaneGeometry(width, height, segments, segments);
     const position = geometry.attributes.position;
