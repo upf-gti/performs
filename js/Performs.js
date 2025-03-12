@@ -1171,9 +1171,9 @@ class Performs {
             this._atelier = window.open(Performs.ATELIER_URL, "Atelier");            
         }
         else {
-            this._atelier.location.reload();
+            //this._atelier.location.reload();
+            this._atelier.focus();
         }
-        this._atelier.focus();
     }
 }
 

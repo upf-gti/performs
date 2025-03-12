@@ -36,6 +36,7 @@ class KeyframeApp {
    
         this.srcEmbedWorldTransforms = false;
         this.trgEmbedWorldTransforms = true;
+        fetch( 'https://resources.gti.upf.edu/3Dcharacters/Eva_Low/Eva_Low.json').then(response => response.json()).then(data => this.stardardConfig = data);
     }
 
     update( deltaTime ) {
@@ -527,8 +528,9 @@ class KeyframeApp {
                 faceAnimation = faceAnimation ? animation.faceAnimation.tracks.concat(faceAnimation.tracks) : animation.faceAnimation;
             }                   
 
+            let mixerFaceAnimation = null;
             if( faceAnimation ) {
-
+                mixerFaceAnimation = faceAnimation.clone();
                 const morphTargets = currentCharacter.morphTargets;
                 const morphTargetMeshes = Object.keys(morphTargets);
                 const morphTargetNames = Object.values(morphTargets);
@@ -538,12 +540,13 @@ class KeyframeApp {
 
                 const tracks = [];
                 const trackNames = [];
+                const parsedTracks = [];
 
                 for(let i = 0; i < faceAnimation.tracks.length; i++) {
 
                     const track = faceAnimation.tracks[i];
                     const times = track.times;
-                    const values = track.values;
+                    let values = track.values;
                     
                     const meshName = track.name.split('.morphTargetInfluences')[0]; // Mesh name
                     const tmp = track.name.split('[');
@@ -564,57 +567,118 @@ class KeyframeApp {
                         continue;
                     }
 
-                    if(tracks.length <= i && morphTargetNames.indexOf(morphTargetName) < 0 && morphTargetMap) {
+                    let weight = 1;
+                    if( parsedTracks.includes(morphTargetName )) {
+                        continue;
+                    }
 
-                        // Search the AU mapped to this morph target
+                    if(morphTargetMap) {
+                        let found = false;
+                        for( let i = 0; i < morphTargetNames.length; i++ ) {
+                            if( morphTargetNames[i][morphTargetName] != undefined ) {
+                                found = true;
+                                tracks.push(track);
+                                break;
+                            }
+                        }
+                        if( found ) {
+                            continue;
+                        }
+
+                        // Search te morph target to the AU standard list (map the animation to standard AU)
+                        if(this.stardardConfig) {
+                            const standardMap = this.stardardConfig.faceController.blendshapeMap;
+                            let mappedAUs = [];
+                            let weights = [];
+                            for ( let actionUnit in standardMap ) {
+                                const mapData = standardMap[actionUnit];
+                                // If the morph target is mapped to the AU, assign the weight
+                                for( let j = 0; j < mapData.length; j++ ) {
+                                    if ( mapData[j][0] == morphTargetName ) {
+                                        // morphTargetName = actionUnit; // Assuming first, but it's wrong. TO DO: Create tracks and give weights. Each AU can have more than 1 morph target assigned
+                                        // weight = mapData[j][1];      
+                                        mappedAUs.push(actionUnit);
+                                        weights.push(1);
+                                        break;
+                                    }                                
+                                }
+                                // if(found) {
+                                //     break;
+                                // }
+                            }
+                            if( mappedAUs.length ) {
+                                parsedTracks.push(morphTargetName);
+                            }
+                            morphTargetName = mappedAUs;
+                            weight = weights;
+                        }
+
+                        // Search the AU mapped to this morph target (map the standard AU to the avatar morph targets)
                         for ( let actionUnit in morphTargetMap ) {
 
-                            const mappedMorphs = morphTargetMap[actionUnit];
+                            const mapData = morphTargetMap[actionUnit];
                             // If the morph target is mapped to the AU, assign the weight
-                            if ( actionUnit == morphTargetName ) {
-                                for(let m = 0; m < mappedMorphs.length; m++) {
-
-                                    const newName = mappedMorphs[m][0]
-
-                                    if(!newName || trackNames.indexOf( newName ) > -1) {
-                                        continue;
-                                    }
-                                    trackNames.push(newName);
-
-                                    for( let mesh in meshes ) {
-                                        tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences[" + newName + "]", times, values ));
-                                    }
-
-                                    break;
-                                }
+                            if( morphTargetName instanceof String ) {
+                                morphTargetName = [morphTargetName];
+                                weight = [weight];
                             }
-                            else if (mappedMorphs === morphTargetName) {
+                            for( let j = 0; j < morphTargetName.length; j++ ) {
 
-                                const newName = actionUnit
-                                if(!newName || trackNames.indexOf( newName ) > -1) {
-                                    continue;
+                                if ( actionUnit == morphTargetName[j] ) {
+                                    for(let m = 0; m < mapData.length; m++) {
+    
+                                        const newName = mapData[m][0];
+    
+                                        if(!newName) {
+                                            continue;
+                                        }
+                                        if( weight[j] < 1 ) {
+                                            values = values.map( v => v*weight[j]);
+                                        }
+                                        for( let mesh in meshes ) {
+                                            const name = mesh + ".morphTargetInfluences[" + newName + "]";
+                                            const id = trackNames.indexOf( name );
+                                            if(id > -1 && weight[j] < 1) {                                               
+                                                tracks[id].values = tracks[id].values.map( (v, idx) => v + values[idx]);
+                                            }
+                                            else {
+    
+                                                tracks.push( new THREE.NumberKeyframeTrack(name, times, values ));
+                                                trackNames.push(name);
+                                            }
+                                        }
+    
+                                        break;
+                                    }
                                 }
-                                trackNames.push(newName);
-
-                                for( let mesh in meshes ) {
-                                    tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences[" + newName + "]", times, values ));
-                                }
-                                break;
+                                // else if (mapData === morphTargetName[j]) {
+    
+                                //     const newName = actionUnit
+                                //     if(!newName || trackNames.indexOf( newName ) > -1) {
+                                //         continue;
+                                //     }
+                                //     trackNames.push(newName);
+    
+                                //     for( let mesh in meshes ) {
+                                //         tracks.push( new THREE.NumberKeyframeTrack(mesh + ".morphTargetInfluences[" + newName + "]", times, values ));
+                                //     }
+                                //     break;
+                                // }
                             }
                         }
                     }
 
-                    if(tracks.length <= i) {
+                    if(tracks.length < (i +1)* morphTargetNames.length) {
                         tracks.push(track);
                     }
 
                 }
-
-                if( tracks ) {
-                    faceAnimation.tracks = tracks;
+                
+                if( tracks ) {                   
+                    mixerFaceAnimation.tracks = tracks;
                 }
 
-                bodyAnimation.tracks = bodyAnimation.tracks.concat(faceAnimation.tracks);
+                bodyAnimation.tracks = bodyAnimation.tracks.concat(mixerFaceAnimation.tracks);
 
             }
 
@@ -622,7 +686,7 @@ class KeyframeApp {
                 this.bindedAnimations[animationName] = {};
             }
             this.bindedAnimations[animationName][this.currentCharacter] = {
-                mixerBodyAnimation: bodyAnimation, mixerFaceAnimation: faceAnimation, // for threejs mixer 
+                mixerBodyAnimation: bodyAnimation, mixerFaceAnimation: mixerFaceAnimation, // for threejs mixer 
             }
 
             // bindedAnim = this.bindedAnimations[animationName][this.currentCharacter];
