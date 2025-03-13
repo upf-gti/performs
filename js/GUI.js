@@ -235,135 +235,270 @@ class GUI {
         }
         p.clear();
         p.branch("Backgrounds");
-        let color = new THREE.Color(this.performs.sceneColor);
+        let color = this.performs.sceneColor;
+        color = new THREE.Color(Number(color.replace("#", "").replace("0x", "")));
 
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
             this.performs.setBackPlaneColour(value);
         });
         
         // Open space
-        let btn = p.addButton(null, "Open space", (value)=> {
+        const openBtn = p.addButton(null, "Open space", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.OPEN);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/open-space.png", className: "centered"});
-        btn.children[0].classList.add("roundedbtn");
-        if(this.performs.background == Performs.Backgrounds.OPEN) {
-            btn.children[0].classList.add('selected');
+        openBtn.children[0].classList.add("roundedbtn");
+        if( this.performs.background == Performs.Backgrounds.OPEN ) {
+            openBtn.children[0].classList.add('selected');
         }
-
         // Studio background
-        btn = p.addButton(null, "Studio", (value)=> {
+        const studioBtn = p.addButton(null, "Studio", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/studio-space.png", className: "centered"});
-        btn.children[0].classList.add("roundedbtn");
-        if(this.performs.background == Performs.Backgrounds.STUDIO) {
-            btn.children[0].classList.add('selected');
+        studioBtn.children[0].classList.add("roundedbtn");        
+        if( this.performs.background == Performs.Backgrounds.STUDIO ) {
+            studioBtn.children[0].classList.add('selected');
+
+            const ebtn = p.addButton(null, "Edit properties", (e) => {
+
+                this.showStudioPropertiesDialog( );
+                
+            }, {icon: "fa fa-pen-to-square", className: "centered"});
+            ebtn.children[0].style.width = "40px";
         }
         // Photocall background
-        btn = p.addButton(null, "Photocall", (value)=> {
+        const photocallBtn = p.addButton(null, "Photocall", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/photocall-space.png", className: "centered"});
-        btn.children[0].classList.add("roundedbtn");
-        
-        if(this.performs.background == Performs.Backgrounds.PHOTOCALL) {
-            btn.children[0].classList.add('selected');
-            const ebtn = p.addButton(null, "Edit logo", (e) => {
-                let dialog = new LX.Dialog("Upload logo", (panel) => {
-                    let formFile = true;
-                    panel.sameLine();
-                    let logoFile = panel.addFile("File", (v, e) => {
-                        let files = panel.widgets["File"].domEl.children[1].files;
-                        if(!files.length) {
-                            return;
-                        }
-                        const path = files[0].name.split(".");
-                        const filename = path[0];
-                        const extension = path[1].toLowerCase();
-                        if (extension == "png" || extension == "jpeg" || extension == "jpg") { 
-                             const imgCallback = ( event ) => {
+        photocallBtn.children[0].classList.add("roundedbtn");
+        if( this.performs.background == Performs.Backgrounds.PHOTOCALL ) {
+            photocallBtn.children[0].classList.add('selected');
+            const ebtn = p.addButton(null, "Edit properties", (e) => {
 
-                                this.performs.logo = event.target;        
-                                this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
-                            }
-            
-                            const img = new Image();            
-                            img.onload = imgCallback;            
-                            img.src = v;
-
-                        }
-                        else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
-                    }, {type: "url", nameWidth: "41%", read:true});
-    
-                    let logoURL = panel.addText("Logo URL", "", (v, e) => {
-                        if(!v) {
-                            return;
-                        }
-                        const path = v.split(".");
-                        let filename = path[path.length-2];
-                        filename = filename.split("/");
-                        filename = filename.pop();
-                        let extension = path[path.length-1];
-                        extension = extension.split("?")[0];
-                        
-                        const imgCallback = ( event ) => {
-
-                            this.performs.logo = event.target;        
-                            this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
-                        }
-        
-                        const img = new Image();            
-                        img.onload = imgCallback;    
-                        fetch(v)
-                        .then(function (response) {
-                            if (response.ok) {
-                            response.blob().then(function (miBlob) {
-                                var objectURL = URL.createObjectURL(miBlob);
-                                img.src = objectURL;
-                            });
-                            } else {
-                            console.log("Not found");
-                            }
-                        })
-                        .catch(function (error) {
-                            console.log("Error:" + error.message);
-                        });        
-
-                    }, {nameWidth: "43%", read: true});
-                    logoURL.domEl.classList.add('hidden');
-
-                    panel.addComboButtons(null, [
-                        {
-                            value: "From File",
-                            callback: (v, e) => {                            
-                                formFile = true;
-                                if(!logoURL.domEl.classList.contains('hidden')) {
-                                    logoURL.domEl.classList.add('hidden');          
-                                }
-                                logoFile.domEl.classList.remove('hidden');                                                          
-                            }
-                        },
-                        {
-                            value: "From URL",
-                            callback: (v, e) => {
-                                formFile = false;
-                                if(!logoFile.domEl.classList.contains('hidden')) {
-                                    logoFile.domEl.classList.add('hidden');           
-                                }                                               
-                                logoURL.domEl.classList.remove('hidden');          
-                            }
-                        }
-                    ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
-                    panel.endLine();
-
-                    panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
-                        this.performs.setPhotocallOffset(v);
-                    }, {min: 0, max: 1, step: 0.01})
-                })
+                this.showPhotocallPropertiesDialog( );
+                
             }, {icon: "fa fa-pen-to-square", className: "centered"});
-            ebtn.children[0].style.width = "40px"
+            ebtn.children[0].style.width = "40px";
         }
+    }
+
+    showStudioPropertiesDialog() {
+        const dialog = new LX.Dialog("Properties", (panel) => {
+            let formFile = true;
+            panel.sameLine();
+
+            const logoFile = panel.addFile("File", (v, e) => {
+                
+                const files = panel.widgets["File"].domEl.children[1].files;
+                if(!files.length) {
+                    return;
+                }
+                const path = files[0].name.split(".");
+                const filename = path[0];
+                const extension = path[1].toLowerCase();
+                if (extension == "png" || extension == "jpeg" || extension == "jpg" || extension == "mp4") { 
+                     const imgCallback = ( event ) => {
+
+                        if(extension == "mp4") {
+                            const texture = new THREE.VideoTexture( event.target );
+                            texture.colorSpace = THREE.SRGBColorSpace;
+                            this.performs.backgroundTexture = texture;
+                        }
+                        else {
+                            this.performs.backgroundTexture = event.target;
+                        }
+                        this.performs.setBackground( Performs.Backgrounds.STUDIO, this.performs.backgroundTexture);
+                    }
+                    if( extension != "mp4") {
+                        const img = new Image();            
+                        img.onload = imgCallback;            
+                        img.src = v;
+                        this.performs.videoBackground = null;
+                    }
+                    else {
+                        const video = document.createElement( 'video' );
+                        video.id = "backgrodundVideo";
+                        video.src = v;
+                        this.performs.videoBackground = video;
+                        imgCallback({target: video});
+                    }
+
+                }
+                else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
+            }, {type: "url", nameWidth: "41%", read:true});
+
+            const textureURL = panel.addText("Image/Video URL", "", (v, e) => {
+                if(!v) {
+                    return;
+                }
+                const path = v.split(".");
+                let filename = path[path.length-2];
+                filename = filename.split("/");
+                filename = filename.pop();
+                let extension = path[path.length-1];
+                extension = extension.split("?")[0];
+                
+                const imgCallback = ( event ) => {
+
+                    this.performs.backgroundTexture = event.target;        
+                    this.performs.setBackground( Performs.Backgrounds.STUDIO, this.performs.backgroundTexture);            
+                }
+
+                const img = new Image();            
+                img.onload = imgCallback;    
+                fetch(v)
+                .then(function (response) {
+                    if (response.ok) {
+                    response.blob().then(function (miBlob) {
+                        var objectURL = URL.createObjectURL(miBlob);
+                        img.src = objectURL;
+                    });
+                    } else {
+                    console.log("Not found");
+                    }
+                })
+                .catch(function (error) {
+                    console.log("Error:" + error.message);
+                });        
+
+            }, {nameWidth: "43%", read: true});
+            textureURL.domEl.classList.add('hidden');
+
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {                            
+                        formFile = true;
+                        if(!textureURL.domEl.classList.contains('hidden')) {
+                            textureURL.domEl.classList.add('hidden');          
+                        }
+                        logoFile.domEl.classList.remove('hidden');                                                          
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        if(!logoFile.domEl.classList.contains('hidden')) {
+                            logoFile.domEl.classList.add('hidden');           
+                        }                                               
+                        textureURL.domEl.classList.remove('hidden');          
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+            panel.endLine();
+
+            panel.addDropdown("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
+                this.performs.setBackgroundSettings(v);
+                this.performs.backgroundSettings = v;               
+            } );
+
+            panel.addNumber("Scale", this.performs.textureScale, (v) => {
+                this.performs.setBackgroundTextureScale(v);
+            }, {min: 0, max: 2, step: 0.01})
+
+            panel.addVector2("Position", this.performs.texturePosition, (v) => {
+                this.performs.setBackgroundTexturePosition(v);
+            }, { step: 0.01})
+        })
+    }
+
+    showPhotocallPropertiesDialog() {
+        const dialog = new LX.Dialog("Properties", (panel) => {
+            let formFile = true;
+            panel.sameLine();
+
+            const logoFile = panel.addFile("File", (v, e) => {
+
+                const files = panel.widgets["File"].domEl.children[1].files;
+                if(!files.length) {
+                    return;
+                }
+                const path = files[0].name.split(".");
+                const filename = path[0];
+                const extension = path[1].toLowerCase();
+                if (extension == "png" || extension == "jpeg" || extension == "jpg") { 
+                     const imgCallback = ( event ) => {
+
+                        this.performs.logo = event.target;        
+                        this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
+                    }
+    
+                    const img = new Image();            
+                    img.onload = imgCallback;            
+                    img.src = v;
+
+                }
+                else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
+            }, {type: "url", nameWidth: "41%", read:true});
+
+            let logoURL = panel.addText("Logo URL", "", (v, e) => {
+                if(!v) {
+                    return;
+                }
+                const path = v.split(".");
+                let filename = path[path.length-2];
+                filename = filename.split("/");
+                filename = filename.pop();
+                let extension = path[path.length-1];
+                extension = extension.split("?")[0];
+                
+                const imgCallback = ( event ) => {
+
+                    this.performs.logo = event.target;        
+                    this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
+                }
+
+                const img = new Image();            
+                img.onload = imgCallback;    
+                fetch(v)
+                .then(function (response) {
+                    if (response.ok) {
+                    response.blob().then(function (miBlob) {
+                        var objectURL = URL.createObjectURL(miBlob);
+                        img.src = objectURL;
+                    });
+                    } else {
+                    console.log("Not found");
+                    }
+                })
+                .catch(function (error) {
+                    console.log("Error:" + error.message);
+                });        
+
+            }, {nameWidth: "43%", read: true});
+            logoURL.domEl.classList.add('hidden');
+
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {                            
+                        formFile = true;
+                        if(!logoURL.domEl.classList.contains('hidden')) {
+                            logoURL.domEl.classList.add('hidden');          
+                        }
+                        logoFile.domEl.classList.remove('hidden');                                                          
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        if(!logoFile.domEl.classList.contains('hidden')) {
+                            logoFile.domEl.classList.add('hidden');           
+                        }                                               
+                        logoURL.domEl.classList.remove('hidden');          
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
+            panel.endLine();
+
+            panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
+                this.performs.setPhotocallOffset(v);
+            }, {min: 0, max: 1, step: 0.01})
+        })
     }
 
     createAvatarsPanel() {
@@ -953,6 +1088,11 @@ class GUI {
                             LX.popup("No animations to play!", null, {size:["200px", "auto"]})
                         }
                     }
+
+                    if(this.performs.videoBackground && this.performs.background == Performs.Backgrounds.STUDIO) {
+                        this.performs.videoBackground.currentTime = 0;
+                        this.performs.videoBackground.play();
+                    }
                 }
             },
             {
@@ -965,6 +1105,10 @@ class GUI {
                     }
                     else if(this.performs.mode == Performs.Modes.KEYFRAME) {
                         this.performs.keyframeApp.changePlayState(false);
+                    }
+                    if(this.performs.videoBackground) {
+                        this.performs.videoBackground.pause();
+                        this.performs.videoBackground.currentTime = 0;
                     }
                     this.changePlayButtons(false);
                 }

@@ -54,6 +54,11 @@ class Performs {
         this.background = Performs.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
+        this.videoBackground = null;
+        this.backgroundSettings = "Expand";
+        this.textureScale = 1;
+        this.texturePosition = [0, 0];
+
         this._atelier = null;
 
         this.raycaster = new THREE.Raycaster();
@@ -92,21 +97,47 @@ class Performs {
                 break;
             case Performs.Backgrounds.STUDIO:
                 this.backPlane.visible = true;
-                // this.backPlane.material.map = null;        
-                this.backPlane.material = this.studioMaterial;                    
-                this.backPlane.material.color.set(this.sceneColor);
-                this.backPlane.material.needsUpdate = true;
                 this.ground.visible = false;
+                this.repeatBackground = false;
+                // let texture = null;
+                if(image) {
+                    if( image instanceof String) {
+                        this.backgroundTexture = new THREE.TextureLoader().load( this.backgroundTexture);
+                    }
+                    else if( !(image instanceof THREE.Texture || image instanceof THREE.VideoTexture) ) {
+                        this.backgroundTexture = new THREE.Texture( this.backgroundTexture );
+                        this.backgroundTexture.colorSpace = THREE.SRGBColorSpace;
+                    }                           
+                    this.backgroundTexture.needsUpdate = true;
+
+                    const shader = this.backPlane.material.userData.shader;
+                    if ( shader ) {
+                        shader.uniforms.textureMap.value = this.backgroundTexture;
+                    }
+                    else {
+                        this.studioMaterial.uniforms.textureMap.value = this.backgroundTexture;
+                    }
+                }
+                this.backPlane.material = this.studioMaterial;
+
+                if(this.backPlane.material.color) {
+                    this.backPlane.material.color.set(this.sceneColor);
+                }
+                else {
+                    this.backPlane.material.uniforms.color.value.set(this.sceneColor);
+                }
+
+                this.backPlane.material.needsUpdate = true;
                
                 break;
             case Performs.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
+                this.repeatBackground = true;
                 // let texture = null;
                 if(image) {
                     if(typeof(image) == 'string') {
                         this.logoTexture = new THREE.TextureLoader().load( this.logo);
-    
                     }
                     else {
                         this.logoTexture = new THREE.Texture( this.logo );
@@ -116,13 +147,10 @@ class Performs {
 
                     const shader = this.backPlane.material.userData.shader;
                     if ( shader ) {
-
                         shader.uniforms.textureMap.value = this.logoTexture;
-
                     }
                     else {
-                        this.photocallMaterial.uniforms.textureMap.value = this.logoTexture;      
-
+                        this.photocallMaterial.uniforms.textureMap.value = this.logoTexture;
                     }
                 }
                 this.backPlane.material = this.photocallMaterial;
@@ -151,6 +179,54 @@ class Performs {
         }
         this.backPlane.material.needsUpdate = true;
         this.repeatOffset = offset;
+    }
+
+    setBackgroundSettings( settings ) {
+        if(!this.backPlane.material.uniforms) {
+            const shader = this.backPlane.material.userData.shader;
+            if ( shader ) {
+                shader.defines.EXPAND = settings == "Expand";
+                shader.defines.FILL = settings == "Fill";
+                shader.defines.EXTEND = settings == "Extend";
+                shader.defines.ADJUST = settings == "Adjust";
+            }
+        }
+        else {
+            this.backPlane.material.defines.EXPAND = settings == "Expand";
+            this.backPlane.material.defines.FILL = settings == "Fill";
+            this.backPlane.material.defines.EXTEND = settings == "Extend";
+            this.backPlane.material.defines.ADJUST = settings == "Adjust";
+        }
+        this.backPlane.material.needsUpdate = true;
+        this.backgroundSettings = settings;
+    }
+   
+    setBackgroundTextureScale ( scale ) {
+        if(!this.backPlane.material.uniforms) {
+            const shader = this.backPlane.material.userData.shader;
+            if ( shader ) {
+                shader.uniforms.scale.value = scale;
+            }
+        }
+        else {
+            this.backPlane.material.uniforms.scale.value = scale;
+        }
+        this.backPlane.material.needsUpdate = true;
+        this.textureScale = scale;
+    }
+
+    setBackgroundTexturePosition ( position ) {
+        if(!this.backPlane.material.uniforms) {
+            const shader = this.backPlane.material.userData.shader;
+            if ( shader ) {
+                shader.uniforms.position.value = position;
+            }
+        }
+        else {
+            this.backPlane.material.uniforms.position.value = position;
+        }
+        this.backPlane.material.needsUpdate = true;
+        this.texturePosition = position;
     }
 
     // value (hex colour) in sRGB space 
@@ -243,6 +319,9 @@ class Performs {
                         this.changeMode(Performs.Modes.SCRIPT);
                         if(this.autoplay) {
                             this.scriptApp.replay();
+                            if(this.videoBackground) {
+                                this.videoBackground.play();
+                            }
                         }
 
                         if(rotation) {
@@ -430,6 +509,9 @@ class Performs {
         if(settings.color) {
             if(typeof(settings.color) == 'string'){
                 settings.color = settings.color.replace('0x', '#');
+                if(!settings.color.includes("#")) {
+                    settings.color = "#" + settings.color;
+                }
             }
             this.sceneColor = settings.color;
             this.setBackPlaneColour(this.sceneColor);                                  
@@ -686,80 +768,45 @@ class Performs {
         
         // Create an standard material for Studio space
         this.studioMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
-        
+        this.studioMaterial.onBeforeCompile = async (shader) => {
+            shader.uniforms.textureMap = {value: this.backgroundTexture}; 
+            shader.uniforms.position = {value: this.texturePosition};
+            shader.uniforms.scale = {value: this.textureScale};
+            shader.uniforms.type = {value: this.backgroundSettings};
+            shader.uniforms.size = {value: [20, 20]};
+            // shader.defines.EXPAND = this.backgroundSettings == "Expand";
+            // shader.defines.FILL = this.backgroundSettings == "Fill";
+            // shader.defines.EXTEND = this.backgroundSettings == "Extend";
+            // shader.defines.ADJUST = this.backgroundSettings == "Adjust";
+            shader.vertexShader = `#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n` + shader.vertexShader;
+            //prepend the input to the shader
+            shader.fragmentShader = `#define EXPAND ${this.backgroundSettings == "Expand"}\n#define EXTEND ${this.backgroundSettings == "Extend"}\n#define FILL ${this.backgroundSettings == "Fill"}\n#define ADJUST ${this.backgroundSettings == "Adjust"}\n#define USE_UV;\nuniform sampler2D textureMap;\nuniform vec2 position; uniform float scale; // Texture repetition count\nuniform float offset;// Offset for the texture in UV space;\nuniform vec2 size;\nvarying vec3 vWorldPosition;\n`+ shader.fragmentShader;
+            shader.fragmentShader = 
+            shader.fragmentShader.replace(
+                'vec4 diffuseColor = vec4( diffuse, opacity );', 
+                backgroundShaderChunk
+                )
+            this.studioMaterial.userData.shader = shader;           
+        };
+
         // Create a customized standard material for Photocall space        
         this.logoTexture = new THREE.TextureLoader().load(this.logo);
         this.logoTexture.wrapS = THREE.RepeatWrapping;
         this.repeatOffset = 0;
-        this.expandBackground = false;
+        this.repeatBackground = true;
 
         this.photocallMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
         this.photocallMaterial.onBeforeCompile = async (shader) => {
             shader.uniforms.textureMap = {value: this.logoTexture}; 
             shader.uniforms.repeat = {value: [20,20]};
             shader.uniforms.offset = {value: this.repeatOffset};
-            shader.uniforms.expand = {value: this.expandBackground}
-            shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;
-            
+            shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;            
             //prepend the input to the shader
-            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; uniform bool expand; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
-
+            shader.fragmentShader = '#define USE_UV;\nuniform sampler2D textureMap\n;uniform vec2 repeat; // Texture repetition count\nuniform float offset; // Offset for the texture in UV space;\nvarying vec3 vWorldPosition;\n' + shader.fragmentShader;
             shader.fragmentShader = 
-            // shader.fragmentShader.replace(
-            // 'vec4 diffuseColor = vec4( diffuse, opacity );', 
-            // 'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
-            // \ if (vWorldPosition.y > 0.0) { \n\
-            //     \ // Scale the UV coordinates by the repeat factor\n\
-            //     \ vec2 uvScaled = vUv * repeat;\n\n\
-            //     \ // Use mod to wrap the UVs for repeating the texture\n\
-            //     \ vec2 uvMod = mod(uvScaled, 1.0);\n\
-            //     \ // Shrink the UV space to account for the gaps\n\
-            //     \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
-            //     \ // Only apply the texture inside the non-gap area\n\
-            //     \ if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
-            //         \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
-            //         \ vec2 uv = fract(uvScaled);\n\
-            //         \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
-            //         \ vec2 smooth_uv = uvScaled;\n\
-            //         \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-            //         \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
-            //         \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-            //     \ }\n\
-            // \ }\n'
-            // )
             shader.fragmentShader.replace(
                 'vec4 diffuseColor = vec4( diffuse, opacity );', 
-                'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
-                \ if (vWorldPosition.y > 0.0) { \n\
-                    \ if (expand) { \n\
-                        \ // Compute derivatives for mipmapping\n\
-                        \ vec2 smooth_uv = vUv;\n\
-                        \ smooth_uv.y = 2.0 * (smooth_uv.y) - 1.0; \n\
-                        \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-                        \ //vec4 texColor = textureGrad(textureMap, vUv, duv.xy, duv.zw);\n\
-                        \ vec4 texColor = texture2D(textureMap, smooth_uv);\n\
-                        \ //diffuseColor = vec4(smooth_uv, 0, 1); \n\
-                        \ diffuseColor =mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-                    \ }\n\
-                    \ else {\n\
-                        \ // Scale the UV coordinates by the repeat factor\n\
-                        \ vec2 uvScaled = vUv * repeat;\n\n\
-                        \ // Use mod to wrap the UVs for repeating the texture\n\
-                        \ vec2 uvMod = mod(uvScaled, 1.0);\n\
-                        \ // Shrink the UV space to account for the gaps\n\
-                        \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
-                        \ // Only apply the texture inside the non-gap area\n\
-                        \ if ( uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
-                            \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
-                            \ vec2 uv = fract(uvScaled);\n\
-                            \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
-                            \ vec2 smooth_uv = uvScaled;\n\
-                            \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-                            \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
-                            \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-                        \ }\n\
-                    \ }\n\
-                \ }\n'
+                repeatShaderChunk
                 )
             this.photocallMaterial.userData.shader = shader;
             const urlParams = new URLSearchParams(window.location.search);
@@ -793,7 +840,7 @@ class Performs {
         };
 
         // Create background mesh for Studio and Photocall space
-        let backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
+        const backPlane = this.backPlane = new THREE.Mesh(createBackdropGeometry(15,10), this.studioMaterial );
         backPlane.name = 'Chroma';
         backPlane.position.z = -1;
         backPlane.receiveShadow = true;
@@ -1059,6 +1106,9 @@ class Performs {
                 
                 if(this.autoplay) {
                     this.scriptApp.replay();
+                    if(this.videoBackground) {
+                        this.videoBackground.play();
+                    }
                 }
             }); 
             return;
@@ -1238,3 +1288,67 @@ function createBackdropGeometry(width = 5, height = 5, segments = 2) {
 }
 
 export { Performs };
+
+const repeatShaderChunk = 
+    'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+    \ if (vWorldPosition.y > 0.0) { \n\
+        \ // Scale the UV coordinates by the repeat factor\n\
+        \ vec2 uvScaled = vUv * repeat;\n\n\
+        \ // Use mod to wrap the UVs for repeating the texture\n\
+        \ vec2 uvMod = mod(uvScaled, 1.0);\n\
+        \ // Shrink the UV space to account for the gaps\n\
+        \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+        \ // Only apply the texture inside the non-gap area\n\
+        \ if ( uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
+            \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
+            \ vec2 uv = fract(uvScaled);\n\
+            \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
+            \ vec2 smooth_uv = uvScaled;\n\
+            \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
+            \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
+            \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
+        \ }\n\
+    \ }\n';
+
+const backgroundShaderChunk = 
+    'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+    \ ivec2 texSize = textureSize(textureMap, 0);\n\
+    \ float texAspect = float(texSize.x) / float(texSize.y);\n\
+    \ vec2 resolution = vec2(size.x, size.y*0.5 ); \n\
+    \ float objAspect = resolution.x / resolution.y;\n\
+    \ if (vWorldPosition.y > 0.0) { \n\
+        \ vec2 smooth_uv = vUv;\n\
+        \ smooth_uv.y = 2.0 * (smooth_uv.y) - 1.0; \n\
+        \ if ( FILL ) {\n\
+        \   // Fill all surface taking into accound proportions (if texture is bigger than the resolution, only a part is shown)\n\
+        \   if( texAspect > objAspect ) {\n\
+        \       smooth_uv.x = ( smooth_uv.x - 0.5) * ( objAspect / texAspect ) + 0.5;\n\
+        \   }\n\
+        \   else {\n\
+        \       smooth_uv.y = ( smooth_uv.y - 0.5) * ( texAspect / objAspect ) + 0.5;\n\
+        \   }\n\
+        \ } \n\
+        \ else if ( ADJUST ) {\n\
+        \   // Adjust the texture in the surface (if texture is lower than the resolution, empty parts are shown)\n\
+        \   if( texAspect > objAspect ) {\n\
+        \       smooth_uv.y = ( smooth_uv.y - 0.5) * ( texAspect / objAspect ) + 0.5;\n\
+        \   }\n\
+        \   else {\n\
+        \       smooth_uv.x = ( smooth_uv.x - 0.5) * ( objAspect / texAspect ) + 0.5;\n\
+        \   }\n\
+        \ } \n\
+        \ else if ( EXTEND ) {\n\
+        \   smooth_uv = (smooth_uv - 0.5) * texAspect / objAspect + 0.5;\n\
+        \ } \n\
+        \ // Expand the texture to adjust it into the surface (does not take into account proportions) \n\
+        \ else if ( EXPAND ) {\n\
+            \ // Compute derivatives for mipmapping\n\
+            \ //smooth_uv.x = 2.0 * (smooth_uv.x) - 0.5; \n\
+        \ } \n\
+        \ smooth_uv -= position;\n\
+        \ smooth_uv /= vec2(scale);\n\
+        \ if( smooth_uv.x <= 1.0 && smooth_uv.x >= 0.0 && smooth_uv.y <= 1.0 && smooth_uv.y >= 0.0 ) { \n\
+        \   vec4 texColor = texture2D(textureMap, smooth_uv);\n\
+        \   diffuseColor = mix(diffuseColor, texColor, texColor.a);\n\
+        \ }\n\
+    \ }\n';
