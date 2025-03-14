@@ -236,7 +236,10 @@ class GUI {
         p.clear();
         p.branch("Backgrounds");
         let color = this.performs.sceneColor;
-        color = new THREE.Color(Number(color.replace("#", "").replace("0x", "")));
+        if( color instanceof String ) {
+            color = Number(color.replace("#", "").replace("0x", ""));
+        }
+        color = new THREE.Color(color);
 
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
             this.performs.setBackPlaneColour(value);
