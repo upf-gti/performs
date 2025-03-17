@@ -305,10 +305,10 @@ class KeyframeApp {
                             let skeleton = null;
                             let model = glb.scene ? glb.scene : glb;
                             model.traverse( o => {                                    
-                                if ( o.skeleton ){ 
+                                if ( o.skeleton ) {
                                     skeleton = o.skeleton;
                                     return;
-                                }                                                
+                                }                                
                             } );
                             let animationsNames = [];
                             if ( skeleton ){
@@ -328,6 +328,36 @@ class KeyframeApp {
 
                             for(let i = 0; i < glb.animations.length; i++) {
                                 let name = glb.animations[i].name;
+                                const tracks = [];
+                                for(let j = 0; j < glb.animations[i].tracks.length; j++) {
+                                
+                                    let track = glb.animations[i].tracks[j];
+                                    const trackBinding = THREE.PropertyBinding.parseTrackName( track.name );
+                                    const meshName = trackBinding.nodeName; // Mesh name                                    
+                                    let morphTargetName = trackBinding.propertyIndex; // Morph target name
+                                    
+                                    if(trackBinding.propertyName != 'morphTargetInfluences' || morphTargetName) {
+                                        tracks.push(track);
+                                        continue;
+                                    }
+
+                                    // this track affects all morph targets together (are merged)                                        
+                                    const sourceTrackNode = THREE.PropertyBinding.findNode( model, trackBinding.nodeName );
+                                    const targetCount = sourceTrackNode.morphTargetInfluences.length;
+                                    const times = track.times;
+                                    for( let morphTarget in sourceTrackNode.morphTargetDictionary ) {
+                                        
+                                        const morphTargetIdx = sourceTrackNode.morphTargetDictionary[morphTarget];
+                                        const values = new track.ValueBufferType( track.times.length );
+                                        for ( let j = 0; j < times.length; j ++ ) {
+
+                                            values[j] = track.values[j * targetCount + morphTargetIdx];
+                                        }
+                                        tracks.push( new THREE.NumberKeyframeTrack(track.name + "[" + morphTarget + "]", times, values, track.getInterpolation()))
+                                    }
+                                }
+                                glb.animations[i].tracks = tracks;
+                                
                                 if(this.loadedAnimations[name]) {
                                     let filename = file.name.split(".");
                                     filename.pop();
@@ -418,11 +448,12 @@ class KeyframeApp {
         
     }
 
-    loadGLTFAnimation(name, animationData, skeleton) {
+    loadGLTFAnimation(name, animationData, skeleton, model) {
         this.loadedAnimations[name] = {
             name: name,
             bodyAnimation: animationData ?? new THREE.AnimationClip( "bodyAnimation", -1, [] ),
             skeleton,
+            model,
             type: "glb"
         };
 
@@ -548,11 +579,14 @@ class KeyframeApp {
                     const times = track.times;
                     let values = track.values;
                     
-                    const meshName = track.name.split('.morphTargetInfluences')[0]; // Mesh name
-                    const tmp = track.name.split('[');
-                    let morphTargetName = tmp.length > 1 ? track.name.split('[')[1].split(']')[0] : null; // Morph target name
+                    const trackBinding = THREE.PropertyBinding.parseTrackName( track.name );                            
+                    const meshName = trackBinding.nodeName; // Mesh name
+                    let morphTargetName = trackBinding.propertyIndex; // Morph target name
 
                     if(!morphTargetName) {
+                                            
+                        tracks.push(track);
+                        continue;
 
                         // for( let mesh in morphTargets ) {
                         //     if(trackNames.includes(mesh)) {
@@ -563,8 +597,6 @@ class KeyframeApp {
                         //     break;
                         // }
 
-                        tracks.push(track);
-                        continue;
                     }
 
                     let weight = 1;
@@ -748,6 +780,28 @@ class KeyframeApp {
             
         }
         clip.tracks = clip.tracks.concat(newTracks);
+    }
+
+    exportAnimations() {
+        const animations = [];
+        for(let name in this.bindedAnimations) { // can be an array of loadedAnimations, or an object with animations (loadedAnimations itself)
+            const bindedAnim = this.bindedAnimations[name][this.currentCharacter];
+            const animSaveName = name;
+            
+            let tracks = []; 
+            if(bindedAnim.mixerBodyAnimation) {
+                tracks = tracks.concat( bindedAnim.mixerBodyAnimation.tracks );
+            }
+            if(bindedAnim.mixerFaceAnimation) {
+                tracks = tracks.concat( bindedAnim.mixerFaceAnimation.tracks );
+            }
+            if(bindedAnim.mixerAnimation) {
+                tracks = tracks.concat( bindedAnim.mixerAnimation.tracks );
+            }
+
+            animations.push( new THREE.AnimationClip( animSaveName, -1, tracks ) );
+        }
+        return animations;
     }
     
 }

@@ -50,7 +50,7 @@ class GUI {
 
         this.mainArea.extend();
 
-        this.branchesOpened = {"Customization" : true, "Transformations": true, "Recording": true, "Animation": true};
+        this.branchesOpened = {"Customization" : true, "Transformations": true, "Recording": true, "Animation": true, "Export": true};
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
         if ( window.sessionStorage ){
@@ -221,10 +221,15 @@ class GUI {
             this.branchesOpened["Export"] = !p.getBranch("Export").content.parentElement.classList.contains("closed");
         }
         p.branch( "Export", { icon: "fa-solid fa-file-export", closed: !this.branchesOpened["Export"]} );
-        p.addButton(null, "Export", (v) => {
+        
+        if( this.performs.mode == Performs.Modes.KEYFRAME ) {            
+            p.addButton(null, "Export avatar", (v) => {
+                this.showExportAvatarDialog();
+            })
+        }
+        p.addButton(null, "Export configuration", (v) => {
             this.showExportDialog();
         })
-
     }
 
     createBackgroundsPanel() {
@@ -500,7 +505,11 @@ class GUI {
 
             panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
                 this.performs.setPhotocallOffset(v);
-            }, {min: 0, max: 1, step: 0.01})
+            }, {min: 0, max: 1, step: 0.01});
+
+            panel.addVector2("Repeatition", this.performs.repeatCount, (v) => {
+                this.performs.repeatCount = v;
+            }, {min: 0, max: 20})
         })
     }
 
@@ -2327,6 +2336,11 @@ class GUI {
             });
         }
 
+    }
+
+    showExportAvatarDialog(callback) {
+        
+        this.performs.export('GLB');
     }
 
     showExportDialog(callback) {

@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
 import { AnimationRecorder } from './recorder/recorder.js';
 import { GUI } from './GUI.js';
@@ -26,7 +27,8 @@ class Performs {
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
         this.clock = new THREE.Clock();
         this.loaderGLB = new GLTFLoader();
-        
+        this.GLTFExporter = new GLTFExporter;
+
         this.scene = null;
         this.renderer = null;
         this.camera = null;
@@ -793,12 +795,13 @@ class Performs {
         this.logoTexture = new THREE.TextureLoader().load(this.logo);
         this.logoTexture.wrapS = THREE.RepeatWrapping;
         this.repeatOffset = 0;
+        this.repeatCount = [20,20];
         this.repeatBackground = true;
 
         this.photocallMaterial = new THREE.MeshStandardMaterial( { color: this.sceneColor, depthWrite: true, roughness: 1, metalness: 0} );
         this.photocallMaterial.onBeforeCompile = async (shader) => {
             shader.uniforms.textureMap = {value: this.logoTexture}; 
-            shader.uniforms.repeat = {value: [20,20]};
+            shader.uniforms.repeat = {value: this.repeatCount};
             shader.uniforms.offset = {value: this.repeatOffset};
             shader.vertexShader = '#define USE_UV;\n#define USE_TRANSMISSION;\nvarying vec3 vPosition;\n' + shader.vertexShader;            
             //prepend the input to the shader
@@ -1261,6 +1264,48 @@ class Performs {
             this._atelier.focus();
         }
     }
+
+    export( type = null, name = null) {
+        let files = [];
+
+        switch(type){
+            case 'GLB':
+                let options = {
+                    binary: true,
+                    animations: []
+                };
+
+                const keyframeAnimations = this.keyframeApp.exportAnimations();
+                // const scriptAnimations = this.scriptApp.exportAnimations();
+                
+                let model = this.currentCharacter.mixer._root.getObjectByName('Armature');
+                options.animations = [...keyframeAnimations];
+
+                this.GLTFExporter.parse(model, 
+                    ( gltf ) => download(gltf, (name || "animations") + '.glb', 'arraybuffer' ), // called when the gltf has been generated
+                    ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
+                    options
+                );
+                break;
+        }
+    }
+}
+
+// Function to download data to a file
+function download (data, filename, type = "text/plain") {
+    const file = new Blob([data], {type: type});
+    if (window.navigator.msSaveOrOpenBlob) // IE10+
+        window.navigator.msSaveOrOpenBlob(file, filename);
+    else { // Others
+        let a = document.createElement("a");
+        let url = URL.createObjectURL(file);
+        a.href = url;
+        a.download = filename;
+        a.click();
+        setTimeout(function() {
+            window.URL.revokeObjectURL(url);  
+        }, 0); 
+    }
 }
 
 // Function to create a curved backdrop geometry
@@ -1291,23 +1336,27 @@ export { Performs };
 
 const repeatShaderChunk = 
     'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
+    \ ivec2 texSize = textureSize(textureMap, 0);\n\
+    \ float texAspect = float(texSize.x) / float(texSize.y);\n\
     \ if (vWorldPosition.y > 0.0) { \n\
-        \ // Scale the UV coordinates by the repeat factor\n\
-        \ vec2 uvScaled = vUv * repeat;\n\n\
-        \ // Use mod to wrap the UVs for repeating the texture\n\
-        \ vec2 uvMod = mod(uvScaled, 1.0);\n\
-        \ // Shrink the UV space to account for the gaps\n\
-        \ float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
-        \ // Only apply the texture inside the non-gap area\n\
-        \ if ( uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) {\n\
-            \ // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area\n\
-            \ vec2 uv = fract(uvScaled);\n\
-            \ vec2 uvShrink = (uv - vec2(offset)) / shrinkFactor;\n\
-            \ vec2 smooth_uv = uvScaled;\n\
-            \ vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv));\n\
-            \ vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw);\n\n\
-            \ diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a);\n\
-        \ }\n\
+    \   // Get the aspect ratio of the texture \n\
+    \   // Adjust UVs based on the texture aspect ratio \n\
+    \   vec2 aspectCorrectedUV = vec2(vUv.x, vUv.y * texAspect); \n\
+    \   // Scale the UV coordinates by the repeat factors \n\
+    \   vec2 uvScaled = aspectCorrectedUV * repeat; \n\
+    \   // Use mod to wrap the UVs for repeating the texture \n\
+    \   vec2 uvMod = mod(uvScaled, 1.0); \n\
+    \   float shrinkFactor = 1.0 - 2.0 * offset; // Shrink the texture to fit between gaps\n\
+    \   // Only apply the texture inside the non-gap area \n\
+    \   if (uvMod.x > offset && uvMod.x < (1.0 - offset) && uvMod.y > offset && uvMod.y < (1.0 - offset)) { \n\
+    \       // Calculate the "shrunken" UV coordinates to fit the texture within the non-gap area \n\
+    \       vec2 uvShrink = (fract(uvScaled) - offset) / vec2(shrinkFactor); \n\
+    \       // Compute derivatives for mipmapping \n\
+    \       vec2 smooth_uv = uvScaled; \n\
+    \       vec4 duv = vec4(dFdx(smooth_uv), dFdy(smooth_uv)); \n\
+    \       vec4 texColor = textureGrad(textureMap, uvShrink, duv.xy, duv.zw); \n\
+    \       diffuseColor = mix(texColor, diffuseColor, 1.0 - texColor.a); \n\
+    \   } \n\
     \ }\n';
 
 const backgroundShaderChunk = 
