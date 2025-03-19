@@ -1764,7 +1764,7 @@ class KeyframeApp {
                                     }
                                 }
                                 glb.animations[i].tracks = tracks;
-                                
+
                                 if(this.loadedAnimations[name]) {
                                     let filename = file.name.split(".");
                                     filename.pop();
@@ -2047,11 +2047,14 @@ class KeyframeApp {
                             }
                             if( mappedAUs.length ) {
                                 parsedTracks.push(morphTargetName);
+                                found = true;
                             }
                             morphTargetName = mappedAUs;
                             weight = weights;
                         }
 
+                        // TO DO: check if it's found, otherwise have a RPM standard config to search a correspondence there
+                        
                         // Search the AU mapped to this morph target (map the standard AU to the avatar morph targets)
                         for ( let actionUnit in morphTargetMap ) {
 

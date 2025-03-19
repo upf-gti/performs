@@ -2340,7 +2340,9 @@ class GUI {
 
     showExportAvatarDialog(callback) {
         
-        this.performs.export('GLB');
+        this.performs.export('GLB', this.performs.currentCharacter.model.name, (error) =>{
+            LX.popup("Error: " + error, null, {size:["800px", "auto"], timeout: 6000})
+        });
     }
 
     showExportDialog(callback) {

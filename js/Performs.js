@@ -1265,7 +1265,7 @@ class Performs {
         }
     }
 
-    export( type = null, name = null) {
+    export( type = null, name = null, onError) {
         let files = [];
 
         switch(type){
@@ -1278,12 +1278,12 @@ class Performs {
                 const keyframeAnimations = this.keyframeApp.exportAnimations();
                 // const scriptAnimations = this.scriptApp.exportAnimations();
                 
-                let model = this.currentCharacter.mixer._root.getObjectByName('Armature');
+                let model = this.currentCharacter.mixer._root;
                 options.animations = [...keyframeAnimations];
 
                 this.GLTFExporter.parse(model, 
                     ( gltf ) => download(gltf, (name || "animations") + '.glb', 'arraybuffer' ), // called when the gltf has been generated
-                    ( error ) => { console.log( 'An error happened:', error ); }, // called when there is an error in the generation
+                    ( error ) => { console.log( 'An error happened:', error ); if(onError) onError(error)}, // called when there is an error in the generation
                     options
                 );
                 break;
