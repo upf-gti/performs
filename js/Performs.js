@@ -284,6 +284,9 @@ class Performs {
             }
 
             if(settings.animations) {
+                if(typeof(settings.animations) == 'string') {
+                    settings.animations = JSON.parse(settings.animations);
+                }
                 this.keyframeApp.processMessageFiles( settings.animations).then(
                     (animations) => {
                         this.keyframeApp.currentAnimation = animations[0];
