@@ -1098,6 +1098,11 @@ class Performs {
             return;
         }
 
+        if (data.askingStatus){
+            event.source.postMessage({appStatus: true}, "*");
+            return;
+        }
+
         if ( Array.isArray(data) ){
             this.scriptApp.onMessage(data, (processedData) => {
                 
