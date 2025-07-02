@@ -1236,6 +1236,9 @@ class Performs {
                     
                     const obj = [];
                     const location = locations[part];
+                    if( !location.parent ) {
+                        location.parent = skeleton.bones[findIndexOfBoneByName(skeleton, location[0])].name;
+                    }
                     let idx = findIndexOfBoneByName( skeleton, location.parent.name );
                     if ( idx < 0 ){ continue; }
     
@@ -1258,14 +1261,28 @@ class Performs {
             rawConfig.bodyController.handLocationsR = innerLocationToObjects(config.bodyController.handLocationsR);
         }
         const atelierData = [name, model, rawConfig, rotation];        
-        localStorage.setItem("atelierData", JSON.stringify(atelierData));
-        if(!this._atelier || this._atelier.closed) {
-            this._atelier = window.open(Performs.ATELIER_URL, "Atelier");            
+        // localStorage.setItem("atelierData", JSON.stringify(atelierData));
+
+              
+        const sendData = (data) => {
+
+            if( !this._atelier || this._atelier.closed ) {
+                this._atelier = window.open(Performs.ATELIER_URL, "Atelier");
+                setTimeout(() => this._atelier.postMessage(data, "*"), 1000); // wait a while to have the page loaded (onloaded has CORS error)                
+            }
+            else {
+                this._atelier.focus();                
+                this._atelier.postMessage(data, "*");
+            }
         }
-        else {
-            //this._atelier.location.reload();
-            this._atelier.focus();
-        }
+        sendData(JSON.stringify(atelierData));
+        // if(!this._atelier || this._atelier.closed) {
+        //     this._atelier = window.open(Performs.ATELIER_URL, "Atelier");            
+        // }
+        // else {
+        //     //this._atelier.location.reload();
+        //     this._atelier.focus();
+        // }
     }
 
     export( type = null, name = null, onError) {
