@@ -428,14 +428,14 @@ class ScriptApp {
 
         let root = bones[0].parent.clone(false);
         root.add(resultBones[0]);
-        if(bones[0].parent.parent) {
-            let parent = bones[0].parent.parent.clone(false);
-            parent.add(root);
-            this.scene.add(parent)
-        }
-        else {
-            this.scene.add(root)
-        }
+        // if(bones[0].parent.parent) {
+        //     let parent = bones[0].parent.parent.clone(false);
+        //     parent.add(root);
+        //     this.scene.add(parent)
+        // }
+        // else {
+        //     this.scene.add(root)
+        // }
         resultBones[0].updateWorldMatrix( true, true ); // assume 0 is root. Update all global matrices (root does not have any parent)
         let resultSkeleton = new THREE.Skeleton(resultBones);
 
