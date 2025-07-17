@@ -120,34 +120,31 @@ let simpleMotionAvailable = [ "directedmotion", "circularmotion", "wristmotion",
 let motionsAvailable = simpleMotionAvailable.concat( [ "nonman_motion", "par_motion", "seq_motion", "split_motion", "rpt_motion", "tgt_motion" ] ); // missing tgt, rpt and timing issues
 let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", "split_location", "location_hand", "handconstellation" , "use_locname"]; // missing location_hand, handconstellation, use_locname(????) 
 
-if (typeof(stringToDirection) != 'function') {
-    // used in rpt_motion
-    function stringToDirection( str, outV = null, symmetry = 0x00 ){
-        if ( !outV ){ outV = [0,0,0]; }
-        outV.fill(0);
-        if ( typeof( str ) != "string" ){ return outV; }
+// used in rpt_motion
+function stringToDirection( str, outV = null, symmetry = 0x00 ){
+    if ( !outV ){ outV = [0,0,0]; }
+    outV.fill(0);
+    if ( typeof( str ) != "string" ){ return outV; }
 
-        str = str.toUpperCase();
-        
-        // right hand system. If accumulate, count repetitions
-        outV[0] = str.split("L").length - str.split("R").length; 
-        outV[1] = str.split("U").length - str.split("D").length;
-        outV[2] = str.split("O").length - str.split("I").length;
+    str = str.toUpperCase();
     
-        if ( symmetry & 0x01 ){ outV[0] *= -1; }
-        if ( symmetry & 0x02 ){ outV[1] *= -1; }
-        if ( symmetry & 0x04 ){ outV[2] *= -1; }
+    // right hand system. If accumulate, count repetitions
+    outV[0] = str.split("L").length - str.split("R").length; 
+    outV[1] = str.split("U").length - str.split("D").length;
+    outV[2] = str.split("O").length - str.split("I").length;
 
-        let length = Math.sqrt( outV[0] * outV[0] + outV[1] * outV[1] + outV[2] * outV[2] );
-        
-        if ( length < 0.0001 ){ outV.fill(0); }
-        outV[0] /= length;
-        outV[1] /= length;
-        outV[2] /= length;
-        return outV;
-    }
+    if ( symmetry & 0x01 ){ outV[0] *= -1; }
+    if ( symmetry & 0x02 ){ outV[1] *= -1; }
+    if ( symmetry & 0x04 ){ outV[2] *= -1; }
+
+    let length = Math.sqrt( outV[0] * outV[0] + outV[1] * outV[1] + outV[2] * outV[2] );
+    
+    if ( length < 0.0001 ){ outV.fill(0); }
+    outV[0] /= length;
+    outV[1] /= length;
+    outV[2] /= length;
+    return outV;
 }
-
 
 function checkHandsUsage( orders ){
     
