@@ -191,13 +191,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcLocation: "HAND", srcSide: "PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
-                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "RIGHT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", hand: "RIGHT" }, 
             ],
             LEFT: [
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcLocation: "HAND", srcSide: "PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
-                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "LEFT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", hand: "LEFT" }, 
             ],
             handConstellation: null,
         }

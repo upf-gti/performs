@@ -7586,8 +7586,8 @@ class BodyController{
         // this posture setting is quite hacky. To avoid dealing with handConstellation shift (not trivial)
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "RIGHT", distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "LEFT",  distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.75, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.5, hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.75, hand: "LEFT", shift:true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "l", hand: "RIGHT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "r", hand: "LEFT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
@@ -8255,13 +8255,13 @@ function currentPostureUpdate( oldPosture, newOrders, overwrite = false ){
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "RIGHT", distance: 0.37, side: "r", srcLocation: "HAND", srcSide: "PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dl", hand: "RIGHT" }, 
                 { type: "gesture", start: -1, palmor: "l", hand: "RIGHT" }, 
-                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "RIGHT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", hand: "RIGHT" }, 
             ],
             LEFT: [
                 { type: "gesture", start: -1, locationBodyArm: "CHEST", secondLocationBodyArm: "STOMACH", hand: "LEFT", distance: 0.37, side: "l", srcLocation: "HAND", srcSide: "PALMAR" },
                 { type: "gesture", start: -1, extfidir: "dr", hand: "LEFT" }, 
                 { type: "gesture", start: -1, palmor: "r", hand: "LEFT" }, 
-                { type: "gesture", start: -1, handshape: "FLAT", thumbshape: "TOUCH", hand: "LEFT" }, 
+                { type: "gesture", start: -1, handshape: "FLAT", hand: "LEFT" }, 
             ],
             handConstellation: null,
         }

@@ -459,8 +459,8 @@ Sets the posture of the fingers of a hand. Fingers are numbered from 1 (thumb) t
     
     // optionals
     "secondHandshape": "FLAT", //string from the handshape table
-    "thumbshape": "TOUCH", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
-    "secondThumbshape": "TOUCH", // string from thumbshape table. Applied to secondHandshape
+    "thumbshape": "OPPOSED", //string from thumbshape table. if not present, the predefined thumbshape for the handshape will be used
+    "secondThumbshape": "ACROSS", // string from thumbshape table. Applied to secondHandshape
     "tco": 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification 
     "secondtco": 0.3, // number [0,1]. Thumb Combination Opening from the Hamnosys specification. Applied to secondHandshape
     
@@ -514,7 +514,6 @@ DEFAULT
 OUT    
 OPPOSED    
 ACROSS    
-TOUCH                   
 </details>
 <details>
 <summary>Click to view the complete list of BEND STATES </summary>
