@@ -93,7 +93,7 @@ class GUI {
                         }
                     }
                     else if (this.performs.mode == Performs.Modes.SCRIPT) {
-                        if(event.target.tagName == 'TEXTAREA') {
+                        if(event.target.tagName == 'TEXTAREA' || event.target.classList.contains("lexcodeeditor")) {
                             return;
                         }
                         this.performs.scriptApp.replay();
