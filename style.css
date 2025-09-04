@@ -121,12 +121,12 @@
 
 /* Overlay buttons*/
 
-.lexoverlaybuttons .lexwidget button {
+.lexoverlaybuttons .lexcomponent button {
 	border-radius: 80px!important;
     height: auto!important;
 }
 
-.lexoverlaybuttons .lexwidget.larger button {
+.lexoverlaybuttons .lexcomponent.larger button {
 
 	width: 37px!important;
 	height: 37px!important;	
@@ -134,42 +134,42 @@
 	max-width: 80px!important;
 }
 
-.lexoverlaybuttons .lexwidget.larger button a {
+.lexoverlaybuttons .lexcomponent.larger button a {
 	font-size: 18px!important;
 }
 .no-padding{
 	padding: 5px!important;
 }
 
-.lexoverlaybuttons .lexwidget.large {
+.lexoverlaybuttons .lexcomponent.large {
     margin: 0 10px!important;
 }
 
-.lexoverlaybuttons .lexwidget.large button {
+.lexoverlaybuttons .lexcomponent.large button {
 	width: 60px!important;
 	height: 60px!important;
     max-height: 80px!important;
 	max-width: 80px!important;
 }
 
-.lexoverlaybuttons .lexwidget.large button a {
+.lexoverlaybuttons .lexcomponent.large button a {
 	font-size: 30px!important;
 }
 
-.lexoverlaybuttons .lexwidget.relative {    
+.lexoverlaybuttons .lexcomponent.relative {    
     margin: 0;
     min-height: 32px;
 }
-.lexoverlaybuttons .lexwidget.relative button{    
+.lexoverlaybuttons .lexcomponent.relative button{    
     height: 32px!important;
 }
 
-.lexoverlaybuttons .lexwidget.relative button a {
+.lexoverlaybuttons .lexcomponent.relative button a {
     line-height: 19px;
     font-size: var(--global-font-size);
 }
 
-.lexoverlaybuttons .lexwidget.relative.left {    
+.lexoverlaybuttons .lexcomponent.relative.left {    
     margin-right: 77px;
 }
 
@@ -178,16 +178,17 @@
     outline: 1px solid var(--global-color-terciary);
     color: #DDD;
 }
-.lexoverlaybuttons .lexwidget {
+.lexoverlaybuttons .lexcomponent {
 	visibility: visible;
 	transition: transform 0.2s ease, opacity 0.2s ease, visibility 0.2s ease;
 }
-.lexoverlaybuttons .lexwidget.hide {
+.lexoverlaybuttons .lexcomponent.hide {
 	transform: translateY(-20px);
     opacity: 0;
 	visibility: hidden;
-}
 
+}
+	
 .lexbutton.accept:hover {
     background-color: #BB86FC;
 }

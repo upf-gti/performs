@@ -1,11 +1,23 @@
 import * as THREE from "three"
 import { LX } from 'lexgui';
-import 'lexgui/components/codeeditor.js';
+import 'lexgui/extensions/codeeditor.js';
 import { Performs } from './Performs.js'
+
+LX.mainArea = await LX.init();
+
+LX.registerIcon("CircleRecording", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M528 320C528 205.1 434.9 112 320 112C205.1 112 112 205.1 112 320C112 434.9 205.1 528 320 528C434.9 528 528 434.9 528 320zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>');
 
 class GUI {
 
     static THUMBNAIL = "data/imgs/monster.png";
+
+    static ACTIVEPANEL_NONE = 0;
+    static ACTIVEPANEL_SETTINGS = 1;
+    static ACTIVEPANEL_CAMERA = 2;
+    static ACTIVEPANEL_BACKGROUND = 3;
+    static ACTIVEPANEL_AVATARS = 4;
+    static ACTIVEPANEL_LIGHTS = 5;
+
     constructor( performs ){
         this.performs = performs;
         this.randomSignAmount = 0;
@@ -20,16 +32,13 @@ class GUI {
 
         // take canvas from dom, detach from dom, attach to lexgui 
         this.performs.renderer.domElement.remove(); // removes from dom
-        this.mainArea = LX.init();
+        this.mainArea = LX.mainArea;
         this.mainArea.root.ondrop = this.onDropFiles.bind(this);
 
-        this.mainArea.onresize = (bounding) => this.performs.onCanvasResize(bounding.width, bounding.height);
         this.bmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText: "" };
         this.sigmlInputData = { openButton: null, dialog: null, codeObj: null, prevInstanceText:"" };
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
-        this.gui = null;
-        
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
         canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
@@ -37,14 +46,10 @@ class GUI {
 
         this.panel = panelArea.addPanel({height: "100%"});
         panelArea.addOverlayButtons([{
-            icon: "fa fa-xmark",
+            icon: "X",
             class: "relative",
             callback: () => {
-                if(this.settingsActive || this.cameraActive || this.lightsActive) {
-                    this.mainArea._moveSplit(-100);
-                }
-                this.mainArea.extend();
-                this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
+                this.setActivePanel( GUI.ACTIVEPANEL_NONE );
             }
         }], {float: "rt"});
 
@@ -83,7 +88,7 @@ class GUI {
                     if(this.performs.mode == Performs.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
                             this.performs.keyframeApp.changePlayState();
-                            if(this.settingsActive) {
+                            if(this.activePanelType == ACTIVEPANEL_SETTINGS) {
                                 this.createSettingsPanel();             
                             }
                             this.changePlayButtons(this.performs.keyframeApp.playing);
@@ -97,17 +102,17 @@ class GUI {
                             return;
                         }
                         this.performs.scriptApp.replay();
-                        if(this.settingsActive) {
+                        if(this.activePanelType == ACTIVEPANEL_SETTINGS) {
                             this.createSettingsPanel();             
                         }
                     }                    
                 }
                 else if(event.key == 'Escape') {
-                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
-                        this.mainArea._moveSplit(-100);
+                    if(this.activePanelType) {
+                        this.setActivePanel(GUI.ACTIVEPANEL_NONE);
+                    }else{
+                        this.setActivePanel(this.prevActivePanelType);
                     }
-                    this.mainArea.extend();
-                    this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
                 }
             });
         }
@@ -116,6 +121,9 @@ class GUI {
         this.captureEnabled = false;
         this.controlsActive = true;
         
+        this.activePanelType = GUI.ACTIVEPANEL_NONE;
+        this.prevActivePanelType = GUI.ACTIVEPANEL_NONE;
+
         this.createIcons(canvasArea);
 
     }
@@ -131,12 +139,32 @@ class GUI {
     }
 
     refresh(){
-        if(this.gui) {
-            this.gui.refresh();
+        this.setActivePanel( this.activePanelType );
+    }
+
+    setActivePanel( type ){
+        switch( type ){
+          case GUI.ACTIVEPANEL_SETTINGS: this.createSettingsPanel(); break;
+          case GUI.ACTIVEPANEL_CAMERA: this.createCameraPanel(); break;
+          case GUI.ACTIVEPANEL_BACKGROUND: this.createBackgroundsPanel(); break;
+          case GUI.ACTIVEPANEL_AVATARS: this.createAvatarsPanel(); break;
+          case GUI.ACTIVEPANEL_LIGHTS: this.createLightsPanel(); break;
+          default: type = GUI.ACTIVEPANEL_NONE; break;
         }
-        if(this.settingsActive) {
-            this.createSettingsPanel();             
+      
+        if (type){
+          this.mainArea._moveSplit(0.3 * window.innerWidth);
+          this.panel.parent.show();
+          this.panel.parent.root.style.opacity = 1; // BUG, FOR SOME REASON OPACITY IS INITIALLY 0
+        }else{
+          this.mainArea._moveSplit(-window.innerWidth);
+          this.panel.parent.hide();
         }
+      
+        if ( type != this.activePanelType ){
+          this.prevActivePanelType = this.activePanelType;
+        }
+        this.activePanelType = type;
     }
 
     createSettingsPanel(force = false) {
@@ -147,7 +175,7 @@ class GUI {
             this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
         }
 
-        p.branch("Animation", {icon: "fa-solid fa-hands-asl-interpreting", closed: !this.branchesOpened["Animation"]});
+        p.branch("Animation", {icon: "ASL", closed: !this.branchesOpened["Animation"]});
         
         p.addText(null,"Animation mode options", null, {disabled: true});
         p.sameLine();
@@ -168,11 +196,12 @@ class GUI {
                 resetBtn.classList.remove("hidden");
             }
 
-        }, {icon: "fa fa-code"} );
+        }, {
+            icon: "Code2", 
+            selectable: true, 
+            selected: this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1
+        } );
 
-        if(this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1) {
-            btn.children[0].classList.add("selected");
-        }
         btn = p.addButton(null, "Keyframing animation",  (v, e) => {
             this.performs.changeMode(Performs.Modes.KEYFRAME);
             this.createSettingsPanel(); 
@@ -181,10 +210,10 @@ class GUI {
             if(resetBtn) {
                 resetBtn.classList.add("hidden");
             }
-        }, {icon: "fa fa-film"} );
+        }, {icon: "Film"} );
         
         if(this.performs.mode == Performs.Modes.KEYFRAME) {
-            btn.children[0].classList.add("selected");
+            btn.root.children[0].classList.add("selected");
         }
 
         p.endLine();
@@ -204,7 +233,7 @@ class GUI {
             }
         }
 
-        p.branch( "Transformations", { icon: "fa-solid fa-up-down-left-right", closed: !this.branchesOpened["Transformations"]} );
+        p.branch( "Transformations", { icon: "Move", closed: !this.branchesOpened["Transformations"]} );
 
         const model = this.performs.currentCharacter.model;
         p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
@@ -220,7 +249,7 @@ class GUI {
         if(p.getBranch("Export")) {
             this.branchesOpened["Export"] = !p.getBranch("Export").content.parentElement.classList.contains("closed");
         }
-        p.branch( "Export", { icon: "fa-solid fa-file-export", closed: !this.branchesOpened["Export"]} );
+        p.branch( "Export", { icon: "FileOutput", closed: !this.branchesOpened["Export"]} );
         
         if( this.performs.mode == Performs.Modes.KEYFRAME ) {            
             p.addButton(null, "Export avatar", (v) => {
@@ -272,7 +301,7 @@ class GUI {
 
                 this.showStudioPropertiesDialog( );
                 
-            }, {icon: "fa fa-pen-to-square", className: "centered"});
+            }, {icon: "PenBox", className: "centered"});
             ebtn.children[0].style.width = "40px";
         }
         // Photocall background
@@ -287,7 +316,7 @@ class GUI {
 
                 this.showPhotocallPropertiesDialog( );
                 
-            }, {icon: "fa fa-pen-to-square", className: "centered"});
+            }, {icon: "PenBox", className: "centered"});
             ebtn.children[0].style.width = "40px";
         }
     }
@@ -398,7 +427,7 @@ class GUI {
             ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
             panel.endLine();
 
-            panel.addDropdown("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
+            panel.addSelect("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
                 this.performs.setBackgroundSettings(v);
                 this.performs.backgroundSettings = v;               
             } );
@@ -553,7 +582,7 @@ class GUI {
                 this.performs.changeAvatar(value);
                 this.createAvatarsPanel();
             });
-        } ,{ nameWidth: "100px", icon: "fa-solid fa-cloud-arrow-up" } );        
+        } ,{ nameWidth: "100px", icon: "UploadCloud" } );        
       
         p.addSeparator();
 
@@ -606,7 +635,7 @@ class GUI {
 
                 let ebtn = p.addButton( null, "Edit Avatar", (v) => {
                     this.createEditAvatarDialog(v);
-                } ,{ icon: "fa-solid fa-user-pen", className: "centered" } );
+                } ,{ icon: "UserRoundPen", className: "centered" } );
                 ebtn.children[0].style.width = "40px";
             }
             avatars.push({ value: avatar, src: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL});
@@ -659,7 +688,7 @@ class GUI {
         }
         
         p.clear();
-        p.branch( "Recording", { icon: "fa-solid fa-video", closed: !this.branchesOpened["Recording"]} );
+        p.branch( "Recording", { icon: "Video", closed: !this.branchesOpened["Recording"]} );
 
         let cameras = [];
         for (let i = 0; i < this.performs.cameras.length; i++) {
@@ -680,11 +709,11 @@ class GUI {
         p.addButton(null, "Reset", (V) => {
             this.performs.controls[this.performs.camera].reset();
 
-        }, { width: "30px", icon: "fa-solid fa-rotate-left"} ) 
+        }, { width: "30px", icon: "RotateCcw"} ) 
         p.addComboButtons(null, [
             {
                 value: "Restricted View",
-                icon: "fa-solid fa-camera",
+                icon: "Camera",
                 callback: (v, e) => {
                     this.performs.toggleCameraMode(); 
                     this.createCameraPanel();
@@ -692,7 +721,7 @@ class GUI {
             },
             {
                 value: "Free View",
-                icon: "fa-solid fa-up-down-left-right",
+                icon: "Move",
                 callback: (v, e) => {
                     this.performs.toggleCameraMode(); 
                     this.createCameraPanel();
@@ -717,28 +746,6 @@ class GUI {
         })
         
         if(this.captureEnabled) {
-
-            // p.addButton("Capture", this.performs.animationRecorder.isRecording ? "Stop recording" : "Start recording", (value, event) => {
-            //     // Replay animation - dont replay if stopping the capture
-            //     if(!this.performs.animationRecorder.isRecording) {
-            //         if(this.settingsActive || this.cameraActive || this.lightsActive) {
-            //             this.mainArea._moveSplit(-100);
-            //         }
-            //         this.mainArea.extend();
-            //         this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
-            //     }
-            //     if(this.performs.mode == Performs.Modes.SCRIPT) {
-            //         this.performs.scriptApp.ECAcontroller.reset(true);
-            //         this.performs.animationRecorder.manageCapture();
-            //         this.createCameraPanel();
-            //     }
-            //     else { 
-            //         this.showRecordingDialog(() => {
-            //             this.performs.animationRecorder.manageMultipleCapture(this.performs.keyframeApp);
-            //             this.createCameraPanel();
-            //         });
-            //     }
-            // }, {icon: "fa-solid fa-circle", buttonClass: "floating-button" + (this.performs.animationRecorder.isRecording ? "-playing" : "")});
 
             p.addText(null, "Select cameras to be recorded:", null, {disabled: true});
             p.sameLine();
@@ -765,7 +772,7 @@ class GUI {
         const p = this.panel;
         
         p.clear();
-        p.branch( "Lights", { icon: "fa-solid fa-lightbulb"} );
+        p.branch( "Lights", { icon: "Lightbulb"} );
 
         p.addColor("Color", "#" + this.performs.dirLight.color.getHexString(), (value, event) => {
             this.performs.dirLight.color.set(value);
@@ -783,20 +790,19 @@ class GUI {
             {
                 name: "Hide controls",
                 selectable: false,
-                icon: this.controlsActive ? "fa fa-eye-slash": 'fa fa-eye',
+                icon: "EyeOff",
+                swap: "Eye",
                 class: "larger",
+                state: false,
                 callback: (b) => {
                     this.controlsActive = !this.controlsActive;   
-                    if(this.controlsActive) {
-                        const icon = document.getElementsByClassName('fa fa-eye')[0];
-                        icon.classList.remove('fa-eye');
-                        icon.classList.add('fa-eye-slash');
+                    if(!this.controlsActive) {
+                        area.panels[0].root.classList.add("hide");
                     }
                     else {
-                        const icon = document.getElementsByClassName('fa fa-eye-slash')[0];
-                        icon.classList.remove('fa-eye-slash');
-                        icon.classList.add('fa-eye');
+                        area.panels[0].root.classList.remove("hide");
                     }
+
                     let el = document.getElementById('overlay-controls');
                     for(let i = 1; i < el.children.length; i++) {
                         if(!this.controlsActive) {
@@ -831,186 +837,86 @@ class GUI {
             {
                 name: "Settings",
                 selectable: false,
-                icon: "fa fa-gear",
+                icon: "Settings",
                 class: "larger",
                 callback: (b) => {
-                    if(this.settingsActive) {
-                        this.mainArea._moveSplit(-100);
-                        this.mainArea.extend();
-                        this.settingsActive = false;
-                        return;
+                    if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
+                        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
+                    else {
+                        this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
                     }
-                    if(!this.cameraActive && !this.lightsActive) {
-                        this.mainArea._moveSplit(100);
-                    }
-                    this.settingsActive = true;
-                    this.cameraActive = this.backgroundsActive = this.avatarsActive = this.lightsActive = false;
-                    this.createSettingsPanel();                    
                 }
             },
             {
                 name: "Avatars",
                 selectable: false,
-                icon: "fa fa-user-pen",
+                icon: "UserPen",
                 class: "larger",
                 callback: () => {
-                    if(this.avatarsActive) {
-                        this.mainArea.extend();
-                        this.avatarsActive = false;
-                        return;
+                    if(this.activePanelType == GUI.ACTIVEPANEL_AVATARS) {
+                        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
+                    else {
+                        this.setActivePanel( GUI.ACTIVEPANEL_AVATARS );
                     }
-                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
-                        this.mainArea._moveSplit(-100);
-                    }
-                    this.avatarsActive = true;
-                    this.cameraActive = this.settingsActive = this.backgroundsActive = this.lightsActive = false;
-                    this.createAvatarsPanel();
                 }
             },
             {
                 name: "Backgrounds",
                 selectable: false,
-                icon: "fa fa-images",
+                icon: "Images",
                 class: "larger",
                 callback: (b) => {
-                    if(this.backgroundsActive) {
-                        this.mainArea.extend();
-                        this.backgroundsActive = false;
-                        return;
+                    if(this.activePanelType == GUI.ACTIVEPANEL_BACKGROUND) {
+                        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
+                    else {
+                        this.setActivePanel( GUI.ACTIVEPANEL_BACKGROUND );
                     }
-                    if(this.settingsActive || this.cameraActive || this.lightsActive) {
-                        this.mainArea._moveSplit(-100);
-                    }
-                    this.backgroundsActive = true;
-                    this.cameraActive = this.settingsActive = this.avatarsActive = this.lightsActive = false;
-                    this.createBackgroundsPanel();                    
                 }
             },            
             {
                 name: "Camera",
                 selectable: false,
-                icon: "fa fa-video",
+                icon: "Video",
                 class: "larger",
                 callback: (b) => {
-                    if(this.cameraActive) {
-                        this.mainArea._moveSplit(-100);
-                        this.mainArea.extend();
-                        this.cameraActive = false;
-                        return;
+                    if(this.activePanelType == GUI.ACTIVEPANEL_CAMERA) {
+                        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
+                    else {
+                        this.setActivePanel( GUI.ACTIVEPANEL_CAMERA );
                     }
-                    if(!this.settingsActive && !this.lightsActive) {
-                        this.mainArea._moveSplit(100);
-                    }
-                    this.cameraActive = true;
-                    this.settingsActive = this.backgroundsActive = this.avatarsActive = this.lightsActive = false;
-                    this.createCameraPanel();                    
                 }
             },
             {
                 name: "Lights",
                 selectable: false,
-                icon: "fa fa-lightbulb",
+                icon: "Lightbulb",
                 class: "larger",
                 callback: (b) => {
-                    if(this.lightsActive) {
-                        this.mainArea._moveSplit(-100);
-                        this.mainArea.extend();
-                        this.lightsActive = false;
-                        return;
+                    if(this.activePanelType == GUI.ACTIVEPANEL_LIGHTS) {
+                        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
-                    else if(this.mainArea.split_extended) {
-                        this.mainArea.reduce();
+                    else {
+                        this.setActivePanel( GUI.ACTIVEPANEL_LIGHTS );
                     }
-                    if(!this.settingsActive && !this.cameraActive) {
-                        this.mainArea._moveSplit(100);
-                    }
-                    this.lightsActive = true;
-                    this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = false;
-                    this.createLightsPanel();                    
                 }
             },
             {
                 name: "Info",
                 selectable: false,
-                icon: "fa fa-question",
+                icon: "CircleQuestionMark",
                 class: "larger",
                 callback: (b) => {
                     this.showGuide();     
                 }
             },
         ]
-        area.addOverlayButtons(buttons, {float: "vr", id: "overlay-controls"});
-        this.createPlayButtons()
-        // const buttonsContainer = document.createElement('div');
-        // buttonsContainer.id ="buttons-container";
-        // buttonsContainer.className = "flex-vertical left-container";
-        // area.root.appendChild(buttonsContainer);
-
-        // let backgrounds = document.createElement("i");
-        // backgrounds.className = "fa fa-images button";
-        // let title = document.createElement("span");
-        // title.innerText ="Show backgrounds";
-        // backgrounds.appendChild(title);
-        
-        // backgrounds.addEventListener("click", (v) => {
-        //     if(!this.backgroundsDialog.visible) {
-        //         v.target.classList.add("active")
-        //         // this.backgroundsDialog.fadeIn(200);
-        //         // this.backgroundsDialog.root.classList.remove("hidden");
-        //         this.backgroundsDialog.display();
-        //         this.backgroundsDialog.root.classList.remove("fade-out");
-        //         this.backgroundsDialog.root.classList.add("fade-in");
-        //     }
-        //     else {
-        //         v.target.classList.remove("active");
-        //         // this.backgroundsDialog.root.classList.add("hidden");
-        //         this.backgroundsDialog.root.classList.remove("fade-in");
-        //         this.backgroundsDialog.root.classList.add("fade-out");
-        //         setTimeout(() => {this.backgroundsDialog.hide()}, 480);
-        //     }
-          
-        // })
-
-        // buttonsContainer.appendChild(backgrounds);
-
-        // let avatars = document.createElement("i");
-        // avatars.className = "fa fa-person button";
-        // title = document.createElement("span");
-        // title.innerText ="Show avatars";
-        // title.style.top = "40px";
-        // avatars.appendChild(title);
-        
-        // avatars.addEventListener("click", (v) => {
-        //     if(!this.avatarsDialog.visible) {
-        //         v.target.classList.add("active")               
-        //         this.avatarsDialog.display();
-        //         this.avatarsDialog.root.classList.remove("fade-out");
-        //         this.avatarsDialog.root.classList.add("fade-in");
-        //         this.showBSavatars = true;
-        //     }
-        //     else {
-        //         v.target.classList.remove("active");
-        //         // this.backgroundsDialog.root.classList.add("hidden");
-        //         this.avatarsDialog.root.classList.remove("fade-in");
-        //         this.avatarsDialog.root.classList.add("fade-out");
-        //         this.showBSavatars = false;
-        //         setTimeout(() => {this.avatarsDialog.hide()}, 470);
-        //     }
-        // })
-
-        // buttonsContainer.appendChild(avatars);
+        const overlay = area.addOverlayButtons(buttons, {className:"hiddenBackground", float: "vr", id: "overlay-controls"});
+        overlay.area.panels[0].root.style.visibility = "hidden";
+        this.createPlayButtons();
     }
 
     createPlayButtons() {
@@ -1019,7 +925,7 @@ class GUI {
         let buttons = [
             {
                 name: "Reset pose",
-                icon: "fa fa-person",
+                icon: "PersonStanding",
                 class: "relative left",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
@@ -1034,7 +940,7 @@ class GUI {
         let playButtons = [ 
             {
                 name: "Record video",
-                icon: "fa fa-circle",
+                icon: "CircleRecording@solid",
                 class: "relative",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
@@ -1085,7 +991,7 @@ class GUI {
             },
             {
                 name: "Play",
-                icon: "fa fa-play",
+                icon: "Play@solid",
                 class: "large",
                 callback: () => {
                     if(this.performs.mode == Performs.Modes.SCRIPT) {
@@ -1109,7 +1015,7 @@ class GUI {
             },
             {
                 name: "Stop",
-                icon: "fa fa-stop",
+                icon: "Stop@solid",
                 class: "large",
                 callback: () => {
                     if(this.performs.mode == Performs.Modes.SCRIPT) {
@@ -1128,6 +1034,8 @@ class GUI {
         ];
         area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
         area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
+        area.panels[1].root.style.visibility = "hidden";
+        area.panels[2].root.style.visibility = "hidden";
 
         const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
         if(btn) {
@@ -1199,7 +1107,7 @@ class GUI {
             this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true});
             this.bmlGui.addButton(null, "Edit avatar", () => { 
                 this.createEditAvatarDialog();                
-            }, {icon: "fa fa-edit"})  
+            }, {icon: "Edit"})  
             return;
         }
                 
@@ -1213,12 +1121,12 @@ class GUI {
             this.performs.scriptApp.mood = "Neutral";
             this.performs.scriptApp.ECAcontroller.reset();
             refresh();
-        }, {icon: "fa-solid fa-person", width: "40px", class:"floating-button"});
+        }, {icon: "PersonStanding", width: "40px", class:"floating-button"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.performs.scriptApp.replay();         
             this.changePlayButtons(false);    
-        }, {icon: "fa-solid fa-play"});
+        }, {icon: "Play@solid"});
 
         this.bmlGui.endLine();
 
@@ -1376,12 +1284,12 @@ class GUI {
                     const area = new LX.Area({ height: "85%" });
                     p.attach( area.root );
                     
-                    p.addDropdown("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
+                    p.addSelect("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
                         this.performs.scriptApp.selectedLanguage = value;
                         p.refresh();
                     } );
 
-                    p.addDropdown("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
+                    p.addSelect("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
                         this.glossInputData.glosses += " " + value;
                         this.glossInputData.textArea.set( this.glossInputData.glosses );
                     }, {filter: true});
@@ -1411,7 +1319,7 @@ class GUI {
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
-        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"fa-solid fa-dice", nameWidth: "200px" } );
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"Dices", nameWidth: "200px" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
@@ -1422,11 +1330,11 @@ class GUI {
             }
             console.log( JSON.parse(JSON.stringify(m)));
             this.performs.scriptApp.processMessageRawBlocks( m );
-        }, { width: "40px", icon: "fa-solid fa-share"} );
+        }, { width: "40px", icon: "Dices"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
-        this.bmlGui.addDropdown("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.performs.scriptApp.mood, (value, event) => {
+        this.bmlGui.addSelect("Mood", [ "Neutral", "Anger", "Happiness", "Sadness", "Surprise", "Fear", "Disgust", "Contempt" ], this.performs.scriptApp.mood, (value, event) => {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: value.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
             this.performs.scriptApp.mood = value;
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
@@ -1446,7 +1354,7 @@ class GUI {
         }, {nameWidth: "115px"});
         if(this.performs.scriptApp.applyIdle) {
    
-            this.bmlGui.addDropdown("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
+            this.bmlGui.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
                 this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
             })
             this.bmlGui.addNumber("Intensity", this.performs.scriptApp.intensity, (v) => {
@@ -1468,7 +1376,7 @@ class GUI {
 
         this.keyframeGui.sameLine();
         const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);
-        this.keyframeGui.addDropdown("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
+        this.keyframeGui.addSelect("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
             this.performs.keyframeApp.onChangeAnimation(v);
         }, {nameWidth:"70px"});
 
@@ -1497,15 +1405,15 @@ class GUI {
         this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
             fileinput.domEl.children[1].click();
            
-        }, { icon: "fa fa-upload", width: "40px", className:"no-padding"});
+        }, { icon: "Upload", width: "40px", className:"no-padding"});
 
-        this.keyframeGui.addButton(null, "<i class='fa fa-solid " + (this.performs.keyframeApp.playing ? "fa-stop'>": "fa-play'>") + "</i>", (v,e) => {
+        this.keyframeGui.addButton(null, null, (v,e) => {
             this.performs.keyframeApp.changePlayState();
             this.changePlayButtons(this.performs.keyframeApp.playing );
             if(refresh) {
                 refresh();
             }
-        }, { width: "40px", className:"no-padding"});
+        }, { icon: this.performs.keyframeApp.playing ? "Stop'>": "Play",width: "40px", className:"no-padding"});
         this.keyframeGui.endLine(); 
 
         if( animations.length > 1 ) {
@@ -1542,7 +1450,7 @@ class GUI {
         }, {nameWidth: "auto"})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
-        this.keyframeGui.addDropdown("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
+        this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
     
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
@@ -1551,7 +1459,7 @@ class GUI {
             }
         }, {nameWidth: "200px"});
 
-        this.keyframeGui.addDropdown("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
+        this.keyframeGui.addSelect("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
@@ -1782,7 +1690,7 @@ class GUI {
                 const editConfigBtn = panel.addButton(null, "Edit config file", () => {
                     this.performs.openAtelier(name, model, config, true, rotation);
 
-                }, {icon: "fa fa-user-gear", width: "40px"});
+                }, {icon: "Settings", width: "40px"});
                 
                 if(!config) {
                     editConfigBtn.classList.add('hidden');
@@ -1938,7 +1846,7 @@ class GUI {
             if(config) {
                 panel.addButton(null, "Edit config file", () => {
                     this.performs.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                  
-                }, {icon: "fa fa-user-gear", width: "40px"});
+                }, {icon: "Settings", width: "40px"});
             }
             panel.addComboButtons(null, [
                 {
@@ -2431,7 +2339,7 @@ class GUI {
                     setTimeout(function() {
                         bubble.classList.remove('show');
                     }, 2000); // Bubble will show for 2 seconds
-                }, {icon:'fa fa-clipboard', width:"40px"})
+                }, {icon:'Clipboard', width:"40px"})
                 pp.endLine();
             }
             
