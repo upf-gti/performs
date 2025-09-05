@@ -14,6 +14,10 @@
 	font-size: larger;
 }
 
+.justItm_c{
+	justify-items: center;
+}
+
 /* ---------- Main elements ---------- */
 #loading {
 	background-color: #111;
@@ -49,14 +53,24 @@
 
 /* Extend lexgui css */
 .floating-button {
-	border-radius: 80px !important;
-    width: 26px !important;
+	/* border-radius: 80px !important;
+    width: 23% !important;
     background-color: var(--global-selected)!important;
+	justify-content: center; */
+
+	border-radius: 80px !important;
+	width: 30px !important;
+    background-color: var(--global-selected) !important;
+    padding: var(--global-padding-sm) 0.1875rem !important;
+    min-width: 0% !important;
 }
 
 .floating-button-playing {
 	border-radius: 80px !important;
-    width: 22px !important;
+	width: 30px !important;
+    background-color: var(--global-selected) !important;
+    padding: var(--global-padding-sm) 0.1875rem !important;
+    min-width: 0% !important;
 	animation: ease pulse 2s infinite;
 	-webkit-animation: ease pulse 2s infinite;
 }

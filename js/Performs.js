@@ -447,7 +447,7 @@ class Performs {
                     this.changeMode(Performs.Modes.SCRIPT);
                     if(this.gui) {
                         this.gui.avatarOptions[name][1] = config._filename;
-                        if(this.gui.settingsActive) {
+                        if(this.gui.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                             this.gui.createSettingsPanel();             
                         }
                     }

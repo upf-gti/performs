@@ -5,7 +5,9 @@ import { Performs } from './Performs.js'
 
 LX.mainArea = await LX.init();
 
-LX.registerIcon("CircleRecording", '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M528 320C528 205.1 434.9 112 320 112C205.1 112 112 205.1 112 320C112 434.9 205.1 528 320 528C434.9 528 528 434.9 528 320zM64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>', '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>');
+LX.registerIcon("CircleRecording", 
+    '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>'
+);
 
 class GUI {
 
@@ -124,6 +126,10 @@ class GUI {
         this.activePanelType = GUI.ACTIVEPANEL_NONE;
         this.prevActivePanelType = GUI.ACTIVEPANEL_NONE;
 
+        this.overlayButtonsPlay = null;
+        this.overlayButtonsReset = null;
+        this.overlayButtonsMenu = null;
+
         this.createIcons(canvasArea);
 
     }
@@ -177,7 +183,7 @@ class GUI {
 
         p.branch("Animation", {icon: "ASL", closed: !this.branchesOpened["Animation"]});
         
-        p.addText(null,"Animation mode options", null, {disabled: true});
+        p.addText(null,"Animation mode options", null, {disabled: true, inputClass:"nobg"});
         p.sameLine();
 
         let btn = p.addButton(null, "Script animation", (v, e) => {
@@ -191,13 +197,10 @@ class GUI {
                 this.performs.changeMode(-1);   
             }
             this.createSettingsPanel();
-            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-            if(resetBtn) {
-                resetBtn.classList.remove("hidden");
-            }
-
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
         }, {
             icon: "Code2", 
+            width: "50%",
             selectable: true, 
             selected: this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1
         } );
@@ -205,21 +208,20 @@ class GUI {
         btn = p.addButton(null, "Keyframing animation",  (v, e) => {
             this.performs.changeMode(Performs.Modes.KEYFRAME);
             this.createSettingsPanel(); 
-            
-            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-            if(resetBtn) {
-                resetBtn.classList.add("hidden");
-            }
-        }, {icon: "Film"} );
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
+        }, {
+            icon: "Film",
+            width: "50%",
+            selectable: true,
+            selected: this.performs.mode == Performs.Modes.KEYFRAME
+        } );
         
-        if(this.performs.mode == Performs.Modes.KEYFRAME) {
-            btn.root.children[0].classList.add("selected");
-        }
-
         p.endLine();
         p.sameLine();
-        p.addText(null, "Script animation", null, {disabled: true});
-        p.addText(null, "Clip animation", null, {disabled: true});
+     
+        p.addText(null, "Script animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
+        p.addText(null, "Clip animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
+
         p.endLine();
 
         p.addSeparator();
@@ -564,11 +566,7 @@ class GUI {
                         this.createAvatarsPanel();
                         if(this.performs.currentCharacter.config) {
                             this.performs.changeMode(Performs.Modes.SCRIPT);
-                            
-                            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-                            if(resetBtn) {
-                                resetBtn.classList.remove("hidden");
-                            }
+                            this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                         }
                         $('#loading').fadeOut();
                     }, (err) => {
@@ -668,13 +666,10 @@ class GUI {
                     this.performs.currentCharacter.skeleton.pose();
                     this.performs.scriptApp.ECAcontroller.reset();                        
                     this.performs.changeMode(Performs.Modes.SCRIPT);
-                    if(this.settingsActive) {
+                    if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                         this.createSettingsPanel();             
                     }
-                    const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-                    if(resetBtn) {
-                        resetBtn.classList.remove("hidden");
-                    }
+                    this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                 }
 
             }, 
@@ -734,14 +729,12 @@ class GUI {
         p.addCheckbox("Enable capture", this.captureEnabled, (v) => {
             this.captureEnabled = v;
             this.createCameraPanel();
-            const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Record video']");
-            if(btn) {
-                if(this.captureEnabled) {
-                    btn.classList.remove("hidden");
-                }
-                else {
-                    btn.classList.add("hidden");
-                }
+
+            if(this.captureEnabled) {
+                this.overlayButtonsPlay.buttons["Record video"].root.classList.remove("hidden");
+            }
+            else {
+                this.overlayButtonsPlay.buttons["Record video"].root.classList.add("hidden");
             }
         })
         
@@ -785,7 +778,6 @@ class GUI {
     }
 
     createIcons(area) {
-        this.settingsActive = this.backgroundsActive = this.avatarsActive = this.cameraActive = this.lightsActive = false;
         const buttons = [
             {
                 name: "Hide controls",
@@ -913,9 +905,10 @@ class GUI {
                     this.showGuide();     
                 }
             },
-        ]
-        const overlay = area.addOverlayButtons(buttons, {className:"hiddenBackground", float: "vr", id: "overlay-controls"});
-        overlay.area.panels[0].root.style.visibility = "hidden";
+        ];
+
+        this.overlayButtonsMenu = area.addOverlayButtons(buttons, {className:"hiddenBackground", float: "vr", id: "overlay-controls"});
+        area.panels[0].root.style.visibility = "hidden";
         this.createPlayButtons();
     }
 
@@ -945,30 +938,25 @@ class GUI {
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
                     if(!this.performs.animationRecorder.isRecording) {
-                        if(this.settingsActive || this.cameraActive || this.lightsActive) {
-                            this.mainArea._moveSplit(-100);
-                        }
-                        this.mainArea.extend();
-                        this.settingsActive = this.cameraActive = this.lightsActive = this.avatarsActive = this.backgroundsActive = false;
+                        this.setActivePanel(GUI.ACTIVEPANEL_NONE);
                     }
-                    const recordBtn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Record video']");
+                    const recordBtn = this.overlayButtonsPlay.buttons["Record video"].root.children[0];
 
                     if(this.performs.mode == Performs.Modes.SCRIPT) {
                         this.performs.scriptApp.ECAcontroller.reset(true);
                         setTimeout(() => {
                             this.performs.animationRecorder.manageCapture();
                             this.createCameraPanel();
-                            if(recordBtn) {
-                                if(this.performs.animationRecorder.isRecording) {
-                                    recordBtn.classList.remove("floating-button");
-                                    recordBtn.classList.add("floating-button-playing");
-                                }
-                                else {
-                                    recordBtn.classList.remove("floating-button-playing");
-                                    recordBtn.classList.add("floating-button");
-                                }
+                            
+                            if(this.performs.animationRecorder.isRecording) {
+                                recordBtn.classList.remove("floating-button");
+                                recordBtn.classList.add("floating-button-playing");
                             }
-                        }, 100)
+                            else {
+                                recordBtn.classList.remove("floating-button-playing");
+                                recordBtn.classList.add("floating-button");
+                            }
+                        }, 100);
                     }
                     else { 
                         this.showRecordingDialog(() => {
@@ -976,17 +964,15 @@ class GUI {
                             this.createCameraPanel();
                         });
                     }
-                    if(recordBtn) {
-                        if(this.performs.animationRecorder.isRecording) {
-                            recordBtn.classList.remove("floating-button");
-                            recordBtn.classList.add("floating-button-playing");
-                        }
-                        else {
-                            recordBtn.classList.remove("floating-button-playing");
-                            recordBtn.classList.add("floating-button");
-                        }
+
+                    if(this.performs.animationRecorder.isRecording) {
+                        recordBtn.classList.remove("floating-button");
+                        recordBtn.classList.add("floating-button-playing");
                     }
-                    
+                    else {
+                        recordBtn.classList.remove("floating-button-playing");
+                        recordBtn.classList.add("floating-button");
+                    }                    
                 }
             },
             {
@@ -1032,43 +1018,32 @@ class GUI {
                 }
             },            
         ];
-        area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
-        area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
+        this.overlayButtonsPlay = area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
+        this.overlayButtonsReset = area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
         area.panels[1].root.style.visibility = "hidden";
         area.panels[2].root.style.visibility = "hidden";
-
-        const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
-        if(btn) {
-            btn.classList.add("hidden");
-        }
-
-        const recordBtn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Record video']");
-        if(recordBtn) {
-            recordBtn.classList.add("floating-button");
-            recordBtn.classList.add("hidden");
-        }
-
-        const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-        if(resetBtn) {
-            resetBtn.classList.add("floating-button");
-        }
+        
+        
+        this.overlayButtonsPlay.buttons["Stop"].root.classList.add("hidden");
+        
+        this.overlayButtonsPlay.buttons["Record video"].root.classList.add("hidden");
+        this.overlayButtonsPlay.buttons["Record video"].root.style.justifyContent = "right";
+        this.overlayButtonsPlay.buttons["Record video"].root.children[0].classList.add("floating-button");
+        
+        this.overlayButtonsReset.buttons["Reset pose"].root.children[0].classList.add("floating-button");
         if(this.performs.mode != Performs.Modes.SCRIPT) {
-            resetBtn.classList.add("hidden");
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
         }
     }
 
     changePlayButtons(isPlaying) {
         if(isPlaying) {
-            const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
-            btn.classList.remove("hidden");
-            const btn2 = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Play']");
-            btn2.classList.add("hidden");
+            this.overlayButtonsPlay.buttons["Stop"].root.classList.remove("hidden");
+            this.overlayButtonsPlay.buttons["Play"].root.classList.add("hidden");
         }
         else {
-            const btn = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Play']");
-            btn.classList.remove("hidden");
-            const btn2 = this.mainArea.sections[0].panels[1].root.querySelector("button[title='Stop']");
-            btn2.classList.add("hidden");
+            this.overlayButtonsPlay.buttons["Stop"].root.classList.add("hidden");
+            this.overlayButtonsPlay.buttons["Play"].root.classList.remove("hidden");
         }
     }
 
@@ -1076,25 +1051,16 @@ class GUI {
         if(mode == Performs.Modes.SCRIPT) {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
             
-            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-            if(resetBtn) {
-                resetBtn.classList.remove("hidden");
-            }
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
             this.changePlayButtons(false);
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
         }
         else if(mode == Performs.Modes.KEYFRAME) {
-            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-            if(resetBtn) {
-                resetBtn.classList.add("hidden");
-            }           
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             this.changePlayButtons( this.performs.keyframeApp.playing);
         }
         else {
-            const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-            if(resetBtn) {
-                resetBtn.classList.add("hidden");
-            }
+            this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             this.changePlayButtons(false);
         }
     }
@@ -1104,7 +1070,7 @@ class GUI {
         this.bmlGui = panel;
 
         if (!this.performs.currentCharacter.config) {
-            this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true});
+            this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true, inputClass: "nobg"});
             this.bmlGui.addButton(null, "Edit avatar", () => { 
                 this.createEditAvatarDialog();                
             }, {icon: "Edit"})  
@@ -1121,12 +1087,12 @@ class GUI {
             this.performs.scriptApp.mood = "Neutral";
             this.performs.scriptApp.ECAcontroller.reset();
             refresh();
-        }, {icon: "PersonStanding", width: "40px", class:"floating-button"});
+        }, {icon: "PersonStanding", width: "30%", buttonclass:"floating-button"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.performs.scriptApp.replay();         
             this.changePlayButtons(false);    
-        }, {icon: "Play@solid"});
+        }, {icon: "Play@solid", width:"70%"});
 
         this.bmlGui.endLine();
 
@@ -1319,7 +1285,7 @@ class GUI {
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
-        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, slider: false, icon:"Dices", nameWidth: "200px" } );
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, nameWidth: "30%", width:"80%" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
@@ -1330,7 +1296,7 @@ class GUI {
             }
             console.log( JSON.parse(JSON.stringify(m)));
             this.performs.scriptApp.processMessageRawBlocks( m );
-        }, { width: "40px", icon: "Dices"} );
+        }, { width: "40px", icon: "Dices", width:"20%"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
@@ -1344,14 +1310,14 @@ class GUI {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
             this.performs.scriptApp.moodIntensity = v;
-        }, {min: 0.1, max: 1.0, step: 0.01})
+        }, {min: 0, max: 1.0, step: 0.01})
 
         this.bmlGui.addCheckbox("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
             this.performs.scriptApp.applyIdle = v;            
             if(refresh) {
                 refresh();
             }
-        }, {nameWidth: "115px"});
+        }, {label:""});
         if(this.performs.scriptApp.applyIdle) {
    
             this.bmlGui.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
@@ -1974,12 +1940,8 @@ class GUI {
                                 this.performs.changeAvatar(value);
                                 this.createAvatarsPanel();
                                 if(this.performs.currentCharacter.config) {
-                                    this.performs.changeMode(Performs.Modes.SCRIPT);
-                                    
-                                    const resetBtn = this.mainArea.sections[0].panels[2].root.querySelector("button[title='Reset pose']");
-                                    if(resetBtn) {
-                                        resetBtn.classList.remove("hidden");
-                                    }
+                                    this.performs.changeMode(Performs.Modes.SCRIPT);    
+                                    this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                                 }
                                 $('#loading').fadeOut();
                             }, (err) => {
@@ -2042,13 +2004,13 @@ class GUI {
                     this.performs.currentCharacter.skeleton.pose();
                     this.performs.scriptApp.ECAcontroller.reset();                        
                     this.performs.changeMode(Performs.Modes.SCRIPT);
-                    if(this.settingsActive) {
-                        this.createSettingsPanel();             
+                    if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
+                        this.createSettingsPanel();   
                     }
                 }
                 else {
                     this.performs.setConfiguration(data, () => {
-                        if(this.settingsActive) {
+                        if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                             this.createSettingsPanel();             
                         }
                     });
