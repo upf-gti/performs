@@ -17,6 +17,9 @@
 .justItm_c{
 	justify-items: center;
 }
+.showScrollBar::-webkit-scrollbar{
+	display: block !important
+}
 
 /* ---------- Main elements ---------- */
 #loading {

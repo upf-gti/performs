@@ -9,6 +9,10 @@ LX.registerIcon("CircleRecording",
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>'
 );
 
+LX.setThemeColor("global-selected", "#6200EA");
+LX.setThemeColor("global-selected-light", "#bb86fc");
+LX.setThemeColor("global-selected-dark", "#a100ff");
+
 class GUI {
 
     static THUMBNAIL = "data/imgs/monster.png";
@@ -159,7 +163,9 @@ class GUI {
         }
       
         if (type){
-          this.mainArea._moveSplit(0.3 * window.innerWidth);
+            if( this.activePanelType == GUI.ACTIVEPANEL_NONE ){ // only move split it was closed before
+              this.mainArea._moveSplit(0.3 * window.innerWidth);
+            }          
           this.panel.parent.show();
           this.panel.parent.root.style.opacity = 1; // BUG, FOR SOME REASON OPACITY IS INITIALLY 0
         }else{
@@ -330,7 +336,7 @@ class GUI {
 
             const logoFile = panel.addFile("File", (v, e) => {
                 
-                const files = panel.widgets["File"].domEl.children[1].files;
+                const files = panel.widgets["File"].root.children[1].files;
                 if(!files.length) {
                     return;
                 }
@@ -403,27 +409,27 @@ class GUI {
                 });        
 
             }, {nameWidth: "43%", read: true});
-            textureURL.domEl.classList.add('hidden');
+            textureURL.root.classList.add('hidden');
 
             panel.addComboButtons(null, [
                 {
                     value: "From File",
                     callback: (v, e) => {                            
                         formFile = true;
-                        if(!textureURL.domEl.classList.contains('hidden')) {
-                            textureURL.domEl.classList.add('hidden');          
+                        if(!textureURL.root.classList.contains('hidden')) {
+                            textureURL.root.classList.add('hidden');          
                         }
-                        logoFile.domEl.classList.remove('hidden');                                                          
+                        logoFile.root.classList.remove('hidden');                                                          
                     }
                 },
                 {
                     value: "From URL",
                     callback: (v, e) => {
                         formFile = false;
-                        if(!logoFile.domEl.classList.contains('hidden')) {
-                            logoFile.domEl.classList.add('hidden');           
+                        if(!logoFile.root.classList.contains('hidden')) {
+                            logoFile.root.classList.add('hidden');           
                         }                                               
-                        textureURL.domEl.classList.remove('hidden');          
+                        textureURL.root.classList.remove('hidden');          
                     }
                 }
             ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
@@ -451,7 +457,7 @@ class GUI {
 
             const logoFile = panel.addFile("File", (v, e) => {
 
-                const files = panel.widgets["File"].domEl.children[1].files;
+                const files = panel.widgets["File"].root.children[1].files;
                 if(!files.length) {
                     return;
                 }
@@ -508,27 +514,27 @@ class GUI {
                 });        
 
             }, {nameWidth: "43%", read: true});
-            logoURL.domEl.classList.add('hidden');
+            logoURL.root.classList.add('hidden');
 
             panel.addComboButtons(null, [
                 {
                     value: "From File",
                     callback: (v, e) => {                            
                         formFile = true;
-                        if(!logoURL.domEl.classList.contains('hidden')) {
-                            logoURL.domEl.classList.add('hidden');          
+                        if(!logoURL.root.classList.contains('hidden')) {
+                            logoURL.root.classList.add('hidden');          
                         }
-                        logoFile.domEl.classList.remove('hidden');                                                          
+                        logoFile.root.classList.remove('hidden');                                                          
                     }
                 },
                 {
                     value: "From URL",
                     callback: (v, e) => {
                         formFile = false;
-                        if(!logoFile.domEl.classList.contains('hidden')) {
-                            logoFile.domEl.classList.add('hidden');           
+                        if(!logoFile.root.classList.contains('hidden')) {
+                            logoFile.root.classList.add('hidden');           
                         }                                               
-                        logoURL.domEl.classList.remove('hidden');          
+                        logoURL.root.classList.remove('hidden');          
                     }
                 }
             ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
@@ -736,7 +742,7 @@ class GUI {
             else {
                 this.overlayButtonsPlay.buttons["Record video"].root.classList.add("hidden");
             }
-        })
+        });
         
         if(this.captureEnabled) {
 
@@ -1105,7 +1111,7 @@ class GUI {
                 this.bmlInputData.dialog = p;
 
                 let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
     
                 p.addButton(null, "Click here to see BML instructions and attributes", () => {
                     window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
@@ -1113,18 +1119,17 @@ class GUI {
     
                 htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
                 htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
-                p.addTextArea(null, htmlStr, null, {disabled: true, height: "72px"});
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
     
                 htmlStr = 'An example: { "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }';
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});
+                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
     
                 const area = new LX.Area({ height: "59%" });
                 p.attach( area.root );
     
                 let editor = new LX.CodeEditor(area, {
                     highlight: 'JSON',
-                    skip_info: true,
-                    allow_add_scripts: false, 
+                    allowAddScripts: false,
                     name : "BML"
                 });
                 editor.setText( this.bmlInputData.prevInstanceText );
@@ -1184,12 +1189,14 @@ class GUI {
                     }
                 })
     
-            }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true, onclose: (root)=>{
+            }, { size: ["35%", "70%"], float: "left", draggable: true, closable: true, onclose: (root)=>{
                 this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
                 this.bmlInputData.dialog = null;
                 this.bmlInputData.codeObj = null;
                 root.remove();
             }});
+
+            this.bmlInputData.dialog.root.children[1].classList.add("showScrollBar");
     
         });
 
@@ -1201,30 +1208,48 @@ class GUI {
             }
 
             this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
+                let a = new LX.Area({height:"100%"});
+                p.attach( a.root );
+
+                let [textCodeArea, sendArea] = a.split({type:"vertical", sizes:["90%", "10%"]});
+
+                let textCodePanel = new LX.Panel({height:"100%"});
+                textCodeArea.attach( textCodePanel.root );
+
                 let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
+                textCodePanel.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
     
-                const area = new LX.Area({ height: "85%" });
-                p.attach( area.root );
+                const codeArea = new LX.Area({ height: "85%" });
+                textCodePanel.attach( codeArea.root );
     
-                let editor = new LX.CodeEditor(area, {
+                let editor = new LX.CodeEditor(codeArea, {
                     highlight: 'XML',
-                    skip_info: true,
-                    allow_add_scripts: false, 
+                    allowAddScripts: false, 
                     name : "XML"
                 });
                 editor.setText( this.sigmlInputData.prevInstanceText );
                 this.sigmlInputData.codeObj = editor;
-    
-                p.addButton(null, "Send", () => {
+
+                let sendPanel = new LX.Panel({height:"100%"});
+                sendArea.attach( sendPanel.root );
+
+                sendPanel.addButton(null, "Send", () => {
                     let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
                     this.performs.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                 });
     
-            }, { size: ["35%", "70%"], float: "left", draggable: false, closable: true});
+            }, { size: ["35%", "70%"], float: "left", draggable: true, closable: true, onclose: (root)=>{
+                this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
+                this.sigmlInputData.dialog = null;
+                this.sigmlInputData.codeObj = null;
+                root.remove();
+            }});
         
+            this.sigmlInputData.dialog.root.children[1].classList.add("showScrollBar");
 
         });
+        
+
 
         let languages = Object.keys(this.performs.scriptApp.languageDictionaries);
         let glossesDictionary = {};
@@ -1245,10 +1270,7 @@ class GUI {
                 p.refresh = () => {
                     p.clear();
                     let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
-                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: false});  
-                    
-                    const area = new LX.Area({ height: "85%" });
-                    p.attach( area.root );
+                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
                     
                     p.addSelect("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
                         this.performs.scriptApp.selectedLanguage = value;
@@ -1280,12 +1302,12 @@ class GUI {
                     });
                 }
                 p.refresh();
-            }, { float: "left", draggable: false, closable: true } );        
+            }, { size: ["35%"],float: "left", draggable: true, closable: true } );        
         });    
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
-        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, nameWidth: "30%", width:"80%" } );
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "30%", width:"80%" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
@@ -1313,20 +1335,21 @@ class GUI {
         }, {min: 0, max: 1.0, step: 0.01})
 
         this.bmlGui.addCheckbox("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
-            this.performs.scriptApp.applyIdle = v;            
-            if(refresh) {
-                refresh();
-            }
-        }, {label:""});
-        if(this.performs.scriptApp.applyIdle) {
-   
-            this.bmlGui.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
-                this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
-            })
-            this.bmlGui.addNumber("Intensity", this.performs.scriptApp.intensity, (v) => {
-                this.performs.scriptApp.setIntensity(v);
-            }, {min: 0.1, max: 1.0, step: 0.01})
-        }
+            this.performs.scriptApp.applyIdle = v;
+        }, {
+                nameWidth: "auto",
+                skipReset: true,
+                label: "",
+                suboptions: (p) => {
+                    p.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
+                        this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
+                    });
+                    p.addNumber("Intensity", this.performs.scriptApp.intensity, (v) => {
+                        this.performs.scriptApp.setIntensity(v);
+                    }, {min: 0.1, max: 1.0, step: 0.01});
+                }
+            });
+        
         this.bmlGui.merge(); // random signs
              
     }
@@ -1340,14 +1363,14 @@ class GUI {
             this.performs.keyframeApp.speed = value;
         }, { min: -2, max: 2, step: 0.01});
 
-        this.keyframeGui.sameLine();
         const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);
         this.keyframeGui.addSelect("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
             this.performs.keyframeApp.onChangeAnimation(v);
-        }, {nameWidth:"70px"});
+        });
+        this.keyframeGui.sameLine();
 
         const fileinput = this.keyframeGui.addFile("Animation File", (v, e) => {
-            let files = panel.widgets["Animation File"].domEl.children[1].files;
+            let files = panel.components["Animation File"].root.children[1].files;
             if(!files.length) {
                 return;
             }
@@ -1365,74 +1388,56 @@ class GUI {
             })
         }, {type: "url", multiple: "multiple"});
 
-        fileinput.domEl.classList.add('hidden');
-        fileinput.domEl.children[1].setAttribute("multiple", "multiple");
+        fileinput.root.classList.add('hidden');
+        fileinput.root.children[1].setAttribute("multiple", "multiple");
 
         this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
-            fileinput.domEl.children[1].click();
+            fileinput.root.children[1].click();
            
-        }, { icon: "Upload", width: "40px", className:"no-padding"});
+        }, { icon: "Upload", width: "30%", className:"no-padding"});
 
         this.keyframeGui.addButton(null, null, (v,e) => {
             this.performs.keyframeApp.changePlayState();
             this.changePlayButtons(this.performs.keyframeApp.playing );
-            if(refresh) {
-                refresh();
-            }
-        }, { icon: this.performs.keyframeApp.playing ? "Stop'>": "Play",width: "40px", className:"no-padding"});
+        }, { icon: "Play@solid", width: "70%", className:"no-padding"});
         this.keyframeGui.endLine(); 
 
         if( animations.length > 1 ) {
-            this.keyframeGui.addCheckbox("Blend animations", this.performs.keyframeApp.useCrossFade, (v) => {
-                this.performs.keyframeApp.useCrossFade = v;
-                if(refresh) {
-                    refresh();
-                }
-            },{nameWidth: "auto"})
-    
-            if(this.performs.keyframeApp.useCrossFade) {
-                this.keyframeGui.addNumber("Blend time", this.performs.keyframeApp.blendTime, (v) => {
-                    this.performs.keyframeApp.blendTime = v;
-                }, {min: 0.0, step: 0.01});
-            }
+            this.keyframeGui.addCheckbox("Blend animations", this.performs.keyframeApp.useCrossFade,
+                (v) => { this.performs.keyframeApp.useCrossFade = v; },
+                {
+                    skipReset: true,
+                    label: "",
+                    suboptions: (p) => {
+                        p.addNumber("Blend time", this.performs.keyframeApp.blendTime, (v) => {
+                            this.performs.keyframeApp.blendTime = v;
+                        }, {min: 0.0, step: 0.01});
+                    }
+                });
         }
 
-        this.keyframeGui.branch("Retargeting")
+        this.keyframeGui.branch("Retargeting", { icon: "Tags"} );
            
         this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-            if(refresh) {
-                refresh();
-            }
-        },{nameWidth: "auto"})
+        },{nameWidth: "auto", skipReset: true, label: ""})
             
         this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-            if(refresh) {
-                refresh();
-            }
-        }, {nameWidth: "auto"})
+        }, {nameWidth: "auto", skipReset: true, label: ""})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
-    
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-            if(refresh) {
-                refresh();
-            }
-        }, {nameWidth: "200px"});
+        }, {nameWidth: "200px", skipReset: true});
 
         this.keyframeGui.addSelect("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
-            
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-            if(refresh) {
-                refresh();
-            }
-        }, {nameWidth: "200px"});
+        }, {nameWidth: "200px", skipReset: true});
     }
 
     showRecordingDialog(callback) {
@@ -1515,7 +1520,7 @@ class GUI {
 
                 panel.sameLine();
                 let avatarFile = panel.addFile("Avatar File", (v, e) => {
-                    let files = panel.widgets["Avatar File"].domEl.children[1].files;
+                    let files = panel.widgets["Avatar File"].root.children[1].files;
                     if(!files.length) {
                         return;
                     }
@@ -1533,7 +1538,7 @@ class GUI {
                 }, {type: "url", nameWidth: "41%"});
 
                 if(!afromFile) {
-                    avatarFile.domEl.classList.add('hidden');
+                    avatarFile.root.classList.add('hidden');
                 }
 
                 let avatarURL = panel.addText("Avatar URL", model, (v, e) => {
@@ -1572,7 +1577,7 @@ class GUI {
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
                 }, {nameWidth: "43%"});
                 if(afromFile) {
-                    avatarURL.domEl.classList.add('hidden');
+                    avatarURL.root.classList.add('hidden');
                 }
 
                 panel.addComboButtons(null, [
@@ -1580,10 +1585,10 @@ class GUI {
                         value: "From File",
                         callback: (v, e) => {                            
                             afromFile = true;
-                            if(!avatarURL.domEl.classList.contains('hidden')) {
-                                avatarURL.domEl.classList.add('hidden');          
+                            if(!avatarURL.root.classList.contains('hidden')) {
+                                avatarURL.root.classList.add('hidden');          
                             }
-                            avatarFile.domEl.classList.remove('hidden');                                                          
+                            avatarFile.root.classList.remove('hidden');                                                          
                             panel.refresh();
                         }
                     },
@@ -1591,10 +1596,10 @@ class GUI {
                         value: "From URL",
                         callback: (v, e) => {
                             afromFile = false;
-                            if(!avatarFile.domEl.classList.contains('hidden')) {
-                                avatarFile.domEl.classList.add('hidden');           
+                            if(!avatarFile.root.classList.contains('hidden')) {
+                                avatarFile.root.classList.add('hidden');           
                             }                                               
-                            avatarURL.domEl.classList.remove('hidden');          
+                            avatarURL.root.classList.remove('hidden');          
                         }
                     }
                 ], {selected: afromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});                
@@ -1606,7 +1611,7 @@ class GUI {
                     if(!v) {
                         return;
                     }
-                    const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
+                    const filename = panel.widgets["Config File"].root.children[1].files[0].name;
                     let extension = filename.split(".");
                     extension = extension.pop();
                     if (extension == "json") { 
@@ -1648,9 +1653,9 @@ class GUI {
                 }, {nameWidth: "43%"});
 
                 if(cfromFile) {
-                    configURL.domEl.classList.add('hidden');
+                    configURL.root.classList.add('hidden');
                 }else {
-                    configFile.domEl.classList.add('hidden');
+                    configFile.root.classList.add('hidden');
                 }
                 
                 const editConfigBtn = panel.addButton(null, "Edit config file", () => {
@@ -1668,10 +1673,10 @@ class GUI {
                         callback: (v, e) => {                            
                             cfromFile = true;
                             // panel.refresh();
-                            if(!configURL.domEl.classList.contains('hidden')) {
-                                configURL.domEl.classList.add('hidden');          
+                            if(!configURL.root.classList.contains('hidden')) {
+                                configURL.root.classList.add('hidden');          
                             }
-                            configFile.domEl.classList.remove('hidden');                                                          
+                            configFile.root.classList.remove('hidden');                                                          
                         }
                     },
                     {
@@ -1679,10 +1684,10 @@ class GUI {
                         callback: (v, e) => {
                             cfromFile = false;
                             // panel.refresh();
-                            if(!configFile.domEl.classList.contains('hidden')) {
-                                configFile.domEl.classList.add('hidden');           
+                            if(!configFile.root.classList.contains('hidden')) {
+                                configFile.root.classList.add('hidden');           
                             }                                               
-                            configURL.domEl.classList.remove('hidden');  
+                            configURL.root.classList.remove('hidden');  
                         }
                     }
                 ], {selected: cfromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
@@ -1764,7 +1769,7 @@ class GUI {
                 if(!v) {
                     return;
                 }
-                const filename = panel.widgets["Config File"].domEl.children[1].files[0].name;
+                const filename = panel.widgets["Config File"].root.children[1].files[0].name;
                 let extension = filename.split(".");
                 extension = extension.pop();
                 if (extension == "json") { 
@@ -1804,9 +1809,9 @@ class GUI {
             }, {nameWidth: "43%"});
 
             if(fromFile) {
-                configURL.domEl.classList.add('hidden');
+                configURL.root.classList.add('hidden');
             }else {
-                configFile.domEl.classList.add('hidden');
+                configFile.root.classList.add('hidden');
             }
 
             if(config) {
@@ -1820,10 +1825,10 @@ class GUI {
                     callback: (v, e) => {                            
                         fromFile = true;
                         // panel.refresh();
-                        if(!configURL.domEl.classList.contains('hidden')) {
-                            configURL.domEl.classList.add('hidden');          
+                        if(!configURL.root.classList.contains('hidden')) {
+                            configURL.root.classList.add('hidden');          
                         }
-                        configFile.domEl.classList.remove('hidden');                                                                                  
+                        configFile.root.classList.remove('hidden');                                                                                  
                     }
                 },
                 {
@@ -1831,10 +1836,10 @@ class GUI {
                     callback: (v, e) => {
                         fromFile = false;
                         // panel.refresh();
-                        if(!configFile.domEl.classList.contains('hidden')) {
-                            configFile.domEl.classList.add('hidden');           
+                        if(!configFile.root.classList.contains('hidden')) {
+                            configFile.root.classList.add('hidden');           
                         }                                               
-                        configURL.domEl.classList.remove('hidden');  
+                        configURL.root.classList.remove('hidden');  
                     }
                 }
             ], {selected: fromFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
@@ -1962,8 +1967,8 @@ class GUI {
                     dataTransfer.items.add(gltfs[0]);
                     // Save the file list to a new variable
                     const fileList = dataTransfer.files;
-                    this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
-                    this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                    this.avatarDialog.panel.widgets["Avatar File"].root.children[1].files = fileList;
+                    this.avatarDialog.panel.widgets["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
                     
                     if (config) { 
                         // Create a data transfer object
@@ -1972,8 +1977,8 @@ class GUI {
                         dataTransfer.items.add(config);
                         // Save the file list to a new variable
                         const fileList = dataTransfer.files;
-                        this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
-                        this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
+                        this.avatarDialog.panel.widgets["Config File"].root.children[1].files = fileList;
+                        this.avatarDialog.panel.widgets["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
                     }
                 }
                 else {
@@ -2076,8 +2081,8 @@ class GUI {
                 // Save the file list to a new variable
                 const fileList = dataTransfer.files;
 
-                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].files = fileList;
-                this.avatarDialog.panel.widgets["Avatar File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
+                this.avatarDialog.panel.widgets["Avatar File"].root.children[1].files = fileList;
+                this.avatarDialog.panel.widgets["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
             }
             else if (extension == "json") { 
                 // Create a data transfer object
@@ -2086,8 +2091,8 @@ class GUI {
                 dataTransfer.items.add(files[i]);
                 // Save the file list to a new variable
                 const fileList = dataTransfer.files;
-                this.avatarDialog.panel.widgets["Config File"].domEl.children[1].files = fileList;
-                this.avatarDialog.panel.widgets["Config File"].domEl.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                this.avatarDialog.panel.widgets["Config File"].root.children[1].files = fileList;
+                this.avatarDialog.panel.widgets["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
             }
         }
     }
@@ -2285,7 +2290,7 @@ class GUI {
             pp.refresh = () => {
                 pp.clear();
                 pp.sameLine();
-                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text"});                
+                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text nobg"});                
                 pp.addButton(null, 'Copy', (value, event) => {
     
                     navigator.clipboard.writeText(url);
@@ -2321,7 +2326,7 @@ class GUI {
                     localStorage.setItem(key, v);               
                 }
                 panel.refresh();
-            });
+            },{nameWidth: "auto", className: "contrast", label:""});
             tabPanel.addSeparator();
             
             panel.refresh = () => {
@@ -2333,8 +2338,8 @@ class GUI {
                         localStorage.setItem(key, v);
                         toExport[key].state = v;
                         panel.refresh();
-                    })
-                    panel.addText(null, toExport[key].text, null, {disabled: true});
+                    },{nameWidth: "auto", className: "contrast", label:""})
+                    panel.addText(null, toExport[key].text, null, {disabled: true, inputClass: "nobg"});
                     panel.endLine();
                 }
                 if(toExport.avatar.state) {
@@ -2386,7 +2391,7 @@ class GUI {
                     localStorage.setItem(key, v);               
                 }
                 spanel.refresh();
-            });
+            },{nameWidth: "auto", className: "contrast", label:""});
             tabPanel.addSeparator();
 
             spanel.refresh = () => {
@@ -2398,8 +2403,8 @@ class GUI {
                         toExportScript[key].state = v;
                         localStorage.setItem(key, v);
                         spanel.refresh();
-                    })
-                    spanel.addText(null, toExportScript[key].text, null, {disabled: true});
+                    },{nameWidth: "auto", className: "contrast", label:""});
+                    spanel.addText(null, toExportScript[key].text, null, {disabled: true, inputClass:"nobg"});
                     spanel.endLine();
                 }
 
@@ -2423,7 +2428,7 @@ class GUI {
                     localStorage.setItem(key, v);
                 }
                 kpanel.refresh();
-            });
+            },{nameWidth: "auto", className: "contrast", label:""});
             tabPanel.addSeparator();
 
             kpanel.refresh = () => {
@@ -2436,8 +2441,8 @@ class GUI {
                         toExportKeyframe[key].state = v;
                         localStorage.setItem(key, v);
                         kpanel.refresh();
-                    })
-                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true, nameWidth:"100px"});
+                    },{nameWidth: "auto", className: "contrast", label:""});
+                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true, inputClass: "nobg", nameWidth:"100px"});
                     kpanel.endLine();
                 }
 
@@ -2473,7 +2478,7 @@ class GUI {
                     localStorage.setItem(key, v);
                 }
                 tpanel.refresh();
-            });
+            },{nameWidth: "auto", className: "contrast", label:""});
             tabPanel.addSeparator();
 
             tpanel.refresh = () => {
@@ -2486,8 +2491,8 @@ class GUI {
                         toExportTransform[key].state = v;
                         localStorage.setItem(key, v);
                         tpanel.refresh();
-                    })
-                    tpanel.addText(null, toExportTransform[key].text, null, {disabled: true, nameWidth:"100px"});
+                    },{nameWidth: "auto", className: "contrast", label:""});
+                    tpanel.addText(null, toExportTransform[key].text, null, {disabled: true, inputClass:"nobg", nameWidth:"100px"});
                     tpanel.endLine();
                 }
 
@@ -2546,13 +2551,10 @@ class GUI {
                 dialog.close();
             }, {buttonClass: "accept", width: "auto"});
 
-        }, {size: ["40%", "auto"], resizable: true, draggable: true, scroll: true });
+        }, {size: ["40%", "85%"], resizable: true, draggable: true, scroll: true });
 
+        dialog.root.style.maxHeight = "90%";
     }
 }
 
 export { GUI };
-
-LX.setThemeColor("global-selected", "#6200EA");
-LX.setThemeColor("global-selected-light", "#bb86fc");
-LX.setThemeColor("global-selected-dark", "#a100ff");
