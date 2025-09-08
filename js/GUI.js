@@ -160,7 +160,7 @@ class GUI {
           case GUI.ACTIVEPANEL_LIGHTS: this.createLightsPanel(); break;
           default: type = GUI.ACTIVEPANEL_NONE; break;
         }
-        
+
         if (type){
             if( this.activePanelType == GUI.ACTIVEPANEL_NONE ){ // only move split if it was closed before
               this.mainArea._moveSplit(0.3 * window.innerWidth);
@@ -179,12 +179,12 @@ class GUI {
 
     createSettingsPanel(force = false) {
         const p = this.panel;
-        p.clear();
-
+        
         if(p.getBranch("Animation")) {
             this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
         }
-
+        
+        p.clear();
         p.branch("Animation", {icon: "ASL", closed: !this.branchesOpened["Animation"]});
         
         p.addText(null,"Animation mode options", null, {disabled: true, inputClass:"nobg"});
@@ -703,18 +703,12 @@ class GUI {
             cameras.push(camera);                  
         }
 
-        p.sameLine();
-        p.addComboButtons("Camera", cameras, {selected: (this.performs.camera + 1).toString(), width: "auto", nameWidth:"260px"});    
-        p.addButton(null, "Reset", (V) => {
-            this.performs.controls[this.performs.camera].reset();
-
-        }, { width: "30px", icon: "RotateCcw"} ) 
-        p.addComboButtons(null, [
+        p.addComboButtons("View Type", [
             {
                 value: "Restricted View",
                 icon: "Camera",
                 callback: (v, e) => {
-                    this.performs.toggleCameraMode(); 
+                    this.performs.changeCameraMode(false); 
                     this.createCameraPanel();
                 }
             },
@@ -722,17 +716,24 @@ class GUI {
                 value: "Free View",
                 icon: "Move",
                 callback: (v, e) => {
-                    this.performs.toggleCameraMode(); 
+                    this.performs.changeCameraMode(true); 
                     this.createCameraPanel();
                 }
             }
         ], {selected: this.performs.cameraMode ? "Free View" : "Restricted View"});
-        p.endLine("left");
 
         p.addSeparator();
+        
+        p.sameLine();
+        p.addComboButtons("Camera", cameras, {selected: (this.performs.camera + 1).toString(), width: "80%"});    
+        p.addButton(null, "Reset", (V) => {
+            this.performs.controls[this.performs.camera].reset();
+
+        }, { icon: "RotateCcw"} );
+        p.endLine("left");
+
         p.addCheckbox("Enable capture", this.captureEnabled, (v) => {
             this.captureEnabled = v;
-            this.createCameraPanel();
 
             if(this.captureEnabled) {
                 this.overlayButtonsPlay.buttons["Record video"].root.classList.remove("hidden");
@@ -740,29 +741,34 @@ class GUI {
             else {
                 this.overlayButtonsPlay.buttons["Record video"].root.classList.add("hidden");
             }
+        }, {
+            skipReset: true,
+            className: "contrast",
+            label: "",
+            suboptions: (sp)=>{
+                sp.addText(null, "Select cameras to be recorded:", null, {disabled: true, inputClass:"nobg"});
+               
+                sp.sameLine();
+
+                for( let i = 0; i < this.performs.cameras.length; ++i){
+                    sp.addCheckbox((i+1).toString(), this.performs.cameras[i].record, (value, event) => {
+                        this.performs.cameras[i].record = value;
+                    },{className:"contrast", label: ""});
+                    
+                }
+                sp.endLine();
+    
+                sp.addTitle("Automatic exportation")
+                sp.addCheckbox("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
+                    this.performs.animationRecorder.exportZip = v;
+                }, {
+                    skipReset: true,
+                    className: "contrast",
+                    label: "",
+                    title:"Pack all videos into a single ZIP or download each file individually"});
+                    
+            }            
         });
-        
-        if(this.captureEnabled) {
-
-            p.addText(null, "Select cameras to be recorded:", null, {disabled: true});
-            p.sameLine();
-            p.addCheckbox("1", this.performs.cameras[0].record, (value, event) => {
-                this.performs.cameras[0].record = value;
-            });
-            p.addCheckbox("2", this.performs.cameras[1].record, (value, event) => {
-                this.performs.cameras[1].record = value;
-            });
-            p.addCheckbox("3", this.performs.cameras[2].record, (value, event) => {
-                this.performs.cameras[2].record = value;
-            });
-            p.endLine();
-
-            p.addTitle("Automatic exportation")
-            p.addCheckbox("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
-                this.performs.animationRecorder.exportZip = v;
-                this.createCameraPanel();            
-            })
-        }
     }
 
     createLightsPanel() {

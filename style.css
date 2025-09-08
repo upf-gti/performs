@@ -71,7 +71,6 @@
 .floating-button-playing {
 	border-radius: 80px !important;
 	width: 30px !important;
-    background-color: var(--global-selected) !important;
     padding: var(--global-padding-sm) 0.1875rem !important;
     min-width: 0% !important;
 	animation: ease pulse 2s infinite;
