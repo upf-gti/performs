@@ -443,7 +443,7 @@ class Performs {
                     this.currentCharacter.config = config;
                     this.scriptApp.onLoadAvatar(this.currentCharacter.model, this.currentCharacter.config, this.currentCharacter.skeleton);
                     this.currentCharacter.skeleton.pose();
-                    this.scriptApp.ECAcontroller.reset();                        
+                    this.scriptApp.ECAcontroller.reset();
                     this.changeMode(Performs.Modes.SCRIPT);
                     if(this.gui) {
                         this.gui.avatarOptions[name][1] = config._filename;

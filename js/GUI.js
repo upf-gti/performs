@@ -59,8 +59,6 @@ class GUI {
             }
         }], {float: "rt"});
 
-        this.mainArea.extend();
-
         this.branchesOpened = {"Customization" : true, "Transformations": true, "Recording": true, "Animation": true, "Export": true};
         // sessionStorage: only for this domain and this tab. Memory is kept during reload (button), reload (link) and F5. New tabs will not know of this memory
         // localStorage: only for this domain. New tabs will see that memory
@@ -129,6 +127,7 @@ class GUI {
         
         this.activePanelType = GUI.ACTIVEPANEL_NONE;
         this.prevActivePanelType = GUI.ACTIVEPANEL_NONE;
+        this.setActivePanel( GUI.ACTIVEPANEL_NONE );
 
         this.overlayButtonsPlay = null;
         this.overlayButtonsReset = null;
@@ -161,20 +160,19 @@ class GUI {
           case GUI.ACTIVEPANEL_LIGHTS: this.createLightsPanel(); break;
           default: type = GUI.ACTIVEPANEL_NONE; break;
         }
-      
+        
         if (type){
-            if( this.activePanelType == GUI.ACTIVEPANEL_NONE ){ // only move split it was closed before
+            if( this.activePanelType == GUI.ACTIVEPANEL_NONE ){ // only move split if it was closed before
               this.mainArea._moveSplit(0.3 * window.innerWidth);
             }          
-          this.panel.parent.show();
-          this.panel.parent.root.style.opacity = 1; // BUG, FOR SOME REASON OPACITY IS INITIALLY 0
+            this.panel.parent.show();
         }else{
-          this.mainArea._moveSplit(-window.innerWidth);
-          this.panel.parent.hide();
+            this.mainArea._moveSplit(-window.innerWidth);
+            this.panel.parent.hide();
         }
       
         if ( type != this.activePanelType ){
-          this.prevActivePanelType = this.activePanelType;
+            this.prevActivePanelType = this.activePanelType;
         }
         this.activePanelType = type;
     }
@@ -1318,7 +1316,7 @@ class GUI {
             }
             console.log( JSON.parse(JSON.stringify(m)));
             this.performs.scriptApp.processMessageRawBlocks( m );
-        }, { width: "40px", icon: "Dices", width:"20%"} );
+        }, { icon: "Play@solid", width:"20%", title:"Play random signs"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
@@ -1340,6 +1338,7 @@ class GUI {
                 nameWidth: "auto",
                 skipReset: true,
                 label: "",
+                className: "contrast",
                 suboptions: (p) => {
                     p.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
                         this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
@@ -1421,12 +1420,12 @@ class GUI {
         this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        },{nameWidth: "auto", skipReset: true, label: ""})
+        },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
             
         this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        }, {nameWidth: "auto", skipReset: true, label: ""})
+        }, {nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
@@ -2220,7 +2219,7 @@ class GUI {
         });
     }
 
-    showExportDialog(callback) {
+    showExportDialog() {
 
         // Avatar URL
         const currentCharacterInfo = this.avatarOptions[this.performs.currentCharacter.model.name];
@@ -2280,18 +2279,18 @@ class GUI {
         const dialog = new LX.Dialog("Export configuration", p => {
             
             p.sameLine();
-            p.addButton("Select the configuration settings you want to export.", 'More info...', (v) => {
+            p.addButton("Select the configuration settings you want to export. ", 'More info...', (v) => {
                 window.open('https://github.com/upf-gti/performs/blob/main/docs/IntegrationGuide.md', '_blank');
-            }, {nameWidth: "80%"})
+            }, {nameWidth: "auto"});
             p.endLine();
             let url = new URL(window.location.origin + window.location.pathname);
 
-            let pp = new LX.Panel({height:'auto'});
-            pp.refresh = () => {
-                pp.clear();
-                pp.sameLine();
-                pp.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text nobg"});                
-                pp.addButton(null, 'Copy', (value, event) => {
+            let urlPanel = new LX.Panel({height:'auto'});
+            urlPanel.refresh = () => {
+                urlPanel.clear();
+                urlPanel.sameLine();
+                urlPanel.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text nobg"});              
+                urlPanel.addButton(null, 'Copy', (value, event) => {
     
                     navigator.clipboard.writeText(url);
                     const bubble = document.getElementById('bubble');
@@ -2299,221 +2298,80 @@ class GUI {
                     // Get the bounding rect of button                    
                     const rect = event.target.getBoundingClientRect();
                     // Set the bubble position
-                    bubble.style.left = `${rect.left - 20}px`//`${x - 25}px`;
-                    bubble.style.top = `${rect.top - 35}px`//`${y - bubble.offsetHeight - 35}px`; // Position above the mouse click
+                    bubble.style.left = `${rect.left - 20}px`; //`${x - 25}px`;
+                    bubble.style.top = `${rect.top - 35}px`; //`${y - bubble.offsetHeight - 35}px`; // Position above the mouse click
                     bubble.classList.add('show');
                     
                     setTimeout(function() {
                         bubble.classList.remove('show');
                     }, 2000); // Bubble will show for 2 seconds
                 }, {icon:'Clipboard', width:"40px"})
-                pp.endLine();
+                urlPanel.endLine();
             }
             
-            let tabsPanel = new LX.Area({height: 'auto'});
+            let tabsPanel = new LX.Area({height: 'fit-content'});
             let tabs = tabsPanel.addTabs();
 
-            let panel = new LX.Panel({height:'auto'});
-            let spanel = new LX.Panel({height:'auto'});
-            let kpanel = new LX.Panel({height:'auto'});
-            let tpanel = new LX.Panel({height:'auto'});
-            
-            // Customizaiton options
-            let tabPanel = new LX.Panel({height:'auto'});            
-            tabPanel.addCheckbox("Select All", false, (v, e) => {
-                for(let key in toExport) {                    
-                    toExport[key].state = v;
-                    localStorage.setItem(key, v);               
-                }
-                panel.refresh();
-            },{nameWidth: "auto", className: "contrast", label:""});
-            tabPanel.addSeparator();
-            
-            panel.refresh = () => {
-                panel.clear();               
-                for(let key in toExport) {
-                    url.searchParams.delete(key);
-                    panel.sameLine();
-                    panel.addCheckbox(key, toExport[key].state, (v, e) => {
-                        localStorage.setItem(key, v);
-                        toExport[key].state = v;
-                        panel.refresh();
-                    },{nameWidth: "auto", className: "contrast", label:""})
-                    panel.addText(null, toExport[key].text, null, {disabled: true, inputClass: "nobg"});
-                    panel.endLine();
-                }
-                if(toExport.avatar.state) {
-                    url.searchParams.append('avatar', toExport.avatar.value);
-                }               
-                if(toExport.cloth.state) {
-                    url.searchParams.append('cloth', toExport.cloth.value);
-                }
-                if(toExport.color.state) {                    
-                    url.searchParams.append('color', toExport.color.value);
-                }
-                if(toExport.background.state) {                    
-                    url.searchParams.append('background', toExport.background.value);
-                }
-                if(toExport.img.state) {                    
-                    url.searchParams.append('img', toExport.img.value);
-                }
-                if(toExport.offset.state) {
-                    url.searchParams.append('offset', toExport.offset.value);
-                }
-                if(toExport.light.state) {
-                    url.searchParams.append('light', toExport.light.value);
-                }
-                if(toExport.lightpos.state) {
-                    url.searchParams.append('lightpos', toExport.lightpos.value);
-                }
-                if(toExport.restrictView.state) {
-                    url.searchParams.append('restrictView', toExport.restrictView.value);
-                }
-                if(toExport.controls.state) {
-                    url.searchParams.append('controls', toExport.controls.value);
-                }
-                if(toExport.autoplay.state) {
-                    url.searchParams.append('autoplay', toExport.autoplay.value);
-                }
-                
-                panel.addSeparator();                
-                pp.refresh();
-            };
-            panel.refresh();
-            tabPanel.root.appendChild(panel.root);
-            tabs.add("Customization", tabPanel.root, () => panel.refresh());
+            const makeTab = ( attributes ) =>{
+                const attrPanel = new LX.Panel({height:'auto'});
+                const tabPanel = new LX.Panel({height:'auto'});
 
-            // Scrip mode idle options
-            tabPanel = new LX.Panel({height:'auto'});     
-            tabPanel.addCheckbox("Select All", toExportScript.config.state, (v, e) => {
-                for(let key in toExportScript) {                    
-                    toExportScript[key].state = v;
-                    localStorage.setItem(key, v);               
-                }
-                spanel.refresh();
-            },{nameWidth: "auto", className: "contrast", label:""});
-            tabPanel.addSeparator();
+                // make selectAll checkbox sepparate from the rest of attributes. A refresh of attributes will not change the selectAll checkbox 
+                tabPanel.addCheckbox("Select All", false, (v, e) => {
+                    for(let key in attributes) {                    
+                        attributes[key].state = v;
+                        localStorage.setItem(key, v);               
+                    }
+                    attrPanel.refresh();
+                },{nameWidth: "auto", className: "contrast", label:"", skipReset: true});
+                tabPanel.addSeparator();
 
-            spanel.refresh = () => {
-                spanel.clear();
-                for(let key in toExportScript) {
-                    url.searchParams.delete(key);
-                    spanel.sameLine();
-                    spanel.addCheckbox(key, toExportScript[key].state, (v, e) => {
-                        toExportScript[key].state = v;
-                        localStorage.setItem(key, v);
-                        spanel.refresh();
-                    },{nameWidth: "auto", className: "contrast", label:""});
-                    spanel.addText(null, toExportScript[key].text, null, {disabled: true, inputClass:"nobg"});
-                    spanel.endLine();
-                }
-
-                if(toExportScript.config.state && currentCharacterInfo[1]) {
-                    url.searchParams.append('config', toExportScript.config.value);
-                }
-                if(toExportScript.applyIdle.state) {
-                    url.searchParams.append('applyIdle', toExportScript.applyIdle.value);
-                }
-                pp.refresh();
+                // attributes to show 
+                attrPanel.refresh = () => {
+                    attrPanel.clear();               
+                    for(let key in attributes) {
+                        url.searchParams.delete(key);
+                        attrPanel.sameLine();
+                        attrPanel.addCheckbox("", attributes[key].state, (v, e) => {
+                            localStorage.setItem(key, v);
+                            attributes[key].state = v;
+                            attrPanel.refresh();
+                        },{nameWidth: "auto", className: "contrast", label:key})
+                        attrPanel.addText(null, attributes[key].text, null, {disabled: true, inputClass: "nobg"});
+                        attrPanel.endLine();
+    
+                        if ( attributes[key].state ){
+                            url.searchParams.append(key, attributes[key].value);
+                        }
+                    }
+                    
+                    attrPanel.addSeparator();                
+                    urlPanel.refresh();
+                };
+                attrPanel.refresh();
+                tabPanel.attach(attrPanel.root);
+                return [tabPanel, attrPanel];
             }
-            spanel.refresh();
-            tabPanel.root.appendChild(spanel.root);
-            tabs.add("Script mode", tabPanel.root, () => spanel.refresh());
+
+            // General options
+            let [tabPanel,attrPanel]  = makeTab( toExport );
+            tabs.add("Customization", tabPanel.root, () => attrPanel.refresh());
+
+            // Script mode idle options
+            [tabPanel,attrPanel]  = makeTab( toExportScript );
+            tabs.add("Script mode", tabPanel.root, () => attrPanel.refresh());
 
             // Keyframe mode options
-            tabPanel = new LX.Panel({height:'auto'});     
-            tabPanel.addCheckbox("Select All", hasAnimations, (v, e) => {
-                for(let key in toExportKeyframe) {                    
-                    toExportKeyframe[key].state = v;
-                    localStorage.setItem(key, v);
-                }
-                kpanel.refresh();
-            },{nameWidth: "auto", className: "contrast", label:""});
-            tabPanel.addSeparator();
-
-            kpanel.refresh = () => {
-                kpanel.clear();
-                for(let key in toExportKeyframe) {
-                    url.searchParams.delete(key);
-
-                    kpanel.sameLine();
-                    kpanel.addCheckbox(key, toExportKeyframe[key].state, (v, e) => {
-                        toExportKeyframe[key].state = v;
-                        localStorage.setItem(key, v);
-                        kpanel.refresh();
-                    },{nameWidth: "auto", className: "contrast", label:""});
-                    kpanel.addText(null, toExportKeyframe[key].text, null, {disabled: true, inputClass: "nobg", nameWidth:"100px"});
-                    kpanel.endLine();
-                }
-
-                if(toExportKeyframe.srcEmbeddedTransforms.state) {
-                    url.searchParams.append('srcEmbeddedTransforms', toExportKeyframe.srcEmbeddedTransforms.value);
-                }
-                if(toExportKeyframe.trgEmbeddedTransforms.state) {
-                    url.searchParams.append('trgEmbeddedTransforms', toExportKeyframe.trgEmbeddedTransforms.value);
-                }
-                if(toExportKeyframe.srcReferencePose.state) {
-                    url.searchParams.append('srcReferencePose', toExportKeyframe.srcReferencePose.value);
-                }
-                if(toExportKeyframe.trgReferencePose.state) {
-                    url.searchParams.append('trgReferencePose', toExportKeyframe.trgReferencePose.value);
-                }
-                if(toExportKeyframe.crossfade.state) {
-                    url.searchParams.append('crossfade', toExportKeyframe.crossfade.value);
-                }
-                if(toExportKeyframe.blendTime.state) {
-                    url.searchParams.append('blendTime', toExportKeyframe.blendTime.value);
-                }
-                pp.refresh();
-            }
-            kpanel.refresh();
-            tabPanel.root.appendChild(kpanel.root);
-            tabs.add("Keyframe mode", tabPanel.root, () => kpanel.refresh());
+            [tabPanel,attrPanel]  = makeTab( toExportKeyframe );
+            tabs.add("Keyframe mode", tabPanel.root, () => attrPanel.refresh());
 
             // Transforms mode options
-            tabPanel = new LX.Panel({height:'auto'});     
-            tabPanel.addCheckbox("Select All", false, (v, e) => {
-                for(let key in toExportTransform) {                    
-                    toExportTransform[key].state = v;
-                    localStorage.setItem(key, v);
-                }
-                tpanel.refresh();
-            },{nameWidth: "auto", className: "contrast", label:""});
-            tabPanel.addSeparator();
-
-            tpanel.refresh = () => {
-                tpanel.clear();
-                for(let key in toExportTransform) {
-                    url.searchParams.delete(key);
-
-                    tpanel.sameLine();
-                    tpanel.addCheckbox(key, toExportTransform[key].state, (v, e) => {
-                        toExportTransform[key].state = v;
-                        localStorage.setItem(key, v);
-                        tpanel.refresh();
-                    },{nameWidth: "auto", className: "contrast", label:""});
-                    tpanel.addText(null, toExportTransform[key].text, null, {disabled: true, inputClass:"nobg", nameWidth:"100px"});
-                    tpanel.endLine();
-                }
-
-                if(toExportTransform.position.state) {
-                    url.searchParams.append('position', toExportTransform.position.value);
-                }
-                if(toExportTransform.rotation.state) {
-                    url.searchParams.append('rotation', toExportTransform.rotation.value);
-                }
-                if(toExportTransform.scale.state) {
-                    url.searchParams.append('scale', toExportTransform.scale.value);
-                }                
-                pp.refresh();
-            }
-            tpanel.refresh();
-            tabPanel.root.appendChild(tpanel.root);
-            tabs.add("Transforms", tabPanel.root, () => tpanel.refresh());
+            [tabPanel,attrPanel]  = makeTab( toExportTransform );
+            tabs.add("Transforms", tabPanel.root, () => toExportTransform.refresh());
               
             p.root.appendChild(tabsPanel.root);
-            pp.refresh();
-            p.root.appendChild(pp.root);        
+            urlPanel.refresh();
+            p.root.appendChild(urlPanel.root);        
 
             p.addButton(null, "Download configuration as file (.json)", () => {
 
@@ -2544,16 +2402,16 @@ class GUI {
                 a.href = "data:text/json;charset=utf-8," + encodeURIComponent(data);
                 a.download = "performsSettings.json";
                 a.click();
-              
-                if (callback) {
-                    callback();
-                }
+
                 dialog.close();
             }, {buttonClass: "accept", width: "auto"});
 
-        }, {size: ["40%", "85%"], resizable: true, draggable: true, scroll: true });
+        }, {size: ["40%", "fit-content"], className: "resizeable", draggable: true, scroll: true });
 
         dialog.root.style.maxHeight = "90%";
+        dialog.root.style.translate = "-50% 0%";
+        dialog.root.style.top = "10%";
+
     }
 }
 
