@@ -286,55 +286,66 @@ class GUI {
         });
         
         // Open space
-        const openBtn = p.addButton(null, "Open space", (value)=> {
+        const openBtn = p.addButton("openBtn", "Open space", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.OPEN);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/open-space.png", className: "centered"});
-        openBtn.children[0].classList.add("roundedbtn");
+        }, {img: "./data/imgs/open-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true}).root;
         if( this.performs.background == Performs.Backgrounds.OPEN ) {
             openBtn.children[0].classList.add('selected');
         }
+        
         // Studio background
-        const studioBtn = p.addButton(null, "Studio", (value)=> {
+        const studioBtn = p.addButton("studioBtn", "Studio", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/studio-space.png", className: "centered"});
-        studioBtn.children[0].classList.add("roundedbtn");        
+        }, {img: "./data/imgs/studio-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true }).root;
         if( this.performs.background == Performs.Backgrounds.STUDIO ) {
             studioBtn.children[0].classList.add('selected');
 
             const ebtn = p.addButton(null, "Edit properties", (e) => {
-
                 this.showStudioPropertiesDialog( );
-                
-            }, {icon: "PenBox", className: "centered"});
-            ebtn.children[0].style.width = "40px";
+            }, {icon: "PenBox", className: "centered"}).root;
         }
+        
         // Photocall background
-        const photocallBtn = p.addButton(null, "Photocall", (value)=> {
+        const photocallBtn = p.addButton("photocallBtn", "Photocall", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/photocall-space.png", className: "centered"});
-        photocallBtn.children[0].classList.add("roundedbtn");
+        }, {img: "./data/imgs/photocall-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true}).root;
         if( this.performs.background == Performs.Backgrounds.PHOTOCALL ) {
             photocallBtn.children[0].classList.add('selected');
             const ebtn = p.addButton(null, "Edit properties", (e) => {
-
-                this.showPhotocallPropertiesDialog( );
-                
-            }, {icon: "PenBox", className: "centered"});
-            ebtn.children[0].style.width = "40px";
+                this.showPhotocallPropertiesDialog( );                
+            }, {icon: "PenBox", className: "centered"}).root;
         }
     }
 
     showStudioPropertiesDialog() {
         const dialog = new LX.Dialog("Properties", (panel) => {
             let formFile = true;
-            panel.sameLine();
 
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {                            
+                        formFile = true;
+                        panel.components["Image/Video URL"].root.classList.add('hidden');
+                        panel.components["File"].root.classList.remove('hidden');
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        panel.components["File"].root.classList.add('hidden');
+                        panel.components["Image/Video URL"].root.classList.remove('hidden');
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL", width: "100%"});
+            
             const logoFile = panel.addFile("File", (v, e) => {
                 
-                const files = panel.widgets["File"].root.children[1].files;
+                const files = panel.components["File"].root.children[1].files;
                 if(!files.length) {
                     return;
                 }
@@ -370,7 +381,7 @@ class GUI {
 
                 }
                 else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
-            }, {type: "url", nameWidth: "41%", read:true});
+            }, {type: "url", read:true});
 
             const textureURL = panel.addText("Image/Video URL", "", (v, e) => {
                 if(!v) {
@@ -394,44 +405,19 @@ class GUI {
                 fetch(v)
                 .then(function (response) {
                     if (response.ok) {
-                    response.blob().then(function (miBlob) {
-                        var objectURL = URL.createObjectURL(miBlob);
-                        img.src = objectURL;
-                    });
+                        response.blob().then(function (miBlob) {
+                            var objectURL = URL.createObjectURL(miBlob);
+                            img.src = objectURL;
+                        });
                     } else {
-                    console.log("Not found");
+                        console.log("Not found");
                     }
                 })
                 .catch(function (error) {
                     console.log("Error:" + error.message);
                 });        
 
-            }, {nameWidth: "43%", read: true});
-            textureURL.root.classList.add('hidden');
-
-            panel.addComboButtons(null, [
-                {
-                    value: "From File",
-                    callback: (v, e) => {                            
-                        formFile = true;
-                        if(!textureURL.root.classList.contains('hidden')) {
-                            textureURL.root.classList.add('hidden');          
-                        }
-                        logoFile.root.classList.remove('hidden');                                                          
-                    }
-                },
-                {
-                    value: "From URL",
-                    callback: (v, e) => {
-                        formFile = false;
-                        if(!logoFile.root.classList.contains('hidden')) {
-                            logoFile.root.classList.add('hidden');           
-                        }                                               
-                        textureURL.root.classList.remove('hidden');          
-                    }
-                }
-            ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
-            panel.endLine();
+            }, {className: "hidden", read: true});
 
             panel.addSelect("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
                 this.performs.setBackgroundSettings(v);
@@ -445,17 +431,34 @@ class GUI {
             panel.addVector2("Position", this.performs.texturePosition, (v) => {
                 this.performs.setBackgroundTexturePosition(v);
             }, { step: 0.01})
-        })
+        }, {className: "resizeable"});
     }
 
     showPhotocallPropertiesDialog() {
         const dialog = new LX.Dialog("Properties", (panel) => {
+            
             let formFile = true;
-            panel.sameLine();
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {                            
+                        formFile = true;
+                        panel.components["Logo URL"].root.classList.add('hidden');
+                        panel.components["File"].root.classList.remove('hidden');
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        panel.components["File"].root.classList.add('hidden');
+                        panel.components["Logo URL"].root.classList.remove('hidden');
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL", width: "100%"});
 
             const logoFile = panel.addFile("File", (v, e) => {
-
-                const files = panel.widgets["File"].root.children[1].files;
+                const files = panel.components["File"].root.children[1].files;
                 if(!files.length) {
                     return;
                 }
@@ -475,7 +478,7 @@ class GUI {
 
                 }
                 else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
-            }, {type: "url", nameWidth: "41%", read:true});
+            }, {type: "url", read:true});
 
             let logoURL = panel.addText("Logo URL", "", (v, e) => {
                 if(!v) {
@@ -499,44 +502,19 @@ class GUI {
                 fetch(v)
                 .then(function (response) {
                     if (response.ok) {
-                    response.blob().then(function (miBlob) {
-                        var objectURL = URL.createObjectURL(miBlob);
-                        img.src = objectURL;
-                    });
+                        response.blob().then(function (miBlob) {
+                            var objectURL = URL.createObjectURL(miBlob);
+                            img.src = objectURL;
+                        });
                     } else {
-                    console.log("Not found");
+                        console.log("Not found");
                     }
                 })
                 .catch(function (error) {
                     console.log("Error:" + error.message);
                 });        
 
-            }, {nameWidth: "43%", read: true});
-            logoURL.root.classList.add('hidden');
-
-            panel.addComboButtons(null, [
-                {
-                    value: "From File",
-                    callback: (v, e) => {                            
-                        formFile = true;
-                        if(!logoURL.root.classList.contains('hidden')) {
-                            logoURL.root.classList.add('hidden');          
-                        }
-                        logoFile.root.classList.remove('hidden');                                                          
-                    }
-                },
-                {
-                    value: "From URL",
-                    callback: (v, e) => {
-                        formFile = false;
-                        if(!logoFile.root.classList.contains('hidden')) {
-                            logoFile.root.classList.add('hidden');           
-                        }                                               
-                        logoURL.root.classList.remove('hidden');          
-                    }
-                }
-            ], {selected: formFile ? "From File" : "From URL", width: "170px", minWidth: "0px"});
-            panel.endLine();
+            }, {read: true, className: "hidden"});
 
             panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
                 this.performs.setPhotocallOffset(v);
@@ -545,7 +523,7 @@ class GUI {
             panel.addVector2("Repeatition", this.performs.repeatCount, (v) => {
                 this.performs.repeatCount = v;
             }, {min: 0, max: 20})
-        })
+        }, {className: "resizeable"});
     }
 
     createAvatarsPanel() {
@@ -1125,7 +1103,7 @@ class GUI {
                 htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
                 p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
     
-                htmlStr = 'An example: { "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }';
+                htmlStr = 'An example: [{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }]';
                 p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
     
                 const area = new LX.Area({ height: "59%" });
@@ -1525,7 +1503,7 @@ class GUI {
 
                 panel.sameLine();
                 let avatarFile = panel.addFile("Avatar File", (v, e) => {
-                    let files = panel.widgets["Avatar File"].root.children[1].files;
+                    let files = panel.components["Avatar File"].root.children[1].files;
                     if(!files.length) {
                         return;
                     }
@@ -1616,7 +1594,7 @@ class GUI {
                     if(!v) {
                         return;
                     }
-                    const filename = panel.widgets["Config File"].root.children[1].files[0].name;
+                    const filename = panel.components["Config File"].root.children[1].files[0].name;
                     let extension = filename.split(".");
                     extension = extension.pop();
                     if (extension == "json") { 
@@ -1774,7 +1752,7 @@ class GUI {
                 if(!v) {
                     return;
                 }
-                const filename = panel.widgets["Config File"].root.children[1].files[0].name;
+                const filename = panel.components["Config File"].root.children[1].files[0].name;
                 let extension = filename.split(".");
                 extension = extension.pop();
                 if (extension == "json") { 
@@ -1972,8 +1950,8 @@ class GUI {
                     dataTransfer.items.add(gltfs[0]);
                     // Save the file list to a new variable
                     const fileList = dataTransfer.files;
-                    this.avatarDialog.panel.widgets["Avatar File"].root.children[1].files = fileList;
-                    this.avatarDialog.panel.widgets["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                    this.avatarDialog.panel.components["Avatar File"].root.children[1].files = fileList;
+                    this.avatarDialog.panel.components["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
                     
                     if (config) { 
                         // Create a data transfer object
@@ -1982,8 +1960,8 @@ class GUI {
                         dataTransfer.items.add(config);
                         // Save the file list to a new variable
                         const fileList = dataTransfer.files;
-                        this.avatarDialog.panel.widgets["Config File"].root.children[1].files = fileList;
-                        this.avatarDialog.panel.widgets["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
+                        this.avatarDialog.panel.components["Config File"].root.children[1].files = fileList;
+                        this.avatarDialog.panel.components["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
                     }
                 }
                 else {
@@ -2086,8 +2064,8 @@ class GUI {
                 // Save the file list to a new variable
                 const fileList = dataTransfer.files;
 
-                this.avatarDialog.panel.widgets["Avatar File"].root.children[1].files = fileList;
-                this.avatarDialog.panel.widgets["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
+                this.avatarDialog.panel.components["Avatar File"].root.children[1].files = fileList;
+                this.avatarDialog.panel.components["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
             }
             else if (extension == "json") { 
                 // Create a data transfer object
@@ -2096,8 +2074,8 @@ class GUI {
                 dataTransfer.items.add(files[i]);
                 // Save the file list to a new variable
                 const fileList = dataTransfer.files;
-                this.avatarDialog.panel.widgets["Config File"].root.children[1].files = fileList;
-                this.avatarDialog.panel.widgets["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
+                this.avatarDialog.panel.components["Config File"].root.children[1].files = fileList;
+                this.avatarDialog.panel.components["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
             }
         }
     }
@@ -2403,7 +2381,7 @@ class GUI {
                     }
                 }
                 const data = JSON.stringify(json);
-                let a = document.createElement('a'); 
+                let a = document.createElement('a');
                 // Then trigger the download link
                 a.href = "data:text/json;charset=utf-8," + encodeURIComponent(data);
                 a.download = "performsSettings.json";
