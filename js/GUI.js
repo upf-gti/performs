@@ -92,9 +92,6 @@ class GUI {
                     if(this.performs.mode == Performs.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
                             this.performs.keyframeApp.changePlayState();
-                            if(this.activePanelType == ACTIVEPANEL_SETTINGS) {
-                                this.createSettingsPanel();             
-                            }
                             this.changePlayButtons(this.performs.keyframeApp.playing);
                         }
                         else {
@@ -106,9 +103,6 @@ class GUI {
                             return;
                         }
                         this.performs.scriptApp.replay();
-                        if(this.activePanelType == ACTIVEPANEL_SETTINGS) {
-                            this.createSettingsPanel();             
-                        }
                     }                    
                 }
                 else if(event.key == 'Escape') {
@@ -1278,7 +1272,7 @@ class GUI {
             }
             console.log( JSON.parse(JSON.stringify(m)));
             this.performs.scriptApp.processMessageRawBlocks( m );
-        }, { icon: "Play@solid", width:"20%", title:"Play random signs"} );
+        }, { icon: "ArrowRightFromLine@solid", width:"20%", title:"Play random signs"} );
         this.bmlGui.endLine();
 
         this.bmlGui.addSeparator();
