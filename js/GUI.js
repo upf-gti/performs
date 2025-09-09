@@ -1070,6 +1070,31 @@ class GUI {
                 editor.setText( this.bmlInputData.prevInstanceText );
                 this.bmlInputData.codeObj = editor;
 
+                // a future update of LX.CodeEditor will delete the format button. A "onContextMenu" will exist instead
+                window.formatJSON = (text) => {
+                    let obj = null;
+                    try{ obj = JSON.parse(text); }
+                    catch(e){ obj = null; }
+
+                    if( !obj ){
+                        try{ obj = JSON.parse("["+text+"]"); }
+                        catch(e){ obj = null; }
+                    }
+
+                    if ( !obj ){
+                        LX.popup( "Check your code for errors. Common errors include: " +
+                            "\n- Keys must be quoted: {\"intensity\" : 0.2}" +
+                            "\n- Numbers use points (.) for decimal numbers: 0.2" +
+                            "\n- Elements of an array/object are separated by commas EXCEPT the last element {\"a\": 1, \"b\":2}",
+                             "Invalid bml message",
+                             {
+                                 timeout: 20000,
+                             });
+                        return text;
+                    }
+                    return JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSpaces));
+                }
+
                 p.addButton(null, "Send", () => {
                     let msg = {
                         type: "behaviours",
@@ -1124,7 +1149,7 @@ class GUI {
                     }
                 })
     
-            }, { size: ["35%", "70%"], float: "left", draggable: true, closable: true, onclose: (root)=>{
+            }, { size: ["35%", "70%"], float: "left", className:"resizeable", draggable: true, closable: true, onclose: (root)=>{
                 this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
                 this.bmlInputData.dialog = null;
                 this.bmlInputData.codeObj = null;
@@ -1173,7 +1198,7 @@ class GUI {
                     this.performs.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
                 });
     
-            }, { size: ["35%", "70%"], float: "left", draggable: true, closable: true, onclose: (root)=>{
+            }, { size: ["35%", "70%"], float: "left", className: "resizeable", draggable: true, closable: true, onclose: (root)=>{
                 this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
                 this.sigmlInputData.dialog = null;
                 this.sigmlInputData.codeObj = null;
@@ -2064,7 +2089,11 @@ class GUI {
                 result = JSON.parse( "[" + text + "]" );
             }
             catch( error ){
-                alert( "Invalid bml message. Check for errors such as proper quoting (\") of words or commas after each instruction (except the last one) and attribute." );
+                alert( "Invalid bml message" +
+                    "\nCheck your code for errors. Common errors include: " +
+                    "\n- Keys must be quoted: {\"intensity\" : 0.2}" +
+                    "\n- Numbers use points (.) for decimal numbers: 0.2" +
+                    "\n- Elements of an array/object are separated by commas EXCEPT the last element {\"a\": 1, \"b\":2}");
                 return [];
             }       
         }
