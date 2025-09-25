@@ -7586,8 +7586,8 @@ class BodyController{
         // this posture setting is quite hacky. To avoid dealing with handConstellation shift (not trivial)
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "RIGHT", distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, locationBodyArm: "neutral", hand: "LEFT",  distance: 0.0251, srcContact:"HAND_PALMAR", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.5, hand: "RIGHT", shift:true } );
-        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.75, hand: "LEFT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.5, thumbshape: "TOUCH", hand: "RIGHT", shift:true } );
+        this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, handshape: "FLAT", mainBend: "ROUND", tco:0.75, thumbshape: "TOUCH", hand: "LEFT", shift:true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "l", hand: "RIGHT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, palmor: "r", hand: "LEFT", shift: true } );
         this.newGesture( { type: "gesture", start: 0, attackPeak: 0.1, relax:0.2, end: 0.3, extfidir: "dl", hand: "RIGHT", mode: "local", shift:true } );
@@ -8181,13 +8181,14 @@ let simpleMotionAvailable = [ "directedmotion", "circularmotion", "wristmotion",
 let motionsAvailable = simpleMotionAvailable.concat( [ "nonman_motion", "par_motion", "seq_motion", "split_motion", "rpt_motion", "tgt_motion" ] ); // missing tgt, rpt and timing issues
 let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", "split_location", "location_hand", "handconstellation" , "use_locname"]; // missing location_hand, handconstellation, use_locname(????) 
 
-if (typeof(stringToDirection) != 'function') {
-    // used in rpt_motion
+// used in rpt_motion
+if(!stringToDirection) {
+
     function stringToDirection( str, outV = null, symmetry = 0x00 ){
         if ( !outV ){ outV = [0,0,0]; }
         outV.fill(0);
         if ( typeof( str ) != "string" ){ return outV; }
-
+    
         str = str.toUpperCase();
         
         // right hand system. If accumulate, count repetitions
@@ -8198,7 +8199,7 @@ if (typeof(stringToDirection) != 'function') {
         if ( symmetry & 0x01 ){ outV[0] *= -1; }
         if ( symmetry & 0x02 ){ outV[1] *= -1; }
         if ( symmetry & 0x04 ){ outV[2] *= -1; }
-
+    
         let length = Math.sqrt( outV[0] * outV[0] + outV[1] * outV[1] + outV[2] * outV[2] );
         
         if ( length < 0.0001 ){ outV.fill(0); }
@@ -8208,7 +8209,6 @@ if (typeof(stringToDirection) != 'function') {
         return outV;
     }
 }
-
 
 function checkHandsUsage( orders ){
     

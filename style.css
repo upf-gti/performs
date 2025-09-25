@@ -136,10 +136,28 @@
 }
 
 /* Overlay buttons*/
-
+.lexoverlaybuttons {
+    width: auto !important;
+    height: auto !important;
+    justify-content: start;
+    gap: 0px;
+    z-index: 95;
+    background-color: var(--global-color-secondary);
+    margin: 8px;
+    padding: 0.25em;
+    border-radius: 12px;
+}
+.lexoverlaybuttonscontainer .lexcomponent button:hover {
+	background-color: #313132cf!important;
+}
+.lexoverlaybuttons .lexcomponent.larger button:hover svg {
+	width: 1.4rem!important;
+	height: 1.4rem!important;
+}
 .lexoverlaybuttons .lexcomponent button {
 	border-radius: 80px!important;
     height: auto!important;
+	background-color: #313132a5;
 }
 
 .lexoverlaybuttons .lexcomponent.larger button {
@@ -150,8 +168,9 @@
 	max-width: 80px!important;
 }
 
-.lexoverlaybuttons .lexcomponent.larger button a {
-	font-size: 18px!important;
+.lexoverlaybuttons .lexcomponent.larger button svg {
+	width: 1.2rem;
+    height: 1.2rem;
 }
 .no-padding{
 	padding: 5px!important;
@@ -168,14 +187,20 @@
 	max-width: 80px!important;
 }
 
-.lexoverlaybuttons .lexcomponent.large button a {
-	font-size: 30px!important;
+.lexoverlaybuttons .lexcomponent.large button svg {
+	width: 1.4rem;
+    height: 1.4rem;
+}
+.lexoverlaybuttons .lexcomponent.large button:hover svg {
+	width: 1.6rem;
+    height: 1.6rem;
 }
 
 .lexoverlaybuttons .lexcomponent.relative {    
     margin: 0;
     min-height: 32px;
 }
+
 .lexoverlaybuttons .lexcomponent.relative button{    
     height: 32px!important;
 }
