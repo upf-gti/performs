@@ -503,8 +503,8 @@ class KeyframeApp {
                     console.warn("T-pose can't be applyied to the TARGET. Automap falied.")
                 }
             } 
-            else {
-                currentCharacter.skeleton.pose(); // for some reason, mixer.stopAllAction makes bone.position and bone.quaternions undefined. Ensure they have some values
+            else if(this.trgPoseMode == AnimationRetargeting.BindPoseModes.DEFAULT) {
+                currentCharacter.skeleton.pose();
             }
                
             bodyAnimation = Object.assign({}, animation.bodyAnimation);       
@@ -541,7 +541,9 @@ class KeyframeApp {
                         console.warn("T-pose can't be applyied to the SOURCE. Automap falied.")
                     }
                 }
-                
+                else if(this.srcPoseMode == AnimationRetargeting.BindPoseModes.DEFAULT) {
+                    currentCharacter.skeleton.pose();
+                }                
              
                 let retargeting = new AnimationRetargeting(animation.skeleton, currentCharacter.model, { srcEmbedWorldTransforms: this.srcEmbedWorldTransforms, trgEmbedWorldTransforms: this.trgEmbedWorldTransforms, srcPoseMode, trgPoseMode } ); // TO DO: change trgUseCurrentPose param
                 bodyAnimation = retargeting.retargetAnimation(bodyAnimation);
