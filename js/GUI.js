@@ -989,10 +989,17 @@ class GUI {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
             this.changePlayButtons(false);
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
+            
+            if(this.performs.keyframeApp.trajectoriesHelper && this.performs.keyframeApp.showTrajectories) {
+                this.performs.keyframeApp.trajectoriesHelper.hide();
+            }
         }
         else if(mode == Performs.Modes.KEYFRAME) {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             this.changePlayButtons( this.performs.keyframeApp.playing);
+            if(this.performs.keyframeApp.trajectoriesHelper && this.performs.keyframeApp.showTrajectories) {
+                this.performs.keyframeApp.trajectoriesHelper.show();
+            }
         }
         else {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
@@ -1022,7 +1029,7 @@ class GUI {
             this.performs.scriptApp.mood = "Neutral";
             this.performs.scriptApp.ECAcontroller.reset();
             refresh();
-        }, {icon: "PersonStanding", width: "30%", buttonclass:"floating-button"});
+        }, {icon: "PersonStanding", width: "30%", buttonclass:"floating-button", title: "Reset pose"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
             this.performs.scriptApp.replay();         
@@ -1368,7 +1375,7 @@ class GUI {
                             this.performs.keyframeApp.blendTime = v;
                         }, {min: 0.0, step: 0.01});
                     }
-                });
+            });
         }
 
         this.keyframeGui.branch("Retargeting", { icon: "Tags"} );
@@ -1393,6 +1400,28 @@ class GUI {
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
             this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
+        
+        if( this.performs.keyframeApp.trajectoriesHelper ) {
+
+            this.keyframeGui.branch("Trajectories", { icon: "Spline"} );
+            this.keyframeGui.addCheckbox("Show trajectories", this.performs.keyframeApp.showTrajectories, (v) => {
+                this.performs.keyframeApp.showTrajectories = v;
+                if( v ) {
+                    this.performs.keyframeApp.trajectoriesHelper.show();
+                }
+                else {
+                    this.performs.keyframeApp.trajectoriesHelper.hide();
+                }
+            },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
+
+            this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {
+                this.performs.keyframeApp.trajectoriesStart = v[0];
+                this.performs.keyframeApp.trajectoriesEnd = v[1];
+                this.performs.keyframeApp.trajectoriesHelper.updateTrajectories(v[0], v[1]);
+            }, {step: 0.01, min:0, max: this.performs.keyframeApp.loadedAnimations[ this.performs.keyframeApp.currentAnimation ].bodyAnimation.duration});
+
+        }
+
     }
 
     showRecordingDialog(callback) {
@@ -1469,7 +1498,7 @@ class GUI {
                 if( this.activePanelType == GUI.ACTIVEPANEL_AVATARS){
                     this.createAvatarsPanel();
                 }
-                if(this.performs.currentCharacter.config) {
+                if(this.performs.currentCharacter.config && this.performs.mode != Performs.Modes.SCRIPT && !this.performs.keyframeApp.currentAnimation) {
                     this.performs.changeMode(Performs.Modes.SCRIPT);
                     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                 }

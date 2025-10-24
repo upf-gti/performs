@@ -5,7 +5,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js'
 
 import { BVHLoader } from './extendedBVHLoader.js';
 import { AnimationRetargeting, applyTPose } from './retargeting/retargeting.js'
-
+import { TrajectoriesHelper } from './TrajectoriesHelper.js';
 class KeyframeApp {
 
     constructor() {
@@ -36,6 +36,12 @@ class KeyframeApp {
    
         this.srcEmbedWorldTransforms = false;
         this.trgEmbedWorldTransforms = true;
+
+        this.trajectoriesHelper = null;
+        this.trajectoriesStart = 0;
+        this.trajectoriesEnd = 0;
+        this.showTrajectories = false;
+
         fetch( 'https://resources.gti.upf.edu/3Dcharacters/Eva_Low/Eva_Low.json').then(response => response.json()).then(data => this.stardardConfig = data);
     }
 
@@ -69,6 +75,7 @@ class KeyframeApp {
             return false; 
         }
 
+        this.trajectoriesHelper = new TrajectoriesHelper(  this.loadedCharacters[avatarName].model,  this.loadedCharacters[avatarName].mixer );
         this.currentCharacter = avatarName;
         this.mixer = this.loadedCharacters[avatarName].mixer;          
         this.onChangeAnimation(this.currentAnimation, true);
@@ -152,7 +159,13 @@ class KeyframeApp {
         // currentCharacter.model.position.set(0,0,0);
         currentCharacter.model.quaternion.copy(currentCharacter.rotation);
         currentCharacter.model.scale.copy(currentCharacter.scale);
-
+        
+        this.trajectoriesHelper.computeTrajectories(bindedAnim);
+        this.trajectoriesStart = 0;
+        this.trajectoriesEnd = bindedAnim.mixerBodyAnimation.duration;
+        if(!this.showTrajectories) {
+            this.trajectoriesHelper.hide();
+        }
     }
     
     prepareCrossFade( startAction, endAction, duration ) {
@@ -488,6 +501,10 @@ class KeyframeApp {
         let bodyAnimation = null;
         // if not yet binded, create it. Otherwise just change to the existing animation
         if ( !this.bindedAnimations[animationName] || !this.bindedAnimations[animationName][characterName] || force) {
+            if( characterName.includes("readyplayerme") || characterName.includes("Eva")) {
+                this.trgPoseMode = 2;
+                this.srcPoseMode = 2;
+            }
             let srcPoseMode = this.srcPoseMode;
             let trgPoseMode = this.trgPoseMode;
 

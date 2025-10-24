@@ -1149,7 +1149,6 @@ class Performs {
         }
         this.renderer.setSize( window.innerWidth, window.innerHeight );
     }
-
         
     changeAvatar( avatarName ) {
         if ( this.currentCharacter ) {
