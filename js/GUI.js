@@ -1246,11 +1246,11 @@ class GUI {
                         p.refresh();
                     } );
 
-                    p.addSelect("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
+                    const select = p.addSelect("Select glosses", glossesDictionary[ this.language ], "", (value, event) => {
                         this.glossInputData.glosses += " " + value;
                         this.glossInputData.textArea.set( this.glossInputData.glosses );
                     }, {filter: true});
-                    
+                    select.root.getElementsByClassName("lexselectoptions")[0].style.maxHeight = "400px";
                     this.glossInputData.textArea = p.addTextArea("Write glosses", this.glossInputData.glosses, (value, event) => {
                         this.glossInputData.glosses = value;
                     }, {placeholder: "Hallo Leuk"});
