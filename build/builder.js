@@ -27,6 +27,7 @@ function build() {
             "../js/extendedBVHLoader.js",
             "../js/retargeting/retargeting.js",
             "../js/KeyframeApp.js",
+            "../js/TrajectoriesHelper.js",
         ],
         // "CharacterController.js": [
         //     "../js/controllers/CharacterController.js",
