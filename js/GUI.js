@@ -33,7 +33,7 @@ class GUI {
             "Witch": [Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
             "Kevin": [Performs.AVATARS_URL+'Kevin/Kevin.glb', Performs.AVATARS_URL+'Kevin/Kevin.json', 0, Performs.AVATARS_URL+'Kevin/Kevin.png'],
             "Ada": [Performs.AVATARS_URL+'Ada/Ada.glb', Performs.AVATARS_URL+'Ada/Ada.json',0, Performs.AVATARS_URL+'Ada/Ada.png'],
-            "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', Performs.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
+            "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', Performs.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png']
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -288,29 +288,35 @@ class GUI {
             openBtn.children[0].classList.add('selected');
         }
         
+        
         // Studio background
+        const studioP = new LX.Panel();
+       
         const studioBtn = p.addButton("studioBtn", "Studio", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/studio-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true }).root;
+        }, {img: "./data/imgs/studio-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true }).root;
         if( this.performs.background == Performs.Backgrounds.STUDIO ) {
             studioBtn.children[0].classList.add('selected');
-
-            const ebtn = p.addButton(null, "Edit properties", (e) => {
+            const ebtn = studioP.addButton(null, "Edit properties", (e) => {
                 this.showStudioPropertiesDialog( );
-            }, {icon: "PenBox", className: "centered"}).root;
+            }, {icon: "PenBox", className: "centered", width: "40px", height: "40px"}).root;
+            studioBtn.append(ebtn);
         }
         
         // Photocall background
+        const photocallP = new LX.Panel();
+      
         const photocallBtn = p.addButton("photocallBtn", "Photocall", (value)=> {
             this.performs.setBackground( Performs.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/photocall-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true}).root;
+        }, {img: "./data/imgs/photocall-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true}).root;
         if( this.performs.background == Performs.Backgrounds.PHOTOCALL ) {
             photocallBtn.children[0].classList.add('selected');
-            const ebtn = p.addButton(null, "Edit properties", (e) => {
+            const ebtn = photocallP.addButton(null, "Edit properties", (e) => {
                 this.showPhotocallPropertiesDialog( );                
-            }, {icon: "PenBox", className: "centered"}).root;
+            }, {icon: "PenBox", className: "centered", width: "40px"}).root;
+            photocallBtn.append(ebtn);
         }
     }
 
@@ -535,7 +541,7 @@ class GUI {
             this.uploadAvatar((avatarName, config) => { 
                 this.selectAvatar(avatarName);
             });
-        } ,{ nameWidth: "100px", icon: "UploadCloud" } );        
+        } ,{ nameWidth: "100px", icon: "UploadCloud", width: "140px"} );        
       
         p.addSeparator();
 
@@ -555,17 +561,19 @@ class GUI {
                 this.selectAvatar(avatarName);
             }, {
                 img: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL,
-                className: "centered",
+                className: "centered flex flex-col items-center",
                 buttonClass: "roundedbtn",
                 title: avatar
-            });
-
+            }).root;
+            
             if(avatar == this.performs.currentCharacter.model.name) {
-                btn.root.children[0].classList.add("selected");
+                btn.children[0].classList.add("selected");
+                const panel = new LX.Panel();
 
-                let ebtn = p.addButton( null, "Edit Avatar", (v) => {
+                let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
                     this.createEditAvatarDialog(v);
-                } ,{ icon: "UserRoundPen"} );
+                } ,{ icon: "UserRoundPen", width: "40px"} ).root;
+                btn.append(ebtn);
             }
         }
     }
@@ -1296,7 +1304,7 @@ class GUI {
         }, {min: 0, max: 1.0, step: 0.01})
 
         this.bmlGui.addCheckbox("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
-            this.performs.scriptApp.applyIdle = v;
+            this.performs.scriptApp.onApplyIdle(v);
         }, {
                 nameWidth: "auto",
                 skipReset: true,
@@ -1728,7 +1736,7 @@ class GUI {
                     let thumbnail = GUI.THUMBNAIL;
                     if( model.includes('models.readyplayer.me') ) {
                         model+= '?pose=T&morphTargets=ARKit&lod=1';
-                        thumbnail =  "https://models.readyplayer.me/" + name + ".png?background=68,68,68";
+                        thumbnail =  "https://models.readyplayer.me/" + name + ".png";
                     }
                     if (config) {
                         this.avatarOptions[name] = [model, config, rotation, thumbnail];               
@@ -2199,7 +2207,7 @@ class GUI {
                     });
                 }
             }
-            const span = modalContent.getElementsByTagName('span')[0];
+            const span = modalContent.getElementsByClassName('close-button')[0];
             span.addEventListener("click", () => {
                 modal.classList.add('hidden');
             });
@@ -2248,6 +2256,7 @@ class GUI {
             restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.performs.cameraMode ?? false},
             controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
             autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
+            trajectories    : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.showTrajectories},
         }
 
         const toExportScript = {

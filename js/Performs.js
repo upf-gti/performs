@@ -372,8 +372,12 @@ class Performs {
                     callback();
                 }
             }
-        }
 
+        }
+        
+        if(settings.trajectories != undefined) {
+            this.keyframeApp.showTrajectories = JSON.parse(settings.trajectories);
+        }
        
         if(settings.autoplay != undefined) {
             this.autoplay = settings.autoplay;

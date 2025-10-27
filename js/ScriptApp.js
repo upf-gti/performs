@@ -471,6 +471,13 @@ class ScriptApp {
         return true;
     }
 
+    onApplyIdle(v) {
+        this.applyIdle = v;
+        if( v && !this.baseSkeleton ) {
+            this.bindAnimationToCharacter(this.currentIdle, this.ECAcontroller.character.name);
+        }
+    }
+
     getLookAtPosition(target = new THREE.Vector3()) {
         if( this.ECAcontroller ) { 
             this.ECAcontroller.skeleton.bones[ this.ECAcontroller.characterConfig.boneMap["ShouldersUnion"] ].getWorldPosition( target ); 

@@ -121,6 +121,7 @@
     align-items: center;
     border: 4px solid var(--global-branch-darker);
 	background-color: rgb(42, 42, 42)!important;
+	--button-color: rgb(42, 42, 42)!important;
 }
 .lexbutton.roundedbtn.selected {
 	border: 4px solid whitesmoke
@@ -215,7 +216,7 @@
 }
 
 .lexbutton.selected {
-    background: var(--global-selected);
+    --button-color: var(--global-selected);
     outline: 1px solid var(--global-color-terciary);
     color: #DDD;
 }
@@ -315,6 +316,17 @@
 
 .iframe-text textarea{
 	color: var(--global-text-secondary)!important;
+}
+
+.close-button {
+	width: 24px;
+	height: 24px;
+	position: absolute;
+	right: 10px;
+	top: 10px;
+	justify-items: center;
+	align-items: center;
+	padding: 0!important;;
 }
 
 /* Copy pop up feedback*/

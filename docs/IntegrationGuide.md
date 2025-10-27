@@ -23,7 +23,8 @@
 |  [trgEmbeddedTransforms](#trgembeddedtransforms-boolean)     | Boolean | External (parent) transforms are computed and embedded into the root joint of target skeleton for retargeting               |
 |  [srcReferencePose](#srcreferencepose-number)          | Integer | [0, 1, 2] Pose of the source skeleton that will be used as the bind pose for the retargeting                                |
 |  [trgReferencePose](#trgreferencepose-number)          | Integer | [0, 1, 2] Pose of the target skeleton that will be used as the bind pose for the retargeting                                |
-|  [animations](#animations-array-of-objects)                    | Array  | Array of objects with animations' information (Keyframe mode)                                                                                                         |
+|  [animations](#animations-array-of-objects)                    | Array  | Array of objects with animations' information (Keyframe mode) |
+|  [trajectories](#trajectories-boolean)                    | Boolean  | Show hands and fingers trajectories (Keyframe mode) |
 |  [crossfade](#crossfade-boolean)                    | Boolean  | Concatenate multiple keyframe animations and apply blending between them                                                                                                          |
 |  [blendTime](#blendtime-float)                    | Float  | Time inverval between animations when _crossfade_ is _true_                                                                                                          |
 |  [scripts](#scripts-array-of-objects)                    | Array  | Array of objects with scripts' information or instructions  (Script mode)                                                                                                        |
@@ -177,6 +178,9 @@ Object data:
 
 - _**`name`**_: **`'./data/animations/myAnimation.glb'`**
 - _**`data`**_: **`{}`** - Optional. Parsed data as an Object. Only _glTF_, _BVH_ and _FBX_ formats are supported.
+
+#### trajectories (Boolean)
+Show hands and fingers trajectories (Keyframe mode).
 
 #### crossfade (Boolean)
 Concatenate multiple keyframe animations and apply blending between them.
