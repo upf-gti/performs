@@ -146,6 +146,13 @@ class GUI {
     }
 
     setActivePanel( type ){
+        switch( this.activePanelType ){
+          case GUI.ACTIVEPANEL_SETTINGS: this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.remove("selected"); break;
+          case GUI.ACTIVEPANEL_CAMERA: this.overlayButtonsMenu.buttons["Camera"].root.children[0].classList.remove("selected"); break;
+          case GUI.ACTIVEPANEL_BACKGROUND: this.overlayButtonsMenu.buttons["Backgrounds"].root.children[0].classList.remove("selected"); break;
+          case GUI.ACTIVEPANEL_AVATARS: this.overlayButtonsMenu.buttons["Avatars"].root.children[0].classList.remove("selected"); break;
+          case GUI.ACTIVEPANEL_LIGHTS: this.overlayButtonsMenu.buttons["Lights"].root.children[0].classList.remove("selected"); break;
+        }
         switch( type ){
           case GUI.ACTIVEPANEL_SETTINGS: this.createSettingsPanel(); break;
           case GUI.ACTIVEPANEL_CAMERA: this.createCameraPanel(); break;
@@ -780,6 +787,7 @@ class GUI {
                     }
                     else {
                         this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
+                        this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
             },
@@ -788,12 +796,13 @@ class GUI {
                 selectable: false,
                 icon: "UserPen",
                 class: "larger",
-                callback: () => {
+                callback: (b) => {
                     if(this.activePanelType == GUI.ACTIVEPANEL_AVATARS) {
                         this.setActivePanel( GUI.ACTIVEPANEL_NONE );
                     }
                     else {
                         this.setActivePanel( GUI.ACTIVEPANEL_AVATARS );
+                        this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
             },
@@ -808,6 +817,7 @@ class GUI {
                     }
                     else {
                         this.setActivePanel( GUI.ACTIVEPANEL_BACKGROUND );
+                        this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
             },            
@@ -822,6 +832,7 @@ class GUI {
                     }
                     else {
                         this.setActivePanel( GUI.ACTIVEPANEL_CAMERA );
+                        this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
             },
@@ -836,6 +847,7 @@ class GUI {
                     }
                     else {
                         this.setActivePanel( GUI.ACTIVEPANEL_LIGHTS );
+                        this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
             },

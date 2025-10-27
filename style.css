@@ -143,13 +143,16 @@
     justify-content: start;
     gap: 0px;
     z-index: 95;
-    background-color: var(--global-color-secondary);
+    --button-color: var(--global-color-secondary);
     margin: 8px;
     padding: 0.25em;
     border-radius: 12px;
 }
 .lexoverlaybuttonscontainer .lexcomponent button:hover {
-	background-color: #313132cf!important;
+	--button-color: #313132cf!important;
+}
+.lexoverlaybuttonscontainer .lexcomponent button.selected {
+	--button-color: #313132cf!important;
 }
 .lexoverlaybuttons .lexcomponent.larger button:hover svg {
 	width: 1.4rem!important;
@@ -158,7 +161,7 @@
 .lexoverlaybuttons .lexcomponent button {
 	border-radius: 80px!important;
     height: auto!important;
-	background-color: #3131323f;
+	--button-color: #3131323f;
 }
 
 .lexoverlaybuttons .lexcomponent.larger button {
