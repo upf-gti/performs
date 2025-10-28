@@ -1433,13 +1433,15 @@ class GUI {
                     this.performs.keyframeApp.trajectoriesHelper.hide();
                 }
             },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
+            
+            if( this.performs.keyframeApp.currentAnimation ) {
+                this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {
+                    this.performs.keyframeApp.trajectoriesStart = v[0];
+                    this.performs.keyframeApp.trajectoriesEnd = v[1];
+                    this.performs.keyframeApp.trajectoriesHelper.updateTrajectories(v[0], v[1]);
+                }, {step: 0.01, min:0, max: this.performs.keyframeApp.loadedAnimations[ this.performs.keyframeApp.currentAnimation ].bodyAnimation.duration});
 
-            this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {
-                this.performs.keyframeApp.trajectoriesStart = v[0];
-                this.performs.keyframeApp.trajectoriesEnd = v[1];
-                this.performs.keyframeApp.trajectoriesHelper.updateTrajectories(v[0], v[1]);
-            }, {step: 0.01, min:0, max: this.performs.keyframeApp.loadedAnimations[ this.performs.keyframeApp.currentAnimation ].bodyAnimation.duration});
-
+            }
         }
 
     }
@@ -2268,7 +2270,6 @@ class GUI {
             restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.performs.cameraMode ?? false},
             controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
             autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
-            trajectories    : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.showTrajectories},
         }
 
         const toExportScript = {
@@ -2284,6 +2285,8 @@ class GUI {
             trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
             crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.useCrossFade},
             blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? JSON.parse(localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
+            trajectories               : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.showTrajectories},
+
         }
 
         const toExportTransform = {
