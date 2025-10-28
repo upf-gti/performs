@@ -81,7 +81,11 @@ class AnimationRecorder {
         
             return new Promise((resolve) => {
                 this.onCaptureComplete = resolve;
+                const crossfade = this.keyframeApp.useCrossFade;
+                this.keyframeApp.useCrossFade = false;
                 this.keyframeApp.onChangeAnimation(animationName);
+                this.keyframeApp.useCrossFade = crossfade;
+                
                 this.startCapture(animationName);
                 
                 // automatically stop recording after animation stops
@@ -173,6 +177,7 @@ class AnimationRecorder {
                     }
                 }
             }
+            //this.recordedChunks[idx] = [];
         });
 
         // refresh gui

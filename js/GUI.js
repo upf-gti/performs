@@ -1457,21 +1457,25 @@ class GUI {
                 let data = {
                     id: animationName,
                     type: "animation",
-                    selected: animation.record
+                    selected: animation.record,
+                    checkbox: true
                 };
                 assetData.push(data);
             }
             
             let assetView = new LX.AssetView({ 
-                skip_browser: true,
-                skip_preview: true,
+                skipBrowser: true,
+                skipPreview: true,
                 layout: LX.AssetView.LAYOUT_LIST,   
-                context_menu: false             
+                contextMenu: false,
+                allowMultipleSelection: true          
             });
-            assetView.load( assetData, event => { 
-                const item = event.item;
-                let animation = animations[item.id];
-                animation.record = item.selected;
+            assetView.load( assetData, event => {
+                if(event.type == LX.AssetViewEvent.ASSET_CHECKED) {
+                    const item = event.item;
+                    let animation = animations[item.id];
+                    animation.record = item.selected;
+                }
             }); 
 
             let panel = new LX.Panel({height: "calc(100% - 40px)"});
@@ -1492,8 +1496,8 @@ class GUI {
             p.addButton("", "Record", () => {
                 if (callback) callback();
                 dialog.close();
-            }, {buttonClass: "accept"});
-            p.addButton(null, "Cancel", () => { dialog.close(); })
+            }, {buttonClass: "accept", width: "100px"});
+            p.addButton(null, "Cancel", () => { dialog.close();}, {width: "100px"})
         }, {size: ["40%", "60%"], resizable: true, draggable: true, scroll: false });
 
     }
@@ -1999,7 +2003,9 @@ class GUI {
                         $("#loading").fadeOut();
                         if(files.length) {
                             this.performs.changeMode(Performs.Modes.KEYFRAME);
-                            this.createSettingsPanel();
+                            this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
+                            this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
+                            //this.createSettingsPanel();
                         }
                         else {
                             LX.popup("This file doesn't contain any animation or a valid source avatar!");
@@ -2022,13 +2028,15 @@ class GUI {
                     this.performs.scriptApp.ECAcontroller.reset();                        
                     this.performs.changeMode(Performs.Modes.SCRIPT);
                     if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
-                        this.createSettingsPanel();   
+                        this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
+                        this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");   
                     }
                 }
                 else {
                     this.performs.setConfiguration(data, () => {
                         if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
-                            this.createSettingsPanel();             
+                            this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
+                            this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");             
                         }
                     });
                 }
@@ -2067,7 +2075,8 @@ class GUI {
                 $("#loading").fadeOut();
                 if(files.length) {
                     this.performs.changeMode(Performs.Modes.KEYFRAME);
-                    this.createSettingsPanel();
+                    this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
+                    this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
                 }
                 else {
                     LX.popup("This file doesn't contain any animation or a valid source avatar!");
@@ -2175,7 +2184,7 @@ class GUI {
         }
         $("#loading p").text( "Capturing animation: " + capture);
 		$("#loading").removeClass("hidden");
-		$("#loading").css({ background: "rgba(17,17,17," + 0.5 + ")" })
+		$("#loading").css({ background: "rgba(17,17,17," + 0.5 + ")", display:"flex" })
 		$("#loading").fadeIn();
        
     }
