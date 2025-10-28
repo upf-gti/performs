@@ -250,17 +250,17 @@
 
 .guide-modal .container {
 	position: fixed;
-	top: 50%;
-	left: 50%;
-	width: 20%;
-	transform: translate(-50%, -50%) scale(0.8);
-	background-color: #1E1E2F;
-	padding: 30px;
-	border-radius: 12px;
-	box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
-	transition: transform 0.3s ease, opacity 0.3s ease;
-
-	color: #FFFFFF;
+    top: 20%;
+    left: 50%;
+    width: 20%;
+    transform: translate(-50%, 0) scale(0.8);
+    background-color: #1E1E2F;
+    padding: 10px 30px 20px 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    gap: 10px;
+    color: #FFFFFF;
 }
 @media all and (orientation:portrait) {
 	.guide-modal .container {
@@ -271,7 +271,7 @@
 .guide-modal .container.show {
 	display: flex;
 	flex-direction: column;
-	transform: translate(-50%, -50%) scale(1);
+	transform: translate(-50%, 0) scale(1);
 }
 
 .guide-modal .container h2 {
@@ -291,14 +291,20 @@
 	border-radius: 10px;
 }
 
+.guide-modal .container-buttons {
+	display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: fit-content;    
+}
+
 .guide-modal .container button {
 	background-color: #6200EA;
 	color: #FFFFFF;
 	border: none;
-	padding: 10px 15px;
+	padding: 4px 10px;
 	border-radius: 5px;
 	cursor: pointer;
-	margin-top: 10px;
 	transition: background-color 0.3s;
 }
 

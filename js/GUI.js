@@ -2205,12 +2205,12 @@ class GUI {
             const buttons = modalContent.getElementsByTagName('button');
             for(let j = 0; j < buttons.length; j++) {
                 const btn = buttons[j];
-                if(btn.innerText == "Back") {
+                if(btn.id == "back") {
                     btn.addEventListener("click", () => {
                         innerChange("modal" + (i-1).toString())
                     })
                 }
-                else if(btn.innerText == "Next") {
+                else if(btn.id == "next") {
                     btn.addEventListener("click", () => {
                         innerChange("modal" + (i+1).toString())
                     })

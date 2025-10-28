@@ -38,45 +38,54 @@
 
         <div class="guide-modal hidden" id="guide-modal">
             <div class="container" id="modal0">
+                <div class="container-buttons">
+                    <button id="next"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-right-icon lucide-arrow-big-right"><path d="M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"></path></svg></button>
+                </div>
                 <button class="close-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <h2>Visualize animations on any character to create your perfect scene</h2>
                 <img src="https://iili.io/2foZgS4.gif">
                 <p>Performs is designed to visualize and synthesize humanoid animations for customized avatars. You can play animation files or synthesize them in real-time from instructions. Select whether to use the <strong>Keyframe mode</strong> or the <strong>Script mode</strong>.</p>
-                <button>Next</button>
             </div>
             <div class="container hidden" id="modal1">
+                <div class="container-buttons">
+                    <button id="back"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-left-icon lucide-arrow-big-left"><path d="M13 9a1 1 0 0 1-1-1V5.061a1 1 0 0 0-1.811-.75l-6.835 6.836a1.207 1.207 0 0 0 0 1.707l6.835 6.835a1 1 0 0 0 1.811-.75V16a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1z"/></svg></button>
+                    <button id="next"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-right-icon lucide-arrow-big-right"><path d="M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"></path></svg></button>
+                </div>
                 <button class="close-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <h2>Keyframe mode</h2>
                 <img src="https://iili.io/2q9u8Mb.gif">
                 <p>Performs uses <a href="https://github.com/upf-gti/retargeting-threejs" target="_blank">retargeting-threejs</a>. Just drag and drop your own .GLB, .GLTF or .BVH files to add your animations and adjust the retargeting configuration in <i>Settings</i>. You can use <a href="https://animics.gti.upf.edu" target="_blank">Animics</a> to generate the animations.</p>
-                <button>Back</button>
-                <button>Next</button>
             </div>
             <div class="container hidden" id="modal2">
+                 <div class="container-buttons">
+                    <button id="back"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-left-icon lucide-arrow-big-left"><path d="M13 9a1 1 0 0 1-1-1V5.061a1 1 0 0 0-1.811-.75l-6.835 6.836a1.207 1.207 0 0 0 0 1.707l6.835 6.835a1 1 0 0 0 1.811-.75V16a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1z"/></svg></button>
+                    <button id="next"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-right-icon lucide-arrow-big-right"><path d="M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"></path></svg></button>
+                </div>
                 <button class="close-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <h2>Script mode</h2>
                 <img src="https://iili.io/2qHjqYB.gif">
                 <p>Performs works with BML (Behavior Markup Language) instructions, extended to create cohesive animations in real-time, which are explained in detail <a href="https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md" target="_blank">here</a>. It also supports SiGML (Signing Gesture Markup Language) and NGT glosses. </p> 
                 <p>This mode allows you to synthesize MF (Manual) and NMF (Non-Manual) features, which is essential for enhancing the realism of sign language animations. Just go to <i>Settings</i> to see the options. </p>
-                <p>To apply these actions, a configuration file is needed for your character, which can be created in <a href="https://atelier.gti.upf.edu" target="_blank">Atelier</a>.</p>
-                <button>Back</button>
-                <button>Next</button>
+                <p>To apply these actions, a configuration file is needed for your character, which can be created in <a href="https://atelier.gti.upf.edu" target="_blank">Atelier</a>.</p>                
             </div>
             <div class="container hidden" id="modal3">
+                 <div class="container-buttons">
+                    <button id="back"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-left-icon lucide-arrow-big-left"><path d="M13 9a1 1 0 0 1-1-1V5.061a1 1 0 0 0-1.811-.75l-6.835 6.836a1.207 1.207 0 0 0 0 1.707l6.835 6.835a1 1 0 0 0 1.811-.75V16a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1z"/></svg></button>
+                    <button id="next"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-right-icon lucide-arrow-big-right"><path d="M11 9a1 1 0 0 0 1-1V5.061a1 1 0 0 1 1.811-.75l6.836 6.836a1.207 1.207 0 0 1 0 1.707l-6.836 6.835a1 1 0 0 1-1.811-.75V16a1 1 0 0 0-1-1H5a1 1 0 0 1-1-1v-4a1 1 0 0 1 1-1z"></path></svg></button>
+                </div>
                 <button class="close-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <h2>Choose your avatar</h2>
                 <p>Performs works with any rigged 3D character. Just drag and drop your .GLB or .GLTF or go to <i>Avatars</i>, select <i>Upload yours</i> and put the link of your file.</p>
                 <p>Use the <a href="https://atelier.gti.upf.edu" target="_blank">Atelier</a> tool to configure all the parameters needed for the <strong>Script mode</strong>. This will generate a configuration .JSON file containing all the needed information.</p>
-                <button>Back</button>
-                <button>Next</button>
             </div>
             <div class="container hidden" id="modal4">
+                 <div class="container-buttons">
+                    <button id="back"tton><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-arrow-big-left-icon lucide-arrow-big-left"><path d="M13 9a1 1 0 0 1-1-1V5.061a1 1 0 0 0-1.811-.75l-6.835 6.836a1.207 1.207 0 0 0 0 1.707l6.835 6.835a1 1 0 0 0 1.811-.75V16a1 1 0 0 1 1-1h6a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1z"/></svg></button>
+                </div>
                 <button class="close-button"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-x-icon lucide-x"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
                 <h2>Customize Your Experience</h2>
                 <img src="https://iili.io/2BeAGwb.gif">
-                <p>Choose the avatar, change the colors, setup the background, modify the illumination... and export the configuration to use it in your app! You can include Performs using an <i>iframe</i> or downloading the build version from <a href="https://github.com/upf-gti/performs" type="_blank">Github</a>.</p>
-                <button>Back</button>
-                <button>Finish</button>
+                <p>Choose the avatar, change the colors, setup the background, modify the illumination... and export the configuration to use it in your app! You can include Performs using an <i>iframe</i> or downloading the build version from <a href="https://github.com/upf-gti/performs" type="_blank">Github</a>.</p>                
             </div>
         </div>
         <div id="bubble" class="bubble">Copied!</div>
