@@ -8181,7 +8181,6 @@ let simpleMotionAvailable = [ "directedmotion", "circularmotion", "wristmotion",
 let motionsAvailable = simpleMotionAvailable.concat( [ "nonman_motion", "par_motion", "seq_motion", "split_motion", "rpt_motion", "tgt_motion" ] ); // missing tgt, rpt and timing issues
 let posturesAvailable = [ "handconfig", "split_handconfig", "location_bodyarm", "split_location", "location_hand", "handconstellation" , "use_locname"]; // missing location_hand, handconstellation, use_locname(????) 
 
-
 function checkHandsUsage( orders ){
     
     let hand = "RIGHT";
