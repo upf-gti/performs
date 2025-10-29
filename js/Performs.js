@@ -1048,6 +1048,14 @@ class Performs {
             this.animationRecorder.update(this.scene, this.cameras);
         }        
 
+        this.cameras[this.camera].layers.enable(0);
+        this.cameras[this.camera].layers.enable(1);
+        if(this.keyframeApp.showTrajectories) {
+            this.cameras[this.camera].layers.enable(2);
+        }
+        else {
+            this.cameras[this.camera].layers.disable(2);
+        }
         this.renderer.render( this.scene, this.cameras[this.camera] );
     }
 
@@ -1062,9 +1070,8 @@ class Performs {
       
         // Cast a ray downwards from the left toe's position
         let dir = new THREE.Vector3(0, 1, 0);
-        this.raycaster.layers.enableAll()
         this.raycaster.set( new THREE.Vector3(LtoePos.x, -1, LtoePos.z), dir);
-              
+	    this.raycaster.layers.enable( 0 ); // only meshes in layer 0
         const intersects = this.raycaster.intersectObjects(character.model.children[0].children, true); // Adjust based on your scene setup
         let diff = 0;
         if (intersects.length > 0) {
@@ -1167,10 +1174,10 @@ class Performs {
         const diffToGround = this.precomputeFeetOffset(avatarName);
         this.loadedCharacters[avatarName].diffToGround = diffToGround;
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
-          
         // Set the avatars to each app mode
         this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
+          
         
         if (this.currentCharacter.config) {
             this.currentCharacter.skeleton.bones[ this.currentCharacter.config.boneMap["ShouldersUnion"] ].getWorldPosition( this.controls[this.camera].target );

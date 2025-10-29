@@ -43,6 +43,7 @@ class TrajectoriesHelper {
             else {
                 this.trajectories[t].thickness = 8;
             }
+            this.trajectories[t].layers.set(2);
         }
         this.trajectoryStart = 0;
         this.trajectoryEnd = 100;
@@ -122,7 +123,7 @@ class TrajectoriesHelper {
 
                 // Second frame
                 mixer.setTime(track.times[t+1]);
-               this.object.updateMatrixWorld(true);
+                this.object.updateMatrixWorld(true);
                 
                 const bone2 =this.object.getObjectByName(boneName);
                 let localPosition2 = new THREE.Vector3();
@@ -153,6 +154,7 @@ class TrajectoriesHelper {
 
                 const arrow = customArrow(position2.x, position2.y, position2.z, position.x, position.y, position.z,  this.trajectories[trajectory].thickness*0.0002, color)
                 arrow.name = t;
+                arrow.layers.set(2); // to avoid intersections with arrows
                 this.trajectories[trajectory].add(arrow);
             }
             if( !this.trajectoryEnd ) {
@@ -174,9 +176,9 @@ class TrajectoriesHelper {
                 transparent: true,
             });
             material.resolution.set(window.innerWidth, window.innerHeight);
-
             const line = new Line2(geometry, material);
             line.name = "line";
+            line.layers.set(2); // to avoid intersections with line
             this.trajectories[trajectory].add(line);
             this.trajectories[trajectory].positions = positions;
             this.trajectories[trajectory].colors = colors;

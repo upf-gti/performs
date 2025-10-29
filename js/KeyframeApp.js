@@ -76,6 +76,12 @@ class KeyframeApp {
         }
 
         this.trajectoriesHelper = new TrajectoriesHelper(  this.loadedCharacters[avatarName].model,  this.loadedCharacters[avatarName].mixer );
+        if(this.showTrajectories) {
+            this.trajectoriesHelper.show();
+        }
+        else {
+            this.trajectoriesHelper.hide();
+        }
         this.currentCharacter = avatarName;
         this.mixer = this.loadedCharacters[avatarName].mixer;          
         this.onChangeAnimation(this.currentAnimation, true);
@@ -163,7 +169,10 @@ class KeyframeApp {
         this.trajectoriesHelper.computeTrajectories(bindedAnim);
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = bindedAnim.mixerBodyAnimation.duration;
-        if(!this.showTrajectories) {
+        if(this.showTrajectories) {
+            this.trajectoriesHelper.show();
+        }
+        else {
             this.trajectoriesHelper.hide();
         }
     }
