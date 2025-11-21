@@ -1437,9 +1437,15 @@ class GUI {
 
             this.keyframeGui.branch("Trajectories", { icon: "Spline"} );
             this.keyframeGui.addCheckbox("Show trajectories", this.performs.keyframeApp.showTrajectories, (v) => {
-                this.performs.keyframeApp.showTrajectories = v;
+                const keyframeApp = this.performs.keyframeApp;
+                keyframeApp.showTrajectories = v;
                 if( v ) {
-                    this.performs.keyframeApp.trajectoriesHelper.show();
+                    const boundAnim = keyframeApp.bindedAnimations[keyframeApp.currentAnimation][keyframeApp.currentCharacter];
+                    if ( keyframeApp.trajectoriesComputationPending && boundAnim ){
+                        keyframeApp.trajectoriesHelper.computeTrajectories( boundAnim );
+                        keyframeApp.trajectoriesComputationPending = false;
+                    };
+                    keyframeApp.trajectoriesHelper.show();
                 }
                 else {
                     this.performs.keyframeApp.trajectoriesHelper.hide();

@@ -1174,7 +1174,9 @@ class Performs {
         const diffToGround = this.precomputeFeetOffset(avatarName);
         this.loadedCharacters[avatarName].diffToGround = diffToGround;
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
+
         // Set the avatars to each app mode
+        this.keyframeApp.showTrajectories = this.keyframeApp.showTrajectories && (this.mode == Performs.Modes.KEYFRAME);
         this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
           

@@ -41,6 +41,7 @@ class KeyframeApp {
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = 0;
         this.showTrajectories = false;
+        this.trajectoriesComputationPending = true;
 
         fetch( 'https://resources.gti.upf.edu/3Dcharacters/Eva_Low/Eva_Low.json').then(response => response.json()).then(data => this.stardardConfig = data);
     }
@@ -75,7 +76,11 @@ class KeyframeApp {
             return false; 
         }
 
+        if ( this.trajectoriesHelper ){
+            this.trajectoriesHelper.dispose();
+        }
         this.trajectoriesHelper = new TrajectoriesHelper(  this.loadedCharacters[avatarName].model,  this.loadedCharacters[avatarName].mixer );
+        this.trajectoriesComputationPending = true;
         if(this.showTrajectories) {
             this.trajectoriesHelper.show();
         }
@@ -166,13 +171,15 @@ class KeyframeApp {
         currentCharacter.model.quaternion.copy(currentCharacter.rotation);
         currentCharacter.model.scale.copy(currentCharacter.scale);
         
-        this.trajectoriesHelper.computeTrajectories(bindedAnim);
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = bindedAnim.mixerBodyAnimation.duration;
         if(this.showTrajectories) {
+            this.trajectoriesHelper.computeTrajectories(bindedAnim);
+            this.trajectoriesComputationPending = false;
             this.trajectoriesHelper.show();
         }
         else {
+            this.trajectoriesComputationPending = true;
             this.trajectoriesHelper.hide();
         }
     }

@@ -52,6 +52,8 @@ class TrajectoriesHelper {
     computeTrajectories( animation ) {
         let boneName = null;
 
+        this.dispose(); // remove any memory held by Threejs
+
         for(let i = 0; i < animation.mixerBodyAnimation.tracks.length; i++) {
             const track = animation.mixerBodyAnimation.tracks[i]
             const trackName = track.name;
@@ -62,16 +64,11 @@ class TrajectoriesHelper {
                     if(boneName) {
                         this.trajectories[trajectory].name = boneName;
                         const isHand = trajectory == "LeftHand" || trajectory == "RightHand";
-                        if(isHand) { // Add hand trajectories to the model object
-                            const root = this.object;
-                            root.remove(this.trajectories[trajectory]);
-                            root.add(this.trajectories[trajectory]);
-                        }
-                        else { // Add finger trajectories to the first joint of the finger
-                            const root = this.object.getObjectByName(boneName.replace("4","1").replace("EndSite","1"));
-                            root.remove(this.trajectories[trajectory]);
-                            root.add(this.trajectories[trajectory]);
-                        }
+                        const root = isHand ? this.object : this.object.getObjectByName(boneName.replace("4","1").replace("EndSite","1"));
+                        // Add hand trajectories to the model object
+                        // or Add finger trajectories to the first joint of the finger
+
+                        root.add(this.trajectories[trajectory]);
                         break;
                     }
                 }
@@ -93,7 +90,6 @@ class TrajectoriesHelper {
         this.object.updateMatrixWorld(true);
 
         for(let trajectory in this.trajectories) {
-            this.trajectories[trajectory].clear();
             const boneName = this.trajectories[trajectory].name;
             const positions = [];
             const colors = [];
@@ -143,10 +139,10 @@ class TrajectoriesHelper {
 
                 lastPos.set(pos.x, pos.y, pos.z);
             }
-            if( !this.trajectoryEnd ) {
-                this.computeTrajectories(animation);
-                return;
-            }
+            // if( !this.trajectoryEnd ) {
+            //     this.computeTrajectories(animation);
+            //     return;
+            // }
             // Create geometry
             const geometry = new MagicLineGeometry();
             geometry.setPositions(positions);
@@ -236,6 +232,33 @@ class TrajectoriesHelper {
     hide( ) {
         for( let trajectory in this.trajectories ) {
             this.trajectories[trajectory].visible = false;
+        }
+    }
+
+    dispose(){
+
+        for( const t in this.trajectories ){
+            this.trajectories[t].traverse( (obj) =>{
+                if ( obj.geometry ){ obj.geometry.dispose(); }
+                if ( obj.material ){ obj.material.dispose(); }
+
+                // https://discourse.threejs.org/t/correctly-remove-mesh-from-scene-and-dispose-material-and-geometry/5448/10
+                // if (obj.material.map)              obj.material.map.dispose ();
+                // if (obj.material.lightMap)         obj.material.lightMap.dispose ();
+                // if (obj.material.bumpMap)          obj.material.bumpMap.dispose ();
+                // if (obj.material.normalMap)        obj.material.normalMap.dispose ();
+                // if (obj.material.specularMap)      obj.material.specularMap.dispose ();
+                // if (obj.material.envMap)           obj.material.envMap.dispose ();
+                // if (obj.material.alphaMap)         obj.material.alphaMap.dispose();
+                // if (obj.material.aoMap)            obj.material.aoMap.dispose();
+                // if (obj.material.displacementMap)  obj.material.displacementMap.dispose();
+                // if (obj.material.emissiveMap)      obj.material.emissiveMap.dispose();
+                // if (obj.material.gradientMap)      obj.material.gradientMap.dispose();
+                // if (obj.material.metalnessMap)     obj.material.metalnessMap.dispose();
+                // if (obj.material.roughnessMap)     obj.material.roughnessMap.dispose();
+            });
+            this.trajectories[t].clear();
+            this.trajectories[t].removeFromParent();
         }
     }
 }
