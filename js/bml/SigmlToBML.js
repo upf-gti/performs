@@ -1,19 +1,11 @@
-// sigmlStringToBML translate from a sigml (xml) string (valid in jasigning) to a bml. It is an approximate solution.
+/*
+    @japopra
+    
+    sigmlStringToBML: translate from a sigml (xml) string (valid in jasigning) to a bml. It is an approximate solution.
 
-// missing location_hand (and handconstellation)
-// missing rpt_motion
-// non manual features parser system already implemented. Missing several non manual features tables 
-
-
-/* 
-
-AFPAKKEN
-AANPASSEN
-AANTAL
-BABYSITTEN
-AARDAPPELPUREE
+    missing rpt_motion
+    non manual features parser system already implemented. Missing several non manual features tables 
 */
-
 
 const TIMESLOT ={
     DEF: 0.5,
@@ -36,9 +28,6 @@ const TIMESLOT ={
     RELAXEND: 0.5, // after the sign, the time it takes to return to neutral pose
     PEAKRELAX: 0.5, // after the last posture is executed, the time it stays in that pose (instead of moving the arm and immediately returning to neutral pose)
 }
-
-window.TIMESLOTS = TIMESLOT;
-
 
 function sigmlStringToBML( str, timeOffset = 0 ) {
     let parser = new DOMParser();

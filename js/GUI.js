@@ -1065,7 +1065,10 @@ class GUI {
             if ( this.bmlInputData.dialog ){ this.bmlInputData.dialog.close(); }
 
             this.bmlInputData.dialog = new LX.PocketDialog( "BML Instruction", p => {
-                this.bmlInputData.dialog = p;
+                if( !this._firstPocketDialogOpen ){ // BUG: pocket dialog needs to be opened and close once. Otherwise, codeEditor behaves weirdly                    this._firstPocketDialogOpen = true;
+                    this._firstPocketDialogOpen = true;
+                    setTimeout( this.bmlInputData.openButton.setState.bind( this.bmlInputData.openButton, true ), 1);
+                }
 
                 let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
                 p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
@@ -1087,35 +1090,39 @@ class GUI {
                 let editor = new LX.CodeEditor(area, {
                     highlight: 'JSON',
                     allowAddScripts: false,
-                    name : "BML"
+                    name : "BML",
+                    onContextMenu: (m) =>{
+                        return [
+                            { path: "Format", callback: ()=>{
+                                    let text = this.bmlInputData.codeObj.getText();
+                                    let obj = null;
+                                    try{ obj = JSON.parse(text); }
+                                    catch(e){ obj = null; }
+                
+                                    if( !obj ){
+                                        try{ obj = JSON.parse("["+text+"]"); }
+                                        catch(e){ obj = null; }
+                                    }
+                
+                                    if ( !obj ){
+                                        LX.popup( "Check your code for errors. Common errors include: " +
+                                            "\n- Keys must be quoted: {\"intensity\" : 0.2}" +
+                                            "\n- Numbers use points (.) for decimal numbers: 0.2" +
+                                            "\n- Elements of an array/object are separated by commas EXCEPT the last element {\"a\": 1, \"b\":2}",
+                                            "Invalid bml message",
+                                            {
+                                                timeout: 20000,
+                                            });
+                                        return;
+                                    }
+                                    this.bmlInputData.codeObj.setText( JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSpaces)) );
+                                }
+                            }
+                        ];
+                    }
                 });
                 editor.setText( this.bmlInputData.prevInstanceText );
                 this.bmlInputData.codeObj = editor;
-
-                // a future update of LX.CodeEditor will delete the format button. A "onContextMenu" will exist instead
-                window.formatJSON = (text) => {
-                    let obj = null;
-                    try{ obj = JSON.parse(text); }
-                    catch(e){ obj = null; }
-
-                    if( !obj ){
-                        try{ obj = JSON.parse("["+text+"]"); }
-                        catch(e){ obj = null; }
-                    }
-
-                    if ( !obj ){
-                        LX.popup( "Check your code for errors. Common errors include: " +
-                            "\n- Keys must be quoted: {\"intensity\" : 0.2}" +
-                            "\n- Numbers use points (.) for decimal numbers: 0.2" +
-                            "\n- Elements of an array/object are separated by commas EXCEPT the last element {\"a\": 1, \"b\":2}",
-                             "Invalid bml message",
-                             {
-                                 timeout: 20000,
-                             });
-                        return text;
-                    }
-                    return JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSpaces));
-                }
 
                 p.addButton(null, "Send", () => {
                     let msg = {
@@ -1171,11 +1178,10 @@ class GUI {
                     }
                 })
     
-            }, { size: ["35%", "70%"], float: "left", className:"resizeable", draggable: true, closable: true, onclose: (root)=>{
+            }, { size: ["35%", "70%"], float: "left", className:"resizeable", draggable: true, closable: true, onBeforeClose: ()=>{
                 this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
                 this.bmlInputData.dialog = null;
                 this.bmlInputData.codeObj = null;
-                root.remove();
             }});
 
             this.bmlInputData.dialog.root.children[1].classList.add("showScrollBar");
@@ -1190,6 +1196,11 @@ class GUI {
             }
 
             this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
+                if( !this._firstPocketDialogOpen ){ // BUG: pocket dialog needs to be opened and close once. Otherwise, codeEditor behaves weirdly
+                    this._firstPocketDialogOpen = true;
+                    setTimeout( this.sigmlInputData.openButton.setState.bind( this.sigmlInputData.openButton, true ), 1);
+                }
+
                 let a = new LX.Area({height:"100%"});
                 p.attach( a.root );
 

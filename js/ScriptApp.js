@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-import { CharacterController } from './controllers/CharacterController.js';
-import { sigmlStringToBML } from './sigml/SigmlToBML.js';
-import { findIndexOfBone } from "./sigml/Utils.js";
+import { EBMLC } from './bml/eBMLController.module.js';
+import { sigmlStringToBML } from './bml/SigmlToBML.js';
 import { BVHLoader } from './extendedBVHLoader.js';
 import { AnimationRetargeting } from './retargeting/retargeting.js';
 
@@ -282,7 +281,7 @@ class ScriptApp {
         }
         
         for( let i = 0; i < bones.length; ++i ){
-            let parentIdx = findIndexOfBone(currentCharacter.originalSkeleton, bones[i].parent);
+            let parentIdx = EBMLC.findIndexOfBone(currentCharacter.originalSkeleton, bones[i].parent);
             if ( parentIdx > -1 ){ resultBones[ parentIdx ].add( resultBones[ i ] ); }   
         }
         
@@ -422,7 +421,7 @@ class ScriptApp {
         }
         
         for( let i = 0; i < bones.length; ++i ){
-            let parentIdx = findIndexOfBone( skeleton, bones[i].parent )
+            let parentIdx = EBMLC.findIndexOfBone( skeleton, bones[i].parent )
             if ( parentIdx > -1 ){ resultBones[ parentIdx ].add( resultBones[ i ] ); }   
         }
 
@@ -439,7 +438,7 @@ class ScriptApp {
         resultBones[0].updateWorldMatrix( true, true ); // assume 0 is root. Update all global matrices (root does not have any parent)
         let resultSkeleton = new THREE.Skeleton(resultBones);
 
-        let ECAcontroller = new CharacterController( {character: newAvatar, characterConfig: config, skeleton: resultSkeleton} );
+        let ECAcontroller = new EBMLC.CharacterController( {character: newAvatar, characterConfig: config, skeleton: resultSkeleton} );
         ECAcontroller.start();
         ECAcontroller.reset();
         ECAcontroller.processMsg( { control: 2 } ); // speaking mode

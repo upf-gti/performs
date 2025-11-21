@@ -7,7 +7,7 @@ import { AnimationRecorder } from './recorder/recorder.js';
 import { GUI } from './GUI.js';
 import { ScriptApp } from './ScriptApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
-import { findIndexOfBoneByName } from './sigml/Utils.js';
+import { EBMLC } from './bml/eBMLController.module.js';
 import { computeAutoBoneMap } from './retargeting/retargeting.js'
 
 // Correct negative blenshapes shader of ThreeJS
@@ -1252,9 +1252,9 @@ class Performs {
                     const obj = [];
                     const location = locations[part];
                     if( !location.parent ) {
-                        location.parent = skeleton.bones[findIndexOfBoneByName(skeleton, location[0])].name;
+                        location.parent = skeleton.bones[EBMLC.findIndexOfBoneByName(skeleton, location[0])].name;
                     }
-                    let idx = findIndexOfBoneByName( skeleton, location.parent.name );
+                    let idx = EBMLC.findIndexOfBoneByName( skeleton, location.parent.name );
                     if ( idx < 0 ){ continue; }
     
                     obj.push(location.parent.name);
