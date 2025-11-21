@@ -90,72 +90,58 @@ class TrajectoriesHelper {
             return bone;
         };
 
+        this.object.updateMatrixWorld(true);
+
         for(let trajectory in this.trajectories) {
             this.trajectories[trajectory].clear();
             const boneName = this.trajectories[trajectory].name;
             const positions = [];
             const colors = [];
+            const bone = this.object.getObjectByName(boneName);
+            
+            const isHand = trajectory == "LeftHand" || trajectory == "RightHand";
+            const rootFinger = isHand ? null : findFirstFingerJoint(bone); // For fingers trajectories: Get fingertip position relative to the first joint of the finger
 
-            for(let t = 0; t < track.times.length-1; t++) {
-                // First frame
+            const pos = new THREE.Vector3();
+            const lastPos = new THREE.Vector3();
+            const mat4 = new THREE.Matrix4();
+
+            for(let t = 0; t < track.times.length; t++) {
+
                 mixer.setTime(track.times[t]);
-               this.object.updateMatrixWorld(true);
-
-                const bone =this.object.getObjectByName(boneName);
-                const isHand = trajectory == "LeftHand" || trajectory == "RightHand";
-
-                let localPosition = new THREE.Vector3();
-                let rootWorldMatrix = new THREE.Matrix4().identity();
+                bone.updateWorldMatrix( true, false );
 
                 if(!isHand) { // For fingers trajectories: Get fingertip position relative to the first joint of the finger
-                    const root = findFirstFingerJoint(bone);
-                    if (!bone || !root) continue;
-                    const tipWorldMatrix = bone.matrixWorld.clone();
-                    rootWorldMatrix = root.matrixWorld.clone();
-                    const rootWorldInverse = new THREE.Matrix4().copy(rootWorldMatrix).invert();
+                    if (!bone || !rootFinger) break; // continue;
 
-                    const localMatrix = new THREE.Matrix4().multiplyMatrices(rootWorldInverse, tipWorldMatrix);
-                    localPosition = new THREE.Vector3().setFromMatrixPosition(localMatrix);
+                    // matrix from root to tip
+                    mat4.copy( rootFinger.matrixWorld )
+                        .invert()
+                        .multiply( bone.matrixWorld );
+                    pos.setFromMatrixPosition(mat4);
                 }
                 else { // For hand trajectory : Get global position of the wrist
-                    bone.getWorldPosition(localPosition);
+                    pos.setFromMatrixPosition( bone.matrixWorld );
                 }
-
-                // Second frame
-                mixer.setTime(track.times[t+1]);
-                this.object.updateMatrixWorld(true);
                 
-                const bone2 =this.object.getObjectByName(boneName);
-                let localPosition2 = new THREE.Vector3();
+                // there will be only track.times.length-1 arrows. Building arrows for t-1
+                if ( t > 0 ){
+                    positions.push(lastPos.x, lastPos.y, lastPos.z);
 
-                let rootWorldMatrix2 = new THREE.Matrix4().identity();
-                if(!isHand) { // For fingers trajectories: Get fingertip position relative to the first joint of the finger
-                    const root2 = findFirstFingerJoint(bone2);
-                    if (!bone2 || !root2) continue;
-
-                    const tipWorldMatrix2 = bone2.matrixWorld.clone();
-                    rootWorldMatrix2 = root2.matrixWorld.clone();
-                    const rootWorldInverse2 = new THREE.Matrix4().copy(rootWorldMatrix2).invert();
-
-                    const localMatrix2 = new THREE.Matrix4().multiplyMatrices(rootWorldInverse2, tipWorldMatrix2);
-                    localPosition2 = new THREE.Vector3().setFromMatrixPosition(localMatrix2);
-                } else { // For hand trajectory : Get global position of the wrist
-                    bone2.getWorldPosition(localPosition2);
+                    const c = this.trajectories[trajectory].color || new THREE.Color(`hsl(${180*Math.sin( track.times[t]/Math.PI)}, 100%, 50%)`);
+                    colors.push(c .r, c .g, c .b, 0.8);
+                    colors.push(c .r, c .g, c .b, 0.8);
+                    // colors.push(c .r, c .g, c .b);
+                    
+                    const arrow = customArrow(pos.x, pos.y, pos.z, lastPos.x, lastPos.y, lastPos.z,  this.trajectories[trajectory].thickness*0.0002, c );
+                    if ( arrow ){
+                        arrow.name = t-1;
+                        arrow.layers.set(2); // to avoid intersections with arrows
+                        this.trajectories[trajectory].add(arrow);
+                    }
                 }
 
-                const position = localPosition.clone();
-                const position2 = localPosition2.clone()
-
-                positions.push(position.x, position.y, position.z);
-                const color = this.trajectories[trajectory].color || new THREE.Color(`hsl(${180*Math.sin( track.times[t]/Math.PI)}, 100%, 50%)`);
-                colors.push(color.r, color.g, color.b, 0.8);
-                colors.push(color.r, color.g, color.b, 0.8);
-                // colors.push(color.r, color.g, color.b);
-
-                const arrow = customArrow(position2.x, position2.y, position2.z, position.x, position.y, position.z,  this.trajectories[trajectory].thickness*0.0002, color)
-                arrow.name = t;
-                arrow.layers.set(2); // to avoid intersections with arrows
-                this.trajectories[trajectory].add(arrow);
+                lastPos.set(pos.x, pos.y, pos.z);
             }
             if( !this.trajectoryEnd ) {
                 this.computeTrajectories(animation);
@@ -205,11 +191,17 @@ class TrajectoriesHelper {
             const positions = this.trajectories[trajectory].positions;
             let colors = this.trajectories[trajectory].colors;
 
-            const line = this.trajectories[trajectory].getObjectByName("line");
             const totalFrames = positions.length / 3;
+            
+            if ( totalFrames < 2 ){ continue; }
+            
+            const listOfObjects = this.trajectories[trajectory].children;// N arrows ( N <= frames ) and, the last element, is the line2 object (with all lines inside)
+            const line = listOfObjects[ listOfObjects.length - 1 ];
+            let nextArrowFrame = listOfObjects[0].isLine2 ? -1 : listOfObjects[0].name;
+            let nextArrowInArray = 0;
 
             for(let frame = 0; frame < totalFrames; frame++) {
-                const arrow = this.trajectories[trajectory].getObjectByName(frame);
+                // update line colors
                 let alpha = 0;
                 if( frame < startFrame ) {
                     alpha = (frame - startFrame)/10;
@@ -220,15 +212,17 @@ class TrajectoriesHelper {
                 const opacity = Math.max(0,Math.min(1,0.8 + alpha));
                 colors[frame*8+3] = opacity;
                 colors[frame*8+7] = opacity;
-
-                arrow.children[0].material.opacity = opacity;
-                if( opacity == 0 ) {
-                    arrow.visible = false;
-                }
-                else {
-                    arrow.visible = true;
+                
+                // update arrow visibility
+                if ( nextArrowFrame == frame ){
+                    const arrow = listOfObjects[nextArrowInArray];
+                    arrow.children[0].material.opacity = opacity;
+                    arrow.visible = opacity > 0;
+                    nextArrowInArray++;
+                    nextArrowFrame = listOfObjects[nextArrowInArray].isLine2 ? -1 : listOfObjects[nextArrowInArray].name; 
                 }
             }
+
             line.geometry.setColors(colors);
         }
     }
@@ -735,20 +729,16 @@ const getFrameIndex = ( action, time = action.time, mode = 0 ) => {
 
 
 const customArrow = ( fx, fy, fz, ix, iy, iz, thickness, color) => {
-    const material = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
-
     const length = Math.sqrt( (ix-fx)**2 + (iy-fy)**2 + (iz-fz)**2 );
+    if(length < 0.01) {
+        return null;
+    }
 
-    const geometry = new THREE.ConeGeometry( 1, 1, 12 ).rotateX( Math.PI/2).translate( 0, 0, -0.5 );
+    const material = new THREE.MeshLambertMaterial( {color: color, transparent: true} );
+    const geometry = new THREE.ConeGeometry( 1, 1, 3 ).rotateX( Math.PI/2).translate( 0, 0, -0.5 );
     const head = new THREE.Mesh( geometry, material );
     head.position.set( 0, 0, length );
-
-    if(length < 0.01) {
-        head.scale.set( 0, 0, 0 );
-    }
-    else {
-        head.scale.set( 2*thickness, 2*thickness, 8*thickness );
-    }
+    head.scale.set( 2*thickness, 2*thickness, 8*thickness );
 
     const arrow = new THREE.Group( );
     arrow.position.set( ix, iy, iz );
