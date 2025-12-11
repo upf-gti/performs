@@ -602,7 +602,7 @@ class ScriptApp {
         this.msg = JSON.parse(JSON.stringify(msg)); // make copy
         this.ECAcontroller.processMsg( msg );
 
-        return { msg: msg, duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
+        return { msg: this.msg, duration: time - delayTime, peakRelaxDuration: peakRelaxDuration, relaxEndDuration: relaxEndDuration }; // duration
     }
 
     onMessage(data, callback){
