@@ -3,12 +3,14 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 
+import { PERFORMS } from "./Core.js";
+
 import { AnimationRecorder } from './recorder/recorder.js';
 import { GUI } from './GUI.js';
 import { ScriptApp } from './ScriptApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
 import { EBMLC } from './bml/eBMLController.module.js';
-import { computeAutoBoneMap } from './retargeting/retargeting.js'
+import { computeAutoBoneMap } from './retargeting/retargeting.js';
 
 // Correct negative blenshapes shader of ThreeJS
 THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
@@ -1328,6 +1330,8 @@ class Performs {
     }
 }
 
+PERFORMS.Performs = Performs;
+
 // Function to download data to a file
 function download (data, filename, type = "text/plain") {
     const file = new Blob([data], {type: type});
@@ -1368,8 +1372,6 @@ function createBackdropGeometry(width = 5, height = 5, segments = 2) {
     geometry.setAttribute( 'position', new THREE.BufferAttribute( vertices, 3 ) );
     return geometry;
 }
-
-export { Performs };
 
 const repeatShaderChunk = 
     'vec4 diffuseColor = vec4( diffuse, 1.0 );\n\n\
@@ -1438,3 +1440,5 @@ const backgroundShaderChunk =
         \   diffuseColor = mix(diffuseColor, texColor, texColor.a);\n\
         \ }\n\
     \ }\n';
+
+export { Performs };

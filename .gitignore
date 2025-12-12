@@ -4,3 +4,5 @@ external/lexgui.js/*
 !external/lexgui.js/build/*
 .vscode/
 typings
+
+node_modules/

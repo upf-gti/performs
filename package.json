@@ -1,0 +1,42 @@
+{
+    "name": "@upf-gti/perfors",
+    "version": "1.0.0",
+    "description": "",
+    "type": "module",
+    "main": "./build/performs.module.min.js",
+    "module": "./build/performs.module.js",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/upf-gti/performs"
+    },
+    "files": [
+        "build",
+        "LICENSE",
+        "package.json",
+        "README.md"
+    ],
+    "keywords": [
+        "performs",
+        "ebmlcontroller",
+        "ebml",
+        "bml",
+        "controller",
+        "animation",
+        "script",
+        "avatar",
+        "three.js"
+    ],
+    "author": "@upf-gti",
+    "license": "Apache-2.0",
+    "bugs": {
+        "url": "https://github.com/upf-gti/performs/issues"
+    },
+    "scripts": {
+        "rollup-js": "rollup -c rollup.build.config.js",
+        "build": "npm run rollup-js"
+    },
+    "dependencies": {
+        "@rollup/plugin-terser": "^0.4.4",
+        "rollup": "^4.53.3"
+    }
+}
