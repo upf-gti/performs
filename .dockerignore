@@ -2,4 +2,4 @@
 .gitattributes
 .gitignore
 node_modules
-build
+rollup*
