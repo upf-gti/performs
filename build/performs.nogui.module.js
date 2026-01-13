@@ -16,7 +16,7 @@ import { Line2 } from 'three/addons/lines/Line2.js';
 */
 
 const PERFORMS = {
-    version: "2.1.0",
+    version: "2.1.1",
 
     // to avoid cyclic dependencies
     ATELIER_URL : "https://atelier.gti.upf.edu/",
@@ -11584,10 +11584,10 @@ class ScriptApp {
     }
 
     onLoadAvatar(newAvatar, config, skeleton){
-        let position = newAvatar.position;
-        let rotation = newAvatar.quaternion;
-        let scale = newAvatar.scale;
-  
+        let position = newAvatar.position.clone();
+        let rotation = newAvatar.quaternion.clone();
+        let scale = newAvatar.scale.clone();
+
         newAvatar.position.set(0,0,0);
         newAvatar.quaternion.set(0,0,0,1);
         newAvatar.scale.set(1,1,1);

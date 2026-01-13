@@ -7,7 +7,7 @@
 */
 
 const PERFORMS = {
-    version: "2.1.0",
+    version: "2.1.1",
 
     // to avoid cyclic dependencies
     ATELIER_URL : "https://atelier.gti.upf.edu/",

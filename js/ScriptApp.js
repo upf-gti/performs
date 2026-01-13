@@ -394,10 +394,10 @@ class ScriptApp {
     }
 
     onLoadAvatar(newAvatar, config, skeleton){
-        let position = newAvatar.position;
-        let rotation = newAvatar.quaternion;
-        let scale = newAvatar.scale;
-  
+        let position = newAvatar.position.clone();
+        let rotation = newAvatar.quaternion.clone();
+        let scale = newAvatar.scale.clone();
+
         newAvatar.position.set(0,0,0);
         newAvatar.quaternion.set(0,0,0,1);
         newAvatar.scale.set(1,1,1);
