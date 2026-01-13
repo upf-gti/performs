@@ -120,10 +120,10 @@ class TrajectoriesHelper {
                     pos.setFromMatrixPosition( bone.matrixWorld );
                 }
                 
-                // there will be only track.times.length-1 arrows. Building arrows for t-1
+                positions.push(pos.x, pos.y, pos.z);
+                
+                // there will be, at most, track.times.length-1 arrows. Building arrows for t-1
                 if ( t > 0 ){
-                    positions.push(lastPos.x, lastPos.y, lastPos.z);
-
                     const c = this.trajectories[trajectory].color || new THREE.Color(`hsl(${180*Math.sin( track.times[t]/Math.PI)}, 100%, 50%)`);
                     colors.push(c .r, c .g, c .b, 0.8);
                     colors.push(c .r, c .g, c .b, 0.8);

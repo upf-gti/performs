@@ -6,7 +6,6 @@ import { GLTFExporter } from 'three/addons/exporters/GLTFExporter.js';
 import { PERFORMS } from "./Core.js";
 
 import { AnimationRecorder } from './recorder/recorder.js';
-import { GUI } from './GUI.js';
 import { ScriptApp } from './ScriptApp.js';
 import { KeyframeApp } from './KeyframeApp.js';
 import { EBMLC } from './bml/eBMLController.module.js';
@@ -18,12 +17,6 @@ THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	unif
 THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
 class Performs {
-    static Modes = { SCRIPT: 0, KEYFRAME: 1 };
-    static Backgrounds = { OPEN:0, STUDIO: 1, PHOTOCALL: 2};
-    static ATELIER_URL = "https://atelier.gti.upf.edu/";
-    static ANIMICS_URL = "https://animics.gti.upf.edu/";
-    static AVATARS_URL = "https://resources.gti.upf.edu/3Dcharacters/";
-
     constructor() {
         
         this.elapsedTime = 0; // clock is ok but might need more time control to dinamicaly change signing speed
@@ -46,7 +39,7 @@ class Performs {
         this.avatarShirt = null;
         this.autoplay = false;
 
-        this.mode = Performs.Modes.SCRIPT;
+        this.mode = PERFORMS.Modes.SCRIPT;
         this.scriptApp = new ScriptApp();        
         this.keyframeApp = new KeyframeApp();   
         
@@ -55,7 +48,7 @@ class Performs {
         this.showControls = true;
 
         this.sceneColor = 0x46c219;
-        this.background = Performs.Backgrounds.OPEN;
+        this.background = PERFORMS.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
         this.videoBackground = null;
@@ -95,11 +88,11 @@ class Performs {
         this.background = type;
 
         switch(type) {
-            case Performs.Backgrounds.OPEN:
+            case PERFORMS.Backgrounds.OPEN:
                 this.backPlane.visible = false;
                 this.ground.visible = true;
                 break;
-            case Performs.Backgrounds.STUDIO:
+            case PERFORMS.Backgrounds.STUDIO:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
                 this.repeatBackground = false;
@@ -134,7 +127,7 @@ class Performs {
                 this.backPlane.material.needsUpdate = true;
                
                 break;
-            case Performs.Backgrounds.PHOTOCALL:
+            case PERFORMS.Backgrounds.PHOTOCALL:
                 this.backPlane.visible = true;
                 this.ground.visible = false;
                 this.repeatBackground = true;
@@ -292,7 +285,7 @@ class Performs {
                 this.keyframeApp.processMessageFiles( settings.animations).then(
                     (animations) => {
                         this.keyframeApp.currentAnimation = animations[0];
-                        this.changeMode(Performs.Modes.KEYFRAME);
+                        this.changeMode(PERFORMS.Modes.KEYFRAME);
                         if(this.autoplay) {
                             this.keyframeApp.changePlayState(true);
                         }
@@ -323,7 +316,7 @@ class Performs {
                 this.scriptApp.processMessageFiles(settings.scripts).then(
                     (results) => {
                         this.scriptApp.onMessage(results);
-                        this.changeMode(Performs.Modes.SCRIPT);
+                        this.changeMode(PERFORMS.Modes.SCRIPT);
                         if(this.autoplay) {
                             this.scriptApp.replay();
                             if(this.videoBackground) {
@@ -450,10 +443,10 @@ class Performs {
                     this.scriptApp.onLoadAvatar(this.currentCharacter.model, this.currentCharacter.config, this.currentCharacter.skeleton);
                     this.currentCharacter.skeleton.pose();
                     this.scriptApp.ECAcontroller.reset();
-                    this.changeMode(Performs.Modes.SCRIPT);
+                    this.changeMode(PERFORMS.Modes.SCRIPT);
                     if(this.gui) {
                         this.gui.avatarOptions[name][1] = config._filename;
-                        if(this.gui.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
+                        if(this.gui.activePanelType == PERFORMS.GUI.ACTIVEPANEL_SETTINGS) {
                             this.gui.createSettingsPanel();             
                         }
                     }
@@ -476,10 +469,10 @@ class Performs {
             let background = settings.background;
             switch(background.toLocaleLowerCase()) {
                 case 'studio':
-                    this.background = Performs.Backgrounds.STUDIO;
+                    this.background = PERFORMS.Backgrounds.STUDIO;
                     break;
                 case 'photocall':
-                        this.background = Performs.Backgrounds.PHOTOCALL;
+                        this.background = PERFORMS.Backgrounds.PHOTOCALL;
                         break;
                 default:
                     break;
@@ -488,13 +481,13 @@ class Performs {
         }
 
         if(settings.img) {
-            this.setBackground( Performs.Backgrounds.PHOTOCALL);         
+            this.setBackground( PERFORMS.Backgrounds.PHOTOCALL);         
 
             let image =settings.img;
             const imgCallback = ( event ) => {
 
                 this.logo = event.target;        
-                this.setBackground( Performs.Backgrounds.PHOTOCALL, this.logo);         
+                this.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.logo);         
             }
 
             const img = new Image();            
@@ -572,7 +565,7 @@ class Performs {
             this.scriptApp.ECAcontroller.update(0,0);
         }
 
-        if(this.mode == Performs.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
             this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation, true);
             if(this.autoplay) {
                 this.keyframeApp.changePlayState(true);
@@ -639,7 +632,7 @@ class Performs {
             }
         }
 
-        let modelToLoad = [Performs.AVATARS_URL+'Eva_Low/Eva_Low.glb', Performs.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
+        let modelToLoad = [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
         
         // Default avatar & config file
         if(options.avatar) {
@@ -666,11 +659,11 @@ class Performs {
           
             this.setConfiguration(options);
             // Create the GUI only if the class exists or the showControls flag is true
-            if ( typeof GUI != "undefined" && this.showControls) { 
-                this.gui = new GUI( this ); 
+            if ( PERFORMS.GUI && this.showControls) {
+                this.gui = new PERFORMS.GUI( this ); 
                 if(!this.gui.avatarOptions[modelToLoad[3]]) {
                     const name = modelToLoad[3];
-                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : GUI.THUMBNAIL;
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
                     this.gui.avatarOptions[name] = modelToLoad;
                     this.gui.refresh();
                 }
@@ -830,7 +823,7 @@ class Performs {
                 img.onload = ( event ) => {
 
                     this.logo = event.target;        
-                    this.setBackground( Performs.Backgrounds.PHOTOCALL, this.logo);         
+                    this.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.logo);         
                 };   
                 
                 // Load image
@@ -1036,10 +1029,10 @@ class Performs {
         this.elapsedTime += delta;
         
         switch( this.mode ){
-            case Performs.Modes.SCRIPT: 
+            case PERFORMS.Modes.SCRIPT: 
                 this.scriptApp.update(delta); 
                 break;
-            case Performs.Modes.KEYFRAME:
+            case PERFORMS.Modes.KEYFRAME:
                 this.keyframeApp.update(delta); 
                 break;
             default:
@@ -1119,7 +1112,7 @@ class Performs {
         if ( Array.isArray(data) ){
             this.scriptApp.onMessage(data, (processedData) => {
                 
-                this.changeMode(Performs.Modes.SCRIPT);
+                this.changeMode(PERFORMS.Modes.SCRIPT);
                 if(this.gui) {
                     this.gui.setBMLInputText( 
                         JSON.stringify(this.scriptApp.msg.data, function(key, val) {
@@ -1141,7 +1134,7 @@ class Performs {
         if(data.type == 'bvh' || data.type == 'bvhe' || data.type == "glb" || data.type == "gltf" || data.type == "fbx") {
             this.keyframeApp.onMessage(data, () => {
                 
-                this.changeMode(Performs.Modes.KEYFRAME);
+                this.changeMode(PERFORMS.Modes.KEYFRAME);
                 if(this.gui) {
                     this.gui.refresh();
                 }
@@ -1178,7 +1171,7 @@ class Performs {
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
 
         // Set the avatars to each app mode
-        this.keyframeApp.showTrajectories = this.keyframeApp.showTrajectories && (this.mode == Performs.Modes.KEYFRAME);
+        this.keyframeApp.showTrajectories = this.keyframeApp.showTrajectories && (this.mode == PERFORMS.Modes.KEYFRAME);
         this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
           
@@ -1190,12 +1183,12 @@ class Performs {
                 control.saveState();
                 control.update();
             });
-            if(this.mode == Performs.Modes.SCRIPT && this.scriptApp.currentIdle) {
+            if(this.mode == PERFORMS.Modes.SCRIPT && this.scriptApp.currentIdle) {
                 this.scriptApp.bindAnimationToCharacter(this.scriptApp.currentIdle, this.currentCharacter.model.name);
             }
         }
         else {
-            this.changeMode(Performs.Modes.KEYFRAME);
+            this.changeMode(PERFORMS.Modes.KEYFRAME);
         }
 
         // Search the top mesh
@@ -1286,7 +1279,7 @@ class Performs {
         const sendData = (data) => {
 
             if( !this._atelier || this._atelier.closed ) {
-                this._atelier = window.open(Performs.ATELIER_URL, "Atelier");
+                this._atelier = window.open(PERFORMS.ATELIER_URL, "Atelier");
                 setTimeout(() => this._atelier.postMessage(data, "*"), 1000); // wait a while to have the page loaded (onloaded has CORS error)                
             }
             else {
@@ -1296,7 +1289,7 @@ class Performs {
         }
         sendData(JSON.stringify(atelierData));
         // if(!this._atelier || this._atelier.closed) {
-        //     this._atelier = window.open(Performs.ATELIER_URL, "Atelier");            
+        //     this._atelier = window.open(PERFORMS.ATELIER_URL, "Atelier");            
         // }
         // else {
         //     //this._atelier.location.reload();

@@ -1,7 +1,7 @@
 import * as THREE from "three"
+import { PERFORMS } from "./Core.js";
 import { LX } from 'lexgui';
 import 'lexgui/extensions/codeeditor.js';
-import { Performs } from './Performs.js'
 
 LX.mainArea = await LX.init();
 
@@ -29,12 +29,12 @@ class GUI {
         this.randomSignAmount = 0;
         // available model models paths - [model, config, rotation, thumbnail]
         this.avatarOptions = {
-            "EvaLow": [Performs.AVATARS_URL+'Eva_Low/Eva_Low.glb', Performs.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, Performs.AVATARS_URL+'Eva_Low/Eva_Low.png'],
-            "Witch": [Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, Performs.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
-            "Kevin": [Performs.AVATARS_URL+'Kevin/Kevin.glb', Performs.AVATARS_URL+'Kevin/Kevin.json', 0, Performs.AVATARS_URL+'Kevin/Kevin.png'],
-            "Ada": [Performs.AVATARS_URL+'Ada/Ada.glb', Performs.AVATARS_URL+'Ada/Ada.json', 0, Performs.AVATARS_URL+'Ada/Ada.png'],
-            "Ready Eva": [Performs.AVATARS_URL+'ReadyEva/ReadyEva.glb', Performs.AVATARS_URL+'ReadyEva/ReadyEva.json', 0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68'],
-            // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', Performs.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
+            "EvaLow": [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.png'],
+            "Witch": [PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
+            "Kevin": [PERFORMS.AVATARS_URL+'Kevin/Kevin.glb', PERFORMS.AVATARS_URL+'Kevin/Kevin.json', 0, PERFORMS.AVATARS_URL+'Kevin/Kevin.png'],
+            "Ada": [PERFORMS.AVATARS_URL+'Ada/Ada.glb', PERFORMS.AVATARS_URL+'Ada/Ada.json', 0, PERFORMS.AVATARS_URL+'Ada/Ada.png'],
+            "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.json', 0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68'],
+            // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
@@ -90,7 +90,7 @@ class GUI {
 
             window.addEventListener("keyup", (event) => {
                 if(event.key == " ") {
-                    if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                    if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
                             this.performs.keyframeApp.changePlayState();
                             this.changePlayButtons(this.performs.keyframeApp.playing);
@@ -99,7 +99,7 @@ class GUI {
                             LX.popup("No animations to play!", null, {size:["200px", "auto"]})
                         }
                     }
-                    else if (this.performs.mode == Performs.Modes.SCRIPT) {
+                    else if (this.performs.mode == PERFORMS.Modes.SCRIPT) {
                         if(event.target.tagName == 'TEXTAREA' || event.target.classList.contains("lexcodeeditor")) {
                             return;
                         }
@@ -194,7 +194,7 @@ class GUI {
 
         let btn = p.addButton(null, "Script animation", (v, e) => {
             if (this.performs.currentCharacter.config) {
-                this.performs.changeMode(Performs.Modes.SCRIPT);
+                this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                 if(this.performs.scriptApp.currentIdle) {
                     this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
                 }
@@ -208,18 +208,18 @@ class GUI {
             icon: "Code2", 
             width: "50%",
             selectable: true, 
-            selected: this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1
+            selected: this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1
         } );
 
         btn = p.addButton(null, "Keyframing animation",  (v, e) => {
-            this.performs.changeMode(Performs.Modes.KEYFRAME);
+            this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
             this.createSettingsPanel(); 
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
         }, {
             icon: "Film",
             width: "50%",
             selectable: true,
-            selected: this.performs.mode == Performs.Modes.KEYFRAME
+            selected: this.performs.mode == PERFORMS.Modes.KEYFRAME
         } );
         
         p.endLine();
@@ -233,7 +233,7 @@ class GUI {
         p.addSeparator();
 
         if(!force) {
-            if(this.performs.mode == Performs.Modes.SCRIPT || this.performs.mode == -1) {
+            if(this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1) {
                 this.createBMLPanel(p, this.createSettingsPanel.bind(this));
             }
             else {
@@ -259,7 +259,7 @@ class GUI {
         }
         p.branch( "Export", { icon: "FileOutput", closed: !this.branchesOpened["Export"]} );
         
-        if( this.performs.mode == Performs.Modes.KEYFRAME ) {            
+        if( this.performs.mode == PERFORMS.Modes.KEYFRAME ) {            
             p.addButton(null, "Export avatar", (v) => {
                 this.showExportAvatarDialog();
             })
@@ -289,10 +289,10 @@ class GUI {
         
         // Open space
         const openBtn = p.addButton("openBtn", "Open space", (value)=> {
-            this.performs.setBackground( Performs.Backgrounds.OPEN);
+            this.performs.setBackground( PERFORMS.Backgrounds.OPEN);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/open-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true}).root;
-        if( this.performs.background == Performs.Backgrounds.OPEN ) {
+        if( this.performs.background == PERFORMS.Backgrounds.OPEN ) {
             openBtn.children[0].classList.add('selected');
         }
         
@@ -301,10 +301,10 @@ class GUI {
         const studioP = new LX.Panel();
        
         const studioBtn = p.addButton("studioBtn", "Studio", (value)=> {
-            this.performs.setBackground( Performs.Backgrounds.STUDIO);
+            this.performs.setBackground( PERFORMS.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/studio-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true }).root;
-        if( this.performs.background == Performs.Backgrounds.STUDIO ) {
+        if( this.performs.background == PERFORMS.Backgrounds.STUDIO ) {
             studioBtn.children[0].classList.add('selected');
             const ebtn = studioP.addButton(null, "Edit properties", (e) => {
                 this.showStudioPropertiesDialog( );
@@ -316,10 +316,10 @@ class GUI {
         const photocallP = new LX.Panel();
       
         const photocallBtn = p.addButton("photocallBtn", "Photocall", (value)=> {
-            this.performs.setBackground( Performs.Backgrounds.PHOTOCALL);
+            this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
         }, {img: "./data/imgs/photocall-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true}).root;
-        if( this.performs.background == Performs.Backgrounds.PHOTOCALL ) {
+        if( this.performs.background == PERFORMS.Backgrounds.PHOTOCALL ) {
             photocallBtn.children[0].classList.add('selected');
             const ebtn = photocallP.addButton(null, "Edit properties", (e) => {
                 this.showPhotocallPropertiesDialog( );                
@@ -371,7 +371,7 @@ class GUI {
                         else {
                             this.performs.backgroundTexture = event.target;
                         }
-                        this.performs.setBackground( Performs.Backgrounds.STUDIO, this.performs.backgroundTexture);
+                        this.performs.setBackground( PERFORMS.Backgrounds.STUDIO, this.performs.backgroundTexture);
                     }
                     if( extension != "mp4") {
                         const img = new Image();            
@@ -405,7 +405,7 @@ class GUI {
                 const imgCallback = ( event ) => {
 
                     this.performs.backgroundTexture = event.target;        
-                    this.performs.setBackground( Performs.Backgrounds.STUDIO, this.performs.backgroundTexture);            
+                    this.performs.setBackground( PERFORMS.Backgrounds.STUDIO, this.performs.backgroundTexture);            
                 }
 
                 const img = new Image();            
@@ -477,7 +477,7 @@ class GUI {
                      const imgCallback = ( event ) => {
 
                         this.performs.logo = event.target;        
-                        this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
+                        this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);            
                     }
     
                     const img = new Image();            
@@ -502,7 +502,7 @@ class GUI {
                 const imgCallback = ( event ) => {
 
                     this.performs.logo = event.target;        
-                    this.performs.setBackground( Performs.Backgrounds.PHOTOCALL, this.performs.logo);            
+                    this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);            
                 }
 
                 const img = new Image();            
@@ -610,7 +610,7 @@ class GUI {
                     this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
                     this.performs.currentCharacter.skeleton.pose();
                     this.performs.scriptApp.ECAcontroller.reset();                        
-                    this.performs.changeMode(Performs.Modes.SCRIPT);
+                    this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                         this.createSettingsPanel();             
                     }
@@ -878,7 +878,7 @@ class GUI {
                 class: "relative left",
                 callback: (value, event) => {
                     // Replay animation - dont replay if stopping the capture
-                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                    if(this.performs.mode == PERFORMS.Modes.SCRIPT) {
                         this.performs.scriptApp.mood = "Neutral";
                         this.performs.scriptApp.ECAcontroller.reset();
                         this.createSettingsPanel();
@@ -898,7 +898,7 @@ class GUI {
                     }
                     const recordBtn = this.overlayButtonsPlay.buttons["Record video"].root.children[0];
 
-                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                    if(this.performs.mode == PERFORMS.Modes.SCRIPT) {
                         this.performs.scriptApp.ECAcontroller.reset(true);
                         setTimeout(() => {
                             this.performs.animationRecorder.manageCapture();
@@ -936,10 +936,10 @@ class GUI {
                 icon: "Play@solid",
                 class: "large",
                 callback: () => {
-                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                    if(this.performs.mode == PERFORMS.Modes.SCRIPT) {
                         this.performs.scriptApp.replay();
                     }
-                    else if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                    else if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
                             this.performs.keyframeApp.changePlayState(true);
                             this.changePlayButtons(true);
@@ -949,7 +949,7 @@ class GUI {
                         }
                     }
 
-                    if(this.performs.videoBackground && this.performs.background == Performs.Backgrounds.STUDIO) {
+                    if(this.performs.videoBackground && this.performs.background == PERFORMS.Backgrounds.STUDIO) {
                         this.performs.videoBackground.currentTime = 0;
                         this.performs.videoBackground.play();
                     }
@@ -960,10 +960,10 @@ class GUI {
                 icon: "Stop@solid",
                 class: "large",
                 callback: () => {
-                    if(this.performs.mode == Performs.Modes.SCRIPT) {
+                    if(this.performs.mode == PERFORMS.Modes.SCRIPT) {
                         this.performs.scriptApp.ECAcontroller.reset(true);
                     }
-                    else if(this.performs.mode == Performs.Modes.KEYFRAME) {
+                    else if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
                         this.performs.keyframeApp.changePlayState(false);
                     }
                     if(this.performs.videoBackground) {
@@ -987,7 +987,7 @@ class GUI {
         this.overlayButtonsPlay.buttons["Record video"].root.children[0].classList.add("floating-button");
         
         this.overlayButtonsReset.buttons["Reset pose"].root.children[0].classList.add("floating-button");
-        if(this.performs.mode != Performs.Modes.SCRIPT) {
+        if(this.performs.mode != PERFORMS.Modes.SCRIPT) {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
         }
     }
@@ -1004,7 +1004,7 @@ class GUI {
     }
 
     onChangeMode(mode) {
-        if(mode == Performs.Modes.SCRIPT) {
+        if(mode == PERFORMS.Modes.SCRIPT) {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
             
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
@@ -1015,7 +1015,7 @@ class GUI {
                 this.performs.keyframeApp.trajectoriesHelper.hide();
             }
         }
-        else if(mode == Performs.Modes.KEYFRAME) {
+        else if(mode == PERFORMS.Modes.KEYFRAME) {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             this.changePlayButtons( this.performs.keyframeApp.playing);
             if(this.performs.keyframeApp.trajectoriesHelper && this.performs.keyframeApp.showTrajectories) {
@@ -1163,7 +1163,7 @@ class GUI {
                         }
                     }
                     if(!this.animics || this.animics.closed) {
-                        this.animics = window.open(Performs.ANIMICS_URL);
+                        this.animics = window.open(PERFORMS.ANIMICS_URL);
                         
                         this.animics.onload = (e, d) => {
                             this.animics.app = e.currentTarget;
@@ -1371,7 +1371,7 @@ class GUI {
             this.performs.keyframeApp.loadFiles(files, (animations)=> {
                 
                 if(animations.length) {
-                    this.performs.changeMode(Performs.Modes.KEYFRAME);
+                    this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
                     if(refresh) {
                         refresh();
                     }
@@ -1542,8 +1542,8 @@ class GUI {
                 if( this.activePanelType == GUI.ACTIVEPANEL_AVATARS){
                     this.createAvatarsPanel();
                 }
-                if(this.performs.currentCharacter.config && this.performs.mode != Performs.Modes.SCRIPT && !this.performs.keyframeApp.currentAnimation) {
-                    this.performs.changeMode(Performs.Modes.SCRIPT);
+                if(this.performs.currentCharacter.config && this.performs.mode != PERFORMS.Modes.SCRIPT && !this.performs.keyframeApp.currentAnimation) {
+                    this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                 }
                 $('#loading').fadeOut();
@@ -1630,7 +1630,7 @@ class GUI {
                                                     "Ready Player Me detected!", (value, event)=> {
                                 cfromFile = false;
                                 panel.refresh();
-                                panel.setValue("Config URL", Performs.AVATARS_URL+"ReadyEva/ReadyEva_v3.json");
+                                panel.setValue("Config URL", PERFORMS.AVATARS_URL+"ReadyEva/ReadyEva_v3.json");
                                 
                             },{input: false, fitHeight: true})                            
                         }
@@ -2020,7 +2020,7 @@ class GUI {
                     this.performs.keyframeApp.loadFiles(gltfs, (files) => {
                         $("#loading").fadeOut();
                         if(files.length) {
-                            this.performs.changeMode(Performs.Modes.KEYFRAME);
+                            this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
                             this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
                             this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
                             //this.createSettingsPanel();
@@ -2044,7 +2044,7 @@ class GUI {
                     this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
                     this.performs.currentCharacter.skeleton.pose();
                     this.performs.scriptApp.ECAcontroller.reset();                        
-                    this.performs.changeMode(Performs.Modes.SCRIPT);
+                    this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                         this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
                         this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");   
@@ -2092,7 +2092,7 @@ class GUI {
             this.performs.keyframeApp.loadFiles(animations, (files) => {
                 $("#loading").fadeOut();
                 if(files.length) {
-                    this.performs.changeMode(Performs.Modes.KEYFRAME);
+                    this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
                     this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
                     this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
                 }
@@ -2277,7 +2277,7 @@ class GUI {
         }
 
         // Background type 
-        const backgrounds = Object.keys(Performs.Backgrounds);
+        const backgrounds = Object.keys(PERFORMS.Backgrounds);
         
         // Photocall image
         let img = this.performs.logo;
@@ -2460,5 +2460,6 @@ class GUI {
 
     }
 }
+PERFORMS.GUI = GUI;
 
 export { GUI };

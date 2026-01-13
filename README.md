@@ -87,9 +87,9 @@ Each project must include at least one HTML file for webpage definition and the 
 By default, Performs generates the code for creating a fully functional web application with its built-in GUI ([_GUI.js_](./js/GUI.js), [_style.css_](style.css), and [lexgui.js](https://github.com/jxarco/lexgui.js/) library are required). However, the application can also be used without the GUI or with a custom interface. Configuration options can be set through the GUI, by loading a JSON file, or by appending URL parameters. For a complete list of available options, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
 
 ```javascript
-import { Performs } from 'Performs.js'
+import { PERFORMS } from 'performs.module.js'
             
-const performs = new Performs();
+const performs = new PERFORMS.Performs();
 
 // Load customization options file
 fetch('performsSettings.json')
@@ -125,9 +125,9 @@ A detailed explanation of these options can be found in the [retargeting reposit
 By default, **Keyframe mode** is enabled. However, if a configuration file for **Script mode** is detected, the mode will automatically switch. When multiple animations are loaded, a crossfade blending is applied during transitions between animations. The blend time can be adjusted using the `blendTime` attribute of `keyframeApp`.
 
 ```javascript
-import { Performs } from 'Performs.js'
+import { PERFORMS } from 'performs.module.js'
             
-const performs = new Performs();
+const performs = new PERFORMS.Performs();
 
 // Set customization options
 const options = {    
@@ -140,7 +140,7 @@ const options = {
     
     onReady = () => { // Function called after loading the application
         // Change to Keyframe mode 
-        performs.changeMode(Performs.Modes.KEYFRAME);
+        performs.changeMode(PERFORMS.Modes.KEYFRAME);
 
         // Play the animation after 1s
         setTimeout(() => performs.keyframeApp.changePlayState(true), 1000);
@@ -174,9 +174,9 @@ An example:
 Include [`./data/dictionaries/`](./data/dictionaries/) folder in your project to use the Idle animation and the NGT gloss dictionary.
 
 ``` javascript
-import { Performs } from 'Performs.js'
+import { PERFORMS } from 'performs.module.js'
             
-const performs = new Performs();
+const performs = new PERFORMS.Performs();
 
 const options = {
     config = './data/configFile.json', // Set required config file for Script mode
