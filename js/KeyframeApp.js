@@ -40,7 +40,7 @@ class KeyframeApp {
         this.trajectoriesHelper = null;
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = 0;
-        this.showTrajectories = false;
+        this.trajectoriesActive = false;
         this.trajectoriesComputationPending = true;
 
         fetch( 'https://resources.gti.upf.edu/3Dcharacters/Eva_Low/Eva_Low.json').then(response => response.json()).then(data => this.stardardConfig = data);
@@ -81,7 +81,7 @@ class KeyframeApp {
         }
         this.trajectoriesHelper = new TrajectoriesHelper(  this.loadedCharacters[avatarName].model,  this.loadedCharacters[avatarName].mixer );
         this.trajectoriesComputationPending = true;
-        if(this.showTrajectories) {
+        if(this.trajectoriesActive) {
             this.trajectoriesHelper.show();
         }
         else {
@@ -173,14 +173,13 @@ class KeyframeApp {
         
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = bindedAnim.mixerBodyAnimation.duration;
-        if(this.showTrajectories) {
-            this.trajectoriesHelper.computeTrajectories(bindedAnim);
-            this.trajectoriesComputationPending = false;
-            this.trajectoriesHelper.show();
+        if(this.trajectoriesActive) {
+            this.computeTrajectories( bindedAnim );
+            this.showTrajectories();
         }
         else {
             this.trajectoriesComputationPending = true;
-            this.trajectoriesHelper.hide();
+            this.hideTrajectories();
         }
     }
     
@@ -415,7 +414,7 @@ class KeyframeApp {
                 });
             }   
 
-            promises.push(filePromise);           
+            promises.push(filePromise);
         }
        
         return Promise.all(promises);
@@ -842,6 +841,44 @@ class KeyframeApp {
         return animations;
     }
     
+    computeTrajectories( animation ) {
+        if( !this.trajectoriesHelper || !animation ) {
+            return;
+        }
+        this.trajectoriesHelper.computeTrajectories( animation );
+        this.trajectoriesComputationPending = false;
+    }
+
+    updateTrajectories( start, end ) {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+
+        this.trajectoriesStart = start;
+        this.trajectoriesEnd = end;
+        this.trajectoriesHelper.updateTrajectories(start, end);
+    }
+
+    showTrajectories() {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+
+        if( this.trajectoriesComputationPending ) {
+            const boundAnim = this.bindedAnimations[this.currentAnimation][this.currentCharacter];
+            this.computeTrajectories( boundAnim );
+        }
+        this.trajectoriesHelper.show();
+        this.trajectoriesActive = true;
+    }
+
+    hideTrajectories() {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+        this.trajectoriesHelper.hide();
+        this.trajectoriesActive = false;
+    }
 }
 
 export { KeyframeApp }

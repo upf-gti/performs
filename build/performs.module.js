@@ -117,7 +117,7 @@ class GUI {
                 if(event.key == " ") {
                     if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
-                            this.performs.keyframeApp.changePlayState();
+                            this.performs.changePlayState();
                             this.changePlayButtons(this.performs.keyframeApp.playing);
                         }
                         else {
@@ -965,7 +965,7 @@ class GUI {
                     }
                     else if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
                         if(Object.keys(this.performs.keyframeApp.loadedAnimations).length) {
-                            this.performs.keyframeApp.changePlayState(true);
+                            this.performs.changePlayState(true);
                             this.changePlayButtons(true);
                         }
                         else {
@@ -988,7 +988,7 @@ class GUI {
                         this.performs.scriptApp.ECAcontroller.reset(true);
                     }
                     else if(this.performs.mode == PERFORMS.Modes.KEYFRAME) {
-                        this.performs.keyframeApp.changePlayState(false);
+                        this.performs.changePlayState(false);
                     }
                     if(this.performs.videoBackground) {
                         this.performs.videoBackground.pause();
@@ -1035,14 +1035,14 @@ class GUI {
             this.changePlayButtons(false);
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
             
-            if(this.performs.keyframeApp.trajectoriesHelper && this.performs.keyframeApp.showTrajectories) {
+            if(this.performs.keyframeApp.trajectoriesActive) {
                 this.performs.keyframeApp.trajectoriesHelper.hide();
             }
         }
         else if(mode == PERFORMS.Modes.KEYFRAME) {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             this.changePlayButtons( this.performs.keyframeApp.playing);
-            if(this.performs.keyframeApp.trajectoriesHelper && this.performs.keyframeApp.showTrajectories) {
+            if(this.performs.keyframeApp.trajectoriesActive) {
                 this.performs.keyframeApp.trajectoriesHelper.show();
             }
         }
@@ -1382,7 +1382,7 @@ class GUI {
 
         const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);
         this.keyframeGui.addSelect("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
-            this.performs.keyframeApp.onChangeAnimation(v);
+            this.performs.changeAnimation(v);
         });
         this.keyframeGui.sameLine();
 
@@ -1414,7 +1414,7 @@ class GUI {
         }, { icon: "Upload", width: "30%", className:"no-padding"});
 
         this.keyframeGui.addButton(null, null, (v,e) => {
-            this.performs.keyframeApp.changePlayState();
+            this.performs.changePlayState();
             this.changePlayButtons(this.performs.keyframeApp.playing );
         }, { icon: "Play@solid", width: "70%", className:"no-padding"});
         this.keyframeGui.endLine(); 
@@ -1437,53 +1437,45 @@ class GUI {
            
         this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
-            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"});
             
         this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
-            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "auto", skipReset: true, label: "", className: "contrast"});
         
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
-            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
 
         this.keyframeGui.addSelect("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
-            this.performs.keyframeApp.onChangeAnimation(this.performs.keyframeApp.currentAnimation, true);
+            this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
         
         if( this.performs.keyframeApp.trajectoriesHelper ) {
 
             this.keyframeGui.branch("Trajectories", { icon: "Spline"} );
-            this.keyframeGui.addCheckbox("Show trajectories", this.performs.keyframeApp.showTrajectories, (v) => {
+            this.keyframeGui.addCheckbox("Show trajectories", this.performs.keyframeApp.trajectoriesActive, (v) => {
                 const keyframeApp = this.performs.keyframeApp;
-                keyframeApp.showTrajectories = v;
                 if( v ) {
-                    const boundAnim = keyframeApp.bindedAnimations[keyframeApp.currentAnimation][keyframeApp.currentCharacter];
-                    if ( keyframeApp.trajectoriesComputationPending && boundAnim ){
-                        keyframeApp.trajectoriesHelper.computeTrajectories( boundAnim );
-                        keyframeApp.trajectoriesComputationPending = false;
-                    }                    keyframeApp.trajectoriesHelper.show();
+                    keyframeApp.showTrajectories();
                 }
                 else {
-                    this.performs.keyframeApp.trajectoriesHelper.hide();
+                    keyframeApp.hideTrajectories();
                 }
             },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"});
             
             if( this.performs.keyframeApp.currentAnimation ) {
                 this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {
-                    this.performs.keyframeApp.trajectoriesStart = v[0];
-                    this.performs.keyframeApp.trajectoriesEnd = v[1];
-                    this.performs.keyframeApp.trajectoriesHelper.updateTrajectories(v[0], v[1]);
+                    this.performs.keyframeApp.updateTrajectories(v[0], v[1]);
                 }, {step: 0.01, min:0, max: this.performs.keyframeApp.loadedAnimations[ this.performs.keyframeApp.currentAnimation ].bodyAnimation.duration});
 
             }
         }
-
     }
 
     showRecordingDialog(callback) {
@@ -2334,7 +2326,7 @@ class GUI {
             trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
             crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.useCrossFade},
             blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? JSON.parse(localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
-            trajectories               : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.showTrajectories},
+            trajectories               : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.trajectoriesActive},
 
         };
 
@@ -15082,7 +15074,7 @@ class KeyframeApp {
         this.trajectoriesHelper = null;
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = 0;
-        this.showTrajectories = false;
+        this.trajectoriesActive = false;
         this.trajectoriesComputationPending = true;
 
         fetch( 'https://resources.gti.upf.edu/3Dcharacters/Eva_Low/Eva_Low.json').then(response => response.json()).then(data => this.stardardConfig = data);
@@ -15123,7 +15115,7 @@ class KeyframeApp {
         }
         this.trajectoriesHelper = new TrajectoriesHelper(  this.loadedCharacters[avatarName].model,  this.loadedCharacters[avatarName].mixer );
         this.trajectoriesComputationPending = true;
-        if(this.showTrajectories) {
+        if(this.trajectoriesActive) {
             this.trajectoriesHelper.show();
         }
         else {
@@ -15215,14 +15207,13 @@ class KeyframeApp {
         
         this.trajectoriesStart = 0;
         this.trajectoriesEnd = bindedAnim.mixerBodyAnimation.duration;
-        if(this.showTrajectories) {
-            this.trajectoriesHelper.computeTrajectories(bindedAnim);
-            this.trajectoriesComputationPending = false;
-            this.trajectoriesHelper.show();
+        if(this.trajectoriesActive) {
+            this.computeTrajectories( bindedAnim );
+            this.showTrajectories();
         }
         else {
             this.trajectoriesComputationPending = true;
-            this.trajectoriesHelper.hide();
+            this.hideTrajectories();
         }
     }
     
@@ -15455,7 +15446,7 @@ class KeyframeApp {
                 });
             }   
 
-            promises.push(filePromise);           
+            promises.push(filePromise);
         }
        
         return Promise.all(promises);
@@ -15863,6 +15854,44 @@ class KeyframeApp {
         return animations;
     }
     
+    computeTrajectories( animation ) {
+        if( !this.trajectoriesHelper || !animation ) {
+            return;
+        }
+        this.trajectoriesHelper.computeTrajectories( animation );
+        this.trajectoriesComputationPending = false;
+    }
+
+    updateTrajectories( start, end ) {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+
+        this.trajectoriesStart = start;
+        this.trajectoriesEnd = end;
+        this.trajectoriesHelper.updateTrajectories(start, end);
+    }
+
+    showTrajectories() {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+
+        if( this.trajectoriesComputationPending ) {
+            const boundAnim = this.bindedAnimations[this.currentAnimation][this.currentCharacter];
+            this.computeTrajectories( boundAnim );
+        }
+        this.trajectoriesHelper.show();
+        this.trajectoriesActive = true;
+    }
+
+    hideTrajectories() {
+        if( ! this.trajectoriesHelper ) {
+            return;
+        }
+        this.trajectoriesHelper.hide();
+        this.trajectoriesActive = false;
+    }
 }
 
 // Correct negative blenshapes shader of ThreeJS
@@ -16141,7 +16170,7 @@ class Performs {
                         this.keyframeApp.currentAnimation = animations[0];
                         this.changeMode(PERFORMS.Modes.KEYFRAME);
                         if(this.autoplay) {
-                            this.keyframeApp.changePlayState(true);
+                            this.changePlayState(true);
                         }
 
                         if(rotation) {
@@ -16172,7 +16201,7 @@ class Performs {
                         this.scriptApp.onMessage(results);
                         this.changeMode(PERFORMS.Modes.SCRIPT);
                         if(this.autoplay) {
-                            this.scriptApp.replay();
+                            this.changePlayState();
                             if(this.videoBackground) {
                                 this.videoBackground.play();
                             }
@@ -16225,7 +16254,7 @@ class Performs {
         };
         
         if(settings.trajectories != undefined) {
-            this.keyframeApp.showTrajectories = JSON.parse(settings.trajectories);
+            this.keyframeApp.trajectoriesActive = JSON.parse(settings.trajectories);
         }
        
         if(settings.autoplay != undefined) {
@@ -16418,13 +16447,28 @@ class Performs {
         }
 
         if(this.mode == PERFORMS.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
-            this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation, true);
+            this.changeAnimation(this.keyframeApp.currentAnimation, true);
             if(this.autoplay) {
-                this.keyframeApp.changePlayState(true);
+                this.changePlayState(true);
             }
         }
         if(this.gui) {
             this.gui.onChangeMode(mode);
+        }
+    }
+
+    changeAnimation( animation, needsUpdate = false ) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            this.keyframeApp.onChangeAnimation(animation, needsUpdate);
+        }
+    }
+
+    changePlayState( play ) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            this.keyframeApp.changePlayState(play);
+        }
+        else {
+            this.scriptApp.replay();
         }
     }
 
@@ -16439,6 +16483,10 @@ class Performs {
     getClothesColour(){
         if ( !this.avatarShirt ){ return 0; }   
         return this.avatarShirt.material.color.getHexString(); // css works in sRGB
+    }
+
+    loadFiles( files, callback ) {
+
     }
 
     init(options) {        
@@ -16894,7 +16942,7 @@ class Performs {
 
         this.cameras[this.camera].layers.enable(0);
         this.cameras[this.camera].layers.enable(1);
-        if(this.keyframeApp.showTrajectories) {
+        if(this.keyframeApp.trajectoriesActive) {
             this.cameras[this.camera].layers.enable(2);
         }
         else {
@@ -16970,7 +17018,7 @@ class Performs {
                 }
                 
                 if(this.autoplay) {
-                    this.scriptApp.replay();
+                    this.changePlayState();
                     if(this.videoBackground) {
                         this.videoBackground.play();
                     }
@@ -16987,7 +17035,7 @@ class Performs {
                     this.gui.refresh();
                 }
                 if(this.autoplay) {
-                    this.keyframeApp.changePlayState(true);
+                    this.changePlayState(true);
                 }
             });
         }
@@ -17019,7 +17067,7 @@ class Performs {
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
 
         // Set the avatars to each app mode
-        this.keyframeApp.showTrajectories = this.keyframeApp.showTrajectories && (this.mode == PERFORMS.Modes.KEYFRAME);
+        this.keyframeApp.trajectoriesActive = this.keyframeApp.trajectoriesActive && (this.mode == PERFORMS.Modes.KEYFRAME);
         this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
           

@@ -287,7 +287,7 @@ class Performs {
                         this.keyframeApp.currentAnimation = animations[0];
                         this.changeMode(PERFORMS.Modes.KEYFRAME);
                         if(this.autoplay) {
-                            this.keyframeApp.changePlayState(true);
+                            this.changePlayState(true);
                         }
 
                         if(rotation) {
@@ -318,7 +318,7 @@ class Performs {
                         this.scriptApp.onMessage(results);
                         this.changeMode(PERFORMS.Modes.SCRIPT);
                         if(this.autoplay) {
-                            this.scriptApp.replay();
+                            this.changePlayState();
                             if(this.videoBackground) {
                                 this.videoBackground.play();
                             }
@@ -371,7 +371,7 @@ class Performs {
         }
         
         if(settings.trajectories != undefined) {
-            this.keyframeApp.showTrajectories = JSON.parse(settings.trajectories);
+            this.keyframeApp.trajectoriesActive = JSON.parse(settings.trajectories);
         }
        
         if(settings.autoplay != undefined) {
@@ -566,13 +566,28 @@ class Performs {
         }
 
         if(this.mode == PERFORMS.Modes.KEYFRAME && this.keyframeApp.currentAnimation) {
-            this.keyframeApp.onChangeAnimation(this.keyframeApp.currentAnimation, true);
+            this.changeAnimation(this.keyframeApp.currentAnimation, true);
             if(this.autoplay) {
-                this.keyframeApp.changePlayState(true);
+                this.changePlayState(true);
             }
         }
         if(this.gui) {
             this.gui.onChangeMode(mode);
+        }
+    }
+
+    changeAnimation( animation, needsUpdate = false ) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            this.keyframeApp.onChangeAnimation(animation, needsUpdate);
+        }
+    }
+
+    changePlayState( play ) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            this.keyframeApp.changePlayState(play);
+        }
+        else {
+            this.scriptApp.replay();
         }
     }
 
@@ -587,6 +602,10 @@ class Performs {
     getClothesColour(){
         if ( !this.avatarShirt ){ return 0; }   
         return this.avatarShirt.material.color.getHexString(); // css works in sRGB
+    }
+
+    loadFiles( files, callback ) {
+
     }
 
     init(options) {        
@@ -1045,7 +1064,7 @@ class Performs {
 
         this.cameras[this.camera].layers.enable(0);
         this.cameras[this.camera].layers.enable(1);
-        if(this.keyframeApp.showTrajectories) {
+        if(this.keyframeApp.trajectoriesActive) {
             this.cameras[this.camera].layers.enable(2);
         }
         else {
@@ -1122,7 +1141,7 @@ class Performs {
                 }
                 
                 if(this.autoplay) {
-                    this.scriptApp.replay();
+                    this.changePlayState();
                     if(this.videoBackground) {
                         this.videoBackground.play();
                     }
@@ -1139,7 +1158,7 @@ class Performs {
                     this.gui.refresh();
                 }
                 if(this.autoplay) {
-                    this.keyframeApp.changePlayState(true);
+                    this.changePlayState(true);
                 }
             });
         }
@@ -1171,7 +1190,7 @@ class Performs {
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
 
         // Set the avatars to each app mode
-        this.keyframeApp.showTrajectories = this.keyframeApp.showTrajectories && (this.mode == PERFORMS.Modes.KEYFRAME);
+        this.keyframeApp.trajectoriesActive = this.keyframeApp.trajectoriesActive && (this.mode == PERFORMS.Modes.KEYFRAME);
         this.scriptApp.onChangeAvatar(avatarName);
         this.keyframeApp.onChangeAvatar(avatarName);
           
