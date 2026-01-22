@@ -100,7 +100,7 @@ A detailed explanation of these options can be found in the [retargeting reposit
 > Currently only **.gltf**, **.glb**, **.bvh** and **.bvhe** (bvh extended to support facial intensities) are supported. If you happen to use another format, please convert it to the mentioned formats.
 
 
-### Code example
+#### Code example
 - `main.js`
 
 By default, **Keyframe mode** is enabled. However, if a configuration file for **Script mode** is detected, the mode will automatically switch. When multiple animations are loaded, a crossfade blending is applied during transitions between animations. The blend time can be adjusted using the `blendTime` attribute of `keyframeApp`.
@@ -149,7 +149,7 @@ An example:
 }
 ```
 
-### Code example
+#### Code example
 - `main.js`
 
 Include [`./data/dictionaries/`](./data/dictionaries/) folder in your project to use the Idle animation and the NGT gloss dictionary.
