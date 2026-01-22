@@ -18,7 +18,7 @@ The application allows users to customize the following features:
     - [x] Light position
     - [x] Light color
 
-It can be easily integrated into other applications by using inserting an HTML iframe or by downloading the code.
+It can be easily integrated into other applications by inserting an HTML iframe or by including the js libary.
 
 ## Performs as an Iframe
 Insert Performs inside your application using the _iframe_ HTML element.
@@ -26,85 +26,66 @@ Insert Performs inside your application using the _iframe_ HTML element.
 <iframe src='https://performs.gti.upf.edu'>
 ```
 > [!IMPORTANT]  
-> You can customize the default settings combining the [available options](./docs/IntegrationGuide.md) with multiple parameters by concatenating them with _&_.
+> You can customize the default settings combining the [available options](./docs/PerformsSettings.md) with multiple parameters by concatenating them with _&_.
 >
 > So for example showing a custom avatar in a blue chroma would look like that:
 >```html
 ><iframe src='https://performs.gti.upf.edu?avatar=https://models.readyplayer.me/67162be7608ab3c0a85ceb2d.glb&background=studio&color=rgb(54,54,190)'>
 >```
 
-## Installation and Running
-Clone the repository:
-```
-git clone https://github.com/upf-gti/performs.git
-```
-To run locally, host a server from the main project folder. You can also use the [build](./build/) version without GUI.
-> [!IMPORTANT]  
-> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _Performs.js_. You can use the resources from the _/data_ folder or add your own.
+## Performs as a library
+By default, Performs generates the code for creating a fully functional web application with its built-in GUI. But there are two versions of performs modules: 
 
-You can load the customization features by appending the URL params outlined in the [Integration Guide](./docs/IntegrationGuide.md) or by loading a JSON file (which can be exported from the Performs app) with containing the same parameters. Then, call the _setConfiguration(options)_ function from _Performs_ passing the JSON object with the options as a parameter.
+<span style="color: rgb(179, 135, 94);">**performs.module.js**</span>: Performs **with** a default GUI. Requires importing [lexgui.js](https://github.com/jxarco/lexgui.js/), [treejs](https://threejs.org/) and include [_style.css_](style.css).
 
-### Project structure
-Each project must include at least one HTML file for webpage definition and the JavaScript build files to execute Performs.
+<span style="color: rgb(179, 135, 94);">**performs.nogui.module.js**</span>: Performs **without** GUI. It only requires importing [treejs](https://threejs.org/). If you want to develop your own GUI, see [Performs API](./docs/PerformsAPI.md) for useful functions.
+
 - `index.html`
 ```html
 <!DOCTYPE html>
-<html lang="eng">
+<html>
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>My app using Performs</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" type="image/x-icon" href="./data/imgs/favicon.png">
-        <style>
-            html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
-        </style>
-
-        <script src="../external/jquery-3.6.0.min.js"></script>
-        <script async src="../external/es-module-shims.js"></script>
-
+        <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@0.7.6/build/lexgui.css">
+        <link rel="stylesheet" href="./style.css">
+        <script async src="https://unpkg.com/es-module-shims@0.10.7/dist/es-module-shims.js"></script>
         <script type="importmap">
 			{
 				"imports": {
 					"three": "../external/three/build/three.module.js",
-                    "three/addons/": "../external/three/jsm/"
+                    "three/addons/": "../external/three/jsm/",
+                    "lexgui": "https://cdn.skypack.dev/lexgui@0.7.10/build/lexgui.module.js",
+                    "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@0.7.10/build/extensions/"
 				}
 			}
 		</script>
     </head>
     <body>
-        <div id="loading" class="modal" style="background-color:rgba(51, 51, 51, 0.5); position: absolute; width: 100%; height: 100%; 
-                display: flex; justify-content: center; align-items: center; z-index: 100; color: white; font-size: larger;">
-			<p>Loading avatar, please wait...</p>
-		</div>
-
         <script type="module" src="main.js"></script>
-
     </body>
 </html>
-
 ```
 - `main.js`
 
-By default, Performs generates the code for creating a fully functional web application with its built-in GUI ([_GUI.js_](./js/GUI.js), [_style.css_](style.css), and [lexgui.js](https://github.com/jxarco/lexgui.js/) library are required). However, the application can also be used without the GUI or with a custom interface. Configuration options can be set through the GUI, by loading a JSON file, or by appending URL parameters. For a complete list of available options, please refer to the [Integration Guide](./docs/IntegrationGuide.md).
 
 ```javascript
-import { PERFORMS } from 'performs.module.js'
-            
-const performs = new PERFORMS.Performs();
-
-// Load customization options file
-fetch('performsSettings.json')
-.then(response => response)
-.then(response => response.json())
-.then(options => {
-    // Init performs with configuration options
-    performs.init(options);    
-})
-.catch(error => console.error(error));
+import { Performs } from './performs.module.js';
+const performs = new Performs();
+const customOptions = {restrictView: false};
+performs.init( customOptions );
 ```
+
+You can load the customization features through the GUI, by loading a JSON file or by appending URL parameters. It can also be passed as a JSON object, calling functions like _init(options)_ and _setConfiguration(options)_. For a complete list of available options, please refer to [Performs Settings](./docs/PerformsSettings.md).
+
+> [!IMPORTANT]  
+> To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _Performs.js_. You can use the resources from the _/data_ folder or add your own.
+
 
 The following sections provide examples of how to initialize the application without a GUI or configure it to initialize with a specific mode as the default.
 
-## Keyframe animation
+### Keyframe animation
 This mode visualizes clip animations across different avatars. To ensure effective retargeting, certain options need to be adjusted for the _source_ animation and the _target_ avatar:
 - _Embedded transforms_: Retargeting only takes into account the transforms from the actual bone objects (local transforms). If set to true, external (parent) transforms are computed and embedded into the root joint (only once, on construction). Afterwards, parent transforms/matrices can be safely modified and will not affect in retargeting. Useful when it is easier to modify the container of the skeleton rather than the actual skeleton in order to align source and target poses.
     - `true` or `false`
@@ -116,10 +97,10 @@ This mode visualizes clip animations across different avatars. To ensure effecti
 
 A detailed explanation of these options can be found in the [retargeting repository](https://github.com/upf-gti/retargeting-threejs/tree/main?tab=readme-ov-file#constructor).
 > [!IMPORTANT]  
-> Currently only **.gltf**, **.glb** and **.bvh** are supported. If you happen to use another format, please convert it to the mentioned formats.
+> Currently only **.gltf**, **.glb**, **.bvh** and **.bvhe** (bvh extended to support facial intensities) are supported. If you happen to use another format, please convert it to the mentioned formats.
+
 
 ### Code example
-
 - `main.js`
 
 By default, **Keyframe mode** is enabled. However, if a configuration file for **Script mode** is detected, the mode will automatically switch. When multiple animations are loaded, a crossfade blending is applied during transitions between animations. The blend time can be adjusted using the `blendTime` attribute of `keyframeApp`.
@@ -143,7 +124,7 @@ const options = {
         performs.changeMode(PERFORMS.Modes.KEYFRAME);
 
         // Play the animation after 1s
-        setTimeout(() => performs.keyframeApp.changePlayState(true), 1000);
+        setTimeout(() => performs.changePlayState(true), 1000);
     }
 }
 
@@ -205,7 +186,7 @@ const options = {
     onReady = () => { // Function called after loading the application
         setTimeout(() => {
             // Play the animation after 1s
-            performs.scriptApp.replay();
+            performs.changePlayState(true);
         }, 1000)                    
     }
 };
@@ -214,41 +195,34 @@ const options = {
 performs.init(options);
 ```
 
-### Examples
+## Installation and Running
+Clone the repository:
+```sh
+git clone https://github.com/upf-gti/performs.git
+```
+To run locally, host a server from the main project folder.
+
+To modify the code, you should change the source files and then build it to get the module updated.
+
+To build you must run the following command:
+
+```sh
+npm run build
+```
+
+> [!IMPORTANT]  
+> You may need to install the [rollup package](https://www.npmjs.com/package/rollup).
+
+## Examples
 Some examples on simple NGT (Dutch Sign Language) 
 
 Kind lezen boek (child reads a book):
+
 ![Alt Text](https://iili.io/2foQwCu.gif) 
 
 Man rijden fiets (Man rides a bicycle) :
+
 ![Alt Text](https://iili.io/2foZgS4.gif)
-
-### Architecture
-
-The realizer is divided into main sections, each containing several files. 
-The whole pipeline is warpped inside the _CharacterController_ class which is in charge of receiving a BML block and triggering and executing its instructions when required.
-
-#### __Controllers section__
-
-Files in this block: _CharacterController_, _FacialController_ and _BodyController_
-
-- _CharacterController_: is the main entry. Everything is controlled from here. Every instance of FacialController, BodyController, BehaviourManager and BehaviourPlanner is automatically created and managed by this class.
-Users only need to instantiated this class and call its functions:
-    - _start_
-    - _update_
-    - _processMsg_: receives all the instructions of a block and triggers the whole pipeline to be synthesise the actions specified. 
-
-- _FacialController_: manages the blending of the diferent animations involved in the face including facial gestures, eye movement and head displacement.
-
-- _BodyController_: manages the blending of the diferent animations involved in the body including trunk, shoulders, arms, hands and fingers movement.
-
-#### __BML section__
-
-The files in this block: _BehaviourManager_, _BehavhourPlanner_ and _BehaviourRealizer_
-
-- _BevahiourPlanner_: automatically generates some instructions such as blinking
-- _BehaviourManager_: deals with all instruction blocks. Is in charge of triggering instructions when their time comes.
-- _BehaviourRealizer_: a set of diverse functionalities to execute some particular instruction
 
 ## Adding avatars
 > [!IMPORTANT]  
@@ -262,11 +236,11 @@ To add a new avatar to Performs, you must follow this steps:
 
 ## Collaborators
 - Jaume Pozo [@japopra](https://github.com/japopra)  
-- Víctor Ubieto [@victorubieto](https://github.com/victorubieto)
 - Eva Valls [@evallsg](https://github.com/evallsg)
 - Carolina del Corral [@carolinadcf](https://github.com/carolinadcf)
-- Pablo García [@PZerua](https://github.com/PZerua)
 - Alex Rodríguez [@jxarco](https://github.com/jxarco)
+- Víctor Ubieto [@victorubieto](https://github.com/victorubieto)
+- Pablo García [@PZerua](https://github.com/PZerua)
 
 ## Acknowledgments
 

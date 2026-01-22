@@ -649,7 +649,7 @@ class GUI {
                 value: "Restricted View",
                 icon: "Camera",
                 callback: (v, e) => {
-                    this.performs.changeCameraMode(false); 
+                    this.performs.changeCameraMode(true); 
                     this.createCameraPanel();
                 }
             },
@@ -657,11 +657,11 @@ class GUI {
                 value: "Free View",
                 icon: "Move",
                 callback: (v, e) => {
-                    this.performs.changeCameraMode(true); 
+                    this.performs.changeCameraMode(false); 
                     this.createCameraPanel();
                 }
             }
-        ], {selected: this.performs.cameraMode ? "Free View" : "Restricted View"});
+        ], {selected: this.performs.cameraRestricted ? "Restricted View" : "Free View" });
 
         p.addSeparator();
         
@@ -1494,7 +1494,7 @@ class GUI {
                     animations[assetData[asset].id].record = v;
                 }
                 assetView._refreshContent();
-            });
+            }, {label: "", className: "contrast"});
 
             selectAllCheckbox.onSetValue(false, false);                       
             
@@ -1524,7 +1524,7 @@ class GUI {
     // select from the this.avatarOptions and loaded characters
     selectAvatar(avatarName){
         if ( !this.performs.loadedCharacters[avatarName] ) {
-            $('#loading').fadeIn(); //hide();
+            this.makeLoading("Loading avatar...");
             let modelFilePath = this.avatarOptions[avatarName][0];                    
             let configFilePath = this.avatarOptions[avatarName][1];
             let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[avatarName][2] ); 
@@ -1537,9 +1537,9 @@ class GUI {
                     this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                 }
-                $('#loading').fadeOut();
+                this.hideLoading();
             }, (err) => {
-                $('#loading').fadeOut();
+                this.hideLoading();
                 LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
             } );
             return;
@@ -1961,7 +1961,7 @@ class GUI {
             const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
             if(formats.indexOf(extension) < 0) {
                 alert(file.name +": Format not supported.\n\nFormats accepted:\n\t 'bml', 'sigml', 'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
-                $("#loading").fadeOut();
+                this.hideLoading();
                 return;
             }
 
@@ -2007,9 +2007,9 @@ class GUI {
                     }
                 }
                 else {
-                    $("#loading").fadeIn();
+                    this.makeLoading("Loading animations...");
                     this.performs.keyframeApp.loadFiles(gltfs, (files) => {
-                        $("#loading").fadeOut();
+                        this.hideLoading();
                         if(files.length) {
                             this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
                             this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
@@ -2079,9 +2079,9 @@ class GUI {
             }
         }
         if(animations.length) {
-            $("#loading").fadeIn();
+            this.makeLoading("Loading animations...");
             this.performs.keyframeApp.loadFiles(animations, (files) => {
-                $("#loading").fadeOut();
+                this.hideLoading();
                 if(files.length) {
                     this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
                     this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
@@ -2191,15 +2191,11 @@ class GUI {
         if(!capture) {
             return;
         }
-        $("#loading p").text( "Capturing animation: " + capture);
-		$("#loading").removeClass("hidden");
-		$("#loading").css({ background: "rgba(17,17,17," + 0.5 + ")", display:"flex" })
-		$("#loading").fadeIn();
-       
+        this.makeLoading("Capturing animation: " + capture, 0.5);
     }
 
     hideCaptureModal() {
-        $("#loading").addClass("hidden");
+        this.hideLoading();
     }
 
     showGuide() {
@@ -2285,7 +2281,7 @@ class GUI {
             offset      : {state: localStorage.getItem("offset") != undefined ? JSON.parse(localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.performs.repeatOffset},
             light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
             lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
-            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: !this.performs.cameraMode ?? false},
+            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: this.performs.cameraRestricted ?? false},
             controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
             autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
         }
@@ -2450,6 +2446,70 @@ class GUI {
         dialog.root.style.top = "10%";
 
     }
+
+    /**
+	 * 
+	 * @param {float} targetOpacity 
+	 * @param {float} fadeTime 
+	 * @param {bool} adaptTime if true, fadeTime is the time it takes to transition from 0 to 1. Final fading time will be computed using the current state opacity
+	 * @returns 
+	 */
+	fadeCSSAnimation( element, targetOpacity, fadeTime, adaptTime = true ){
+		let anims = element.getAnimations({subtree: true});
+
+		for( let i = 0; i < anims.length; ++i ){
+			const a = anims[i];
+			if (a.isOpacityFade){
+				// css animations do not update element.style properties
+				// sets current animation state into the element style properties
+				a.commitStyles(); 
+
+				// will automatically remove itself from the list
+				a.finish();
+				break;
+			}
+		}
+		if ( adaptTime ){
+			let elop = parseFloat(element.style.opacity);
+			if ( isNaN(elop) ){
+				elop = 1;
+			}
+			fadeTime = fadeTime * Math.abs( elop - targetOpacity );
+		}
+
+		const newAnim = element.animate([ {opacity: element.style.opacity}, {opacity: targetOpacity}], {duration:fadeTime, iterations: 1}); //
+		newAnim.isOpacityFade = true;
+		element.style.opacity = targetOpacity; // set the state it will have after the animation ends
+		return newAnim;
+	}
+
+    makeLoading( string, opacity = 1){
+		const loading = document.getElementById("loading");
+        if( !loading ) {
+            return;
+        }
+		loading.classList.remove("hidden");
+		loading.getElementsByTagName("p")[0].innerText = string;
+		return this.fadeCSSAnimation( loading, opacity, 200, true );
+	}
+
+	hideLoading ( ){
+		const loading = document.getElementById("loading");
+        if( !loading ) {
+            return;
+        }
+		const string = loading.getElementsByTagName("p")[0].innerText;
+		if ( loading.classList.contains("hidden") ){
+			loading.style.opacity = 0;
+			return;
+		}
+		const anim = this.fadeCSSAnimation( loading, 0, 200, true );
+		anim.onfinish = ()=>{ 
+			if(string == loading.getElementsByTagName("p")[0].innerText) {
+				loading.classList.add("hidden");
+			}
+		}
+	}
 }
 PERFORMS.GUI = GUI;
 

@@ -7,8 +7,7 @@
             html, body { width:100%; height:100%; margin:0; padding:0; overflow:hidden; }
         </style>
 
-        <script src="../external/jquery-3.6.0.min.js"></script>
-        <script async src="../external/es-module-shims.js"></script>
+        <script async src="https://unpkg.com/es-module-shims@0.10.7/dist/es-module-shims.js"></script>
 
         <script type="importmap">
 			{
@@ -20,17 +19,11 @@
 		</script>
     </head>
     <body>
-        <div id="loading" class="modal" style="background-color:rgba(51, 51, 51, 0.5); position: absolute; width: 100%; height: 100%; 
-                display: flex; justify-content: center; align-items: center; z-index: 100; color: white; font-size: larger;">
-			<p>Loading avatar, please wait</p>
-		</div>
-
-        <script type="module">
-            import {Performs} from './performs.module.js';
+           <script type="module">
+            import {Performs} from './performs.nogui.module.js';
             const performs = new Performs();
-            performs.init();
+            performs.init({animations:[{name:"https://signon-lfs.gti.upf.edu/files/evalls/animics/clips/GSL-Omega.bvhe"}]});
             window.global = {app: performs};
         </script>
-
     </body>
 </html>

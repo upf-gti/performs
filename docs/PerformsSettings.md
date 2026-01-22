@@ -1,4 +1,4 @@
-# Integration Guide
+# Performs Settings
 ## Available options
 
 | Name                       | Type    | Description                                                                                                                 |

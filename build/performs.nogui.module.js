@@ -13462,7 +13462,7 @@ class Performs {
         this.camera = null;
         this.cameras = [];
         this.controls = [];
-        this.cameraMode = 0;
+        this.cameraRestricted = true;
 
         this.loadedCharacters = {};
         this.currentCharacter = null;
@@ -13839,7 +13839,6 @@ class Performs {
             
             if(!this.currentCharacter || this.currentCharacter && this.currentCharacter.model.name != filename) {
                 loadConfig = false;
-                $('#loading').fadeIn(); 
                 let thumbnail = null;
                 if( avatar.includes('models.readyplayer.me') ) {
                     avatar+= '?pose=T&morphTargets=ARKit&lod=1';
@@ -13851,11 +13850,12 @@ class Performs {
                 this.loadAvatar(avatar, settings.config, new THREE.Quaternion(), filename, () => {
                     this.changeAvatar( filename );
                     innerAvatarSettings(settings);
-    
-                    $('#loading').fadeOut(); //hide();               
+               
                 }, (err) => {
-                    $('#loading').fadeOut();
-                    alert("There was an error loading the avatar", "Avatar not loaded");
+                    console.error(err);
+                    if(callback) {
+                        callback(err);
+                    }
                 } );
             }
             
@@ -13977,7 +13977,7 @@ class Performs {
         
         if(settings.restrictView != undefined) {
             let view = (settings.restrictView === "false" || settings.restrictView === false);
-            this.changeCameraMode( view ); //moved here because it needs the backplane to exist
+            this.changeCameraMode( !view ); //moved here because it needs the backplane to exist
         }
 
         if(settings.applyIdle != undefined) {
@@ -14056,19 +14056,19 @@ class Performs {
         // this.renderer.shadowMap.type = THREE.VSMShadowMap; // Produces artifacts, camera has to be close to objects and negative bias
         
         // camera views
-        this.createCameras();
+        this._createCameras();
    
         // lights
-        this.createLights();
+        this._createLights();
 
         // background
-        this.createBackgrounds();
+        this._createBackgrounds();
 
         // animation recorder
-        this.createRecorder();
+        this._createRecorder();
 
         // so the screen is not black while loading
-        this.changeCameraMode( false ); //moved here because it needs the backplane to exist
+        this.changeCameraMode( this.cameraRestricted ); //moved here because it needs the backplane to exist
         this.renderer.render( this.scene, this.cameras[this.camera] );        
         this.scriptApp.init(this.scene);
     
@@ -14103,44 +14103,50 @@ class Performs {
             modelToLoad[2].fromArray(rotation);
         }
         
+        if( PERFORMS.GUI && this.showControls ) {
+            this.gui = new PERFORMS.GUI( this );
+            this.gui.makeLoading("Loading avatar...");
+        }
         // Load default avatar
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
           
-            this.setConfiguration(options);
-            // Create the GUI only if the class exists or the showControls flag is true
-            if ( PERFORMS.GUI && this.showControls) {
-                this.gui = new PERFORMS.GUI( this ); 
-                if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                    const name = modelToLoad[3];
-                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
-                    this.gui.avatarOptions[name] = modelToLoad;
-                    this.gui.refresh();
+            this.setConfiguration(options, ( err ) => {
+                // Create the GUI only if the class exists or the showControls flag is true
+                if ( this.gui) {
+                    if(!this.gui.avatarOptions[modelToLoad[3]]) {
+                        const name = modelToLoad[3];
+                        modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
+                        this.gui.avatarOptions[name] = modelToLoad;
+                        this.gui.refresh();
+                    }
+                    this.gui.hideLoading();
                 }
-            }
-            else {
-                window.document.body.appendChild(this.renderer.domElement);
-            }
-
-            $('#loading').fadeOut(); //hide();
-            this.animate();
-            this.isAppReady = true;
-                        
-            if(this.pendingMessageReceived) {
-                this.onMessage( this.pendingMessageReceived );
-                this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
-            }
+                else {
+                    window.document.body.appendChild(this.renderer.domElement);
+                }
+                
+                this._animate();
+                this.isAppReady = true;
+                            
+                if(this.pendingMessageReceived) {
+                    this._onMessage( this.pendingMessageReceived );
+                    this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
+                }
+            });
         }, (err) => {
-            $('#loading').fadeOut();
+            if( this.gui ) {
+                this.gui.hideLoading();
+            }
             alert("There was an error loading the avatar", "Avatar not loaded");
         } );
 
         // Create event listeners
-        window.addEventListener( "message", this.onMessage.bind(this) );
-        window.addEventListener( 'resize', this.onWindowResize.bind(this) );
+        window.addEventListener( "message", this._onMessage.bind(this) );
+        window.addEventListener( 'resize', this._onWindowResize.bind(this) );
     }
     
-    newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
+    _newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
         let camera = new THREE.PerspectiveCamera(60, window.innerWidth/window.innerHeight, 0.01, 1000);
         camera.record = true;
         let controls = new OrbitControls( camera, this.renderer.domElement );
@@ -14168,15 +14174,15 @@ class Performs {
         return {camera: camera, controls: controls};
     }
 
-    createCameras() {
-        this.newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
-        this.newCameraFrom({azimuthAngle: 25});
-        this.newCameraFrom({azimuthAngle: -25});
+    _createCameras() {
+        this._newCameraFrom({azimuthAngle: 0, controlsEnabled: true}); // init main Camera (0)
+        this._newCameraFrom({azimuthAngle: 25});
+        this._newCameraFrom({azimuthAngle: -25});
     
         this.camera = 0;
     }
 
-    createLights() {
+    _createLights() {
         const hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 0.5 );
         this.scene.add( hemiLight );
 
@@ -14212,7 +14218,7 @@ class Performs {
         dirLight.target = dirLightTarget;
     }
 
-    createBackgrounds() {
+    _createBackgrounds() {
         // Create transparent ground for Open space
         const ground = this.ground = new THREE.Mesh( new THREE.PlaneGeometry(20,20), new THREE.MeshStandardMaterial( { color: this.sceneColor, opacity: 0.1, transparent:true, depthWrite: true, roughness: 1, metalness: 0 } ) );
         ground.name = 'Ground';
@@ -14305,7 +14311,7 @@ class Performs {
         this.setBackground(this.background);
     }
 
-    createRecorder() {
+    _createRecorder() {
         
         this.animationRecorder = new AnimationRecorder(this.cameras.length, this);
         this.animationRecorder.onStartCapture = (v) => {
@@ -14454,12 +14460,12 @@ class Performs {
         });
     }
 
-    animate() {
+    _animate() {
 
-        requestAnimationFrame( this.animate.bind(this) );
+        requestAnimationFrame( this._animate.bind(this) );
 
         // don't let the camera to be under the ground 
-        if(this.cameraMode) {
+        if(!this.cameraRestricted) {
             let centerPosition = this.controls[this.camera].target.clone();
             centerPosition.y = 0;
             let groundPosition = this.cameras[this.camera].position.clone();
@@ -14502,7 +14508,7 @@ class Performs {
     }
 
     // Force feet to touch the ground
-    precomputeFeetOffset(avatarName) {
+    _precomputeFeetOffset(avatarName) {
         const character = this.loadedCharacters[avatarName];
         const map = computeAutoBoneMap( character.skeleton );
         character.LToeName = character.model.getObjectByName(map.nameMap.LFoot).children[0].name;
@@ -14527,7 +14533,7 @@ class Performs {
         return diff;
     }
 
-    onMessage(event) {
+    _onMessage(event) {
         if ( !this.isAppReady ) { 
             this.pendingMessageReceived = event; 
             return; 
@@ -14594,7 +14600,7 @@ class Performs {
         }
     }
     
-    onWindowResize() {
+    _onWindowResize() {
         for (let i = 0; i < this.cameras.length; i++) {
             this.cameras[i].aspect = window.innerWidth / window.innerHeight;
             this.cameras[i].updateProjectionMatrix();
@@ -14612,7 +14618,7 @@ class Performs {
         this.scene.add( this.currentCharacter.model ); 
         
         // Compute the distance between the feet bones and the mesh for force to touch the ground
-        const diffToGround = this.precomputeFeetOffset(avatarName);
+        const diffToGround = this._precomputeFeetOffset(avatarName);
         this.loadedCharacters[avatarName].diffToGround = diffToGround;
         this.loadedCharacters[avatarName].position = this.currentCharacter.model.position.clone();
 
@@ -14650,12 +14656,12 @@ class Performs {
     }
 
     toggleCameraMode() { 
-        this.changeCameraMode( !this.cameraMode ); 
+        this.changeCameraMode( !this.cameraRestricted ); 
     }
 
-    changeCameraMode( mode ) {
+    changeCameraMode( restrictView ) {
 
-        if ( mode ) { // Free camera controls
+        if ( !restrictView ) { // Free camera controls
             this.controls[this.camera].enablePan = true;
             this.controls[this.camera].minDistance = 0.1;
             this.controls[this.camera].maxDistance = 10;
@@ -14677,7 +14683,7 @@ class Performs {
             }
         }
         this.controls[this.camera].update();
-        this.cameraMode = mode; 
+        this.cameraRestricted = restrictView; 
     }
 
     openAtelier(name, model, config, fromFile = true, rotation = 0) {
