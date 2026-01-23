@@ -687,8 +687,8 @@ class Performs {
         
         if( PERFORMS.GUI && this.showControls ) {
             this.gui = new PERFORMS.GUI( this );
-            this._onLoading( "Loading avatar...");
         }
+        this._onLoading( "Loading avatar...");
         // Load default avatar
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
             this.changeAvatar( modelToLoad[3] );
