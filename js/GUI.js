@@ -1042,7 +1042,7 @@ class GUI {
                 
         this.bmlGui.addNumber("Speed", this.performs.scriptApp.speed, (value, event) => {
             // this.performs.speed = Math.pow( Math.E, (value - 1) );
-            this.performs.scriptApp.speed = value;
+            this.performs.setSpeed(value);
         }, { min: 0.1, max: 2, step: 0.01});
 
         this.bmlGui.sameLine();
@@ -1354,7 +1354,7 @@ class GUI {
   
         this.keyframeGui.addNumber("Speed", this.performs.keyframeApp.speed, (value, event) => {
             // this.performs.speed = Math.pow( Math.E, (value - 1) );
-            this.performs.keyframeApp.speed = value;
+            this.performs.setSpeed(value);
         }, { min: -2, max: 2, step: 0.01});
 
         const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);

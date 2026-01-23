@@ -13467,7 +13467,6 @@ class Performs {
         this.loadedCharacters = {};
         this.currentCharacter = null;
 
-        this.speed = 1;
         this.backPlane = null;
         this.avatarShirt = null;
         this.autoplay = false;
@@ -13494,7 +13493,14 @@ class Performs {
         this.raycaster = new THREE.Raycaster();
     }
 
-    setSpeed( value ){ this.speed = value; }
+    setSpeed( value ){ 
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            this.keyframeApp.speed = value;
+        }
+        else {
+            this.scriptApp.speed = value;
+        }
+    }
     // value (hex color) in sRGB space 
     setBackPlaneColor( value ){
         this.sceneColor = value;
@@ -14022,7 +14028,14 @@ class Performs {
         }
     }
 
-    getSpeed( ){ return this.speed; }
+    getSpeed( ) {
+        if(this.mode == PERFORMS.Modes.KEYFRAME ) {
+            return this.keyframeApp.speed;
+        }
+        else {
+            return this.scriptApp.speed;
+        }
+    }
 
     // returns value (hex) with the color in sRGB space
     getBackPlaneColor(){       
@@ -14489,7 +14502,6 @@ class Performs {
 
         this.controls[this.camera].update(); // needed because of this.controls.enableDamping = true
         let delta = this.clock.getDelta();         
-        // delta *= this.speed;
         this.elapsedTime += delta;
         
         switch( this.mode ){
