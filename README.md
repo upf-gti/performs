@@ -36,9 +36,9 @@ Insert Performs inside your application using the _iframe_ HTML element.
 ## Performs as a library
 By default, Performs generates the code for creating a fully functional web application with its built-in GUI. But there are two versions of performs modules: 
 
-<span style="color: rgb(179, 135, 94);">**performs.module.js**</span>: Performs **with** a default GUI. Requires importing [lexgui.js](https://github.com/jxarco/lexgui.js/), [treejs](https://threejs.org/) and include [_style.css_](style.css).
+**[performs.module.js](./build/performs.module.js)**: Performs **with** a default GUI. Requires importing [lexgui.js](https://github.com/jxarco/lexgui.js/), [treejs](https://threejs.org/) and include [_style.css_](style.css).
 
-<span style="color: rgb(179, 135, 94);">**performs.nogui.module.js**</span>: Performs **without** GUI. It only requires importing [treejs](https://threejs.org/). If you want to develop your own GUI, see [Performs API](./docs/PerformsAPI.md) for useful functions.
+**[performs.nogui.module.js](./build/performs.nogui.module.js)**: Performs **without** GUI. It only requires importing [treejs](https://threejs.org/). If you want to develop your own GUI, see [Performs API](./docs/PerformsAPI.md) for useful functions.
 
 - `index.html`
 ```html
