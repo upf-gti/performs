@@ -82,10 +82,10 @@ You can load the customization features through the GUI, by loading a JSON file 
 > [!IMPORTANT]  
 > To load the default avatar, an internet connection is required. If you prefer to work offline, you can change the _modelToLoad_ in the _init()_ method of _Performs.js_. You can use the resources from the _/data_ folder or add your own.
 
+### Examples
+The following sections provide examples of how to initialize the application without a GUI or configure it to initialize with a specific mode as the default. You can also check the demos: **[Demo with default GUI](./build/demo-with-gui.html)** or **[Demo with custom GUI](./build/demo-without-gui.html)**.
 
-The following sections provide examples of how to initialize the application without a GUI or configure it to initialize with a specific mode as the default.
-
-### Keyframe animation
+### <span style="color:rgb(151, 54, 190)">Keyframe animation</span>
 This mode visualizes clip animations across different avatars. To ensure effective retargeting, certain options need to be adjusted for the _source_ animation and the _target_ avatar:
 - _Embedded transforms_: Retargeting only takes into account the transforms from the actual bone objects (local transforms). If set to true, external (parent) transforms are computed and embedded into the root joint (only once, on construction). Afterwards, parent transforms/matrices can be safely modified and will not affect in retargeting. Useful when it is easier to modify the container of the skeleton rather than the actual skeleton in order to align source and target poses.
     - `true` or `false`
@@ -132,7 +132,7 @@ const options = {
 performs.init(options);
 ```
 
-## Script animation
+## <span style="color:rgb(151, 54, 190)">Script animation</span>
 This mode allows for the generation of procedural animations based on instructions. The system interprets the instructions based in **SiGML** (Signing Gesture Markup Language), and translates them into an extended version of BML (Behavior Markup Language), or directly into BML in **JSON** format. While the results may not match the quality of keyframe animations, this approach requires neither expensive equipment nor extensive manual labor, making it highly suitable for scalable sign synthesis. These instructions can be written manually or generated and exported using [Animics](https://animics.gti.upf.edu)' script mode, which enables the creation and editing of this type of animation through a visual timeline-clip representation.
 
 The current supported instructions are explained in detail in [BML Instructions](./docs/InstructionsBML.md).
