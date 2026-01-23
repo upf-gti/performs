@@ -1,150 +1,223 @@
 # Performs API
 
-
-#### <span style="color: #049EF4;">setSpeed</span>( speed: <span style="color: gray;">Number</span> )
+```javascript
+setSpeed( speed: Number )
+```
 
 Changes the speed of the animation player.
 
-**speed**: New speed. Negative values means playing the animations backwards
+- **speed**: New speed. Negative values means playing the animations backwards
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">setBackPlaneColor</span>( color: <span style="color: gray;">String </span>) 
+```javascript
+setBackPlaneColor( color: String ) 
+```
 
 Changes the color of the scene background.
 
-**color**: The color in Hex sRGB space
+- **color**: The color in Hex sRGB space
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">setBackground</span>( type:  <span style="color: gray;">Number</span>, image<span style="color: orange;">*</span>: <span style="color: gray;">String (base64)</span>, <span style="color: gray;">THREE.Texture</span> or <span style="color: gray;">THREE.VideoTexture</span>)
+```javascript
+setBackground( type: Number, image:* String (base64), THREE.Texture or THREE.VideoTexture)
+```
 
 Changes the background style. It can be an open space, an studio or a photocall. The studio can have an image or a video in the background. The photocall can have an image/logo that can be repeated.
 
-**type**: Type of background. The values can be PERFORMS.Backgrounds.OPEN (0), PERFORMS.Backgrounds.STUDIO (1), PERFORMS.Backgrounds.PHOTOCALL (2)
+- **type**: Type of background. The values can be PERFORMS.Backgrounds.OPEN (0), PERFORMS.Backgrounds.STUDIO (1), PERFORMS.Backgrounds.PHOTOCALL (2)
 
-**image**: <span style="color: orange;">Optional</span>. The image or the video that has to be on the background.
+- **image**: _Optional_. The image or the video that has to be on the background.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">setPhotocallOffset</span>( offset: <span style="color: gray;">Number</span> )
+```javascript
+setPhotocallOffset( offset: Number )
+```
 
 Changes the space between the repeatitive images for the photocall background.
 
-**offset**: New offset.
+- **offset**: New offset.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">setBackgroundSettings</span>( settings: <span style="color: gray;">String</span> )
+```javascript
+setBackgroundSettings( settings: String )
+```
 
 Changes how to fits the image or the video in the studio background based on the passed configuration.
 
-**settings**: Adjustment of background image or video. The values can be: `"Expand"`, `"Fill"`, `"Extend"` and `"Adjust"`. Default value is `"Expand"`.
+- **settings**: Adjustment of background image or video. The values can be: `"Expand"`, `"Fill"`, `"Extend"` and `"Adjust"`. Default value is `"Expand"`.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">setBackgroundTextureScale</span>( scale: <span style="color: gray;">Number</span> )
+```javascript
+setBackgroundTextureScale( scale: Number )
+```
 
 Changes the scale of the image or video for studio background.
 
-**scale**: New scale. Default value is `1`.
+- **scale**: New scale. Default value is `1`.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">setBackgroundTexturePosition</span>( position: <span style="color: gray;">Array</span>)
+```javascript
+setBackgroundTexturePosition( position: Array)
+```
 
 Changes the position of the image or video for studio background.
 
-**position**: New position. Default value is center `[0,0]`.
+- **position**: New position. Default value is center `[0,0]`.
+<br>
+<br>
 
-#### <span style="color: #049EF4;">setConfiguration</span>( configuration: <span style="color: gray;">JSON</span>, <span style="color: gray;">callback<span style="color: orange;">*</span>: function</span> )
+```javascript
+setConfiguration( configuration: JSON,  callback:* function )
+```
 
 **configuration**: JSON with configuration options (position, rotation, scale, animations, autoplay, etc). See [available options](IntegrationGuide.md) for more info.
 
-**callback**: <span style="color: orange;">Optional</span>. Function called when all configuration is loaded.
+- **callback**: _Optional_. Function called when all configuration is loaded.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">changeMode</span>( mode: <span style="color: gray;">Number</span> )
+```javascript
+changeMode( mode: Number )
+```
 
 Changes animation player mode. The two modes of Performs are Script (BML,SiGML based instructions) and Keyframe (bvh, bvhe, glb animations).
 
-**mode**: New mode.`Performs.Modes.SCRIPT` (0) or `Performs.Modes.KEYFRAME` (1). Default is Script mode `0`.
+- **mode**: New mode.`Performs.Modes.SCRIPT` (0) or `Performs.Modes.KEYFRAME` (1). Default is Script mode `0`.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">changeAnimation</span>( animation: <span style="color: gray;">String</span>, needsUpdate<span style="color: orange;">*</span>: <span style="color: gray;">Boolean</span> )</span>
+```javascript
+changeAnimation( animation: String, needsUpdate:* Boolean )
+```
 
-**animation**: Name of a preloaded animation.
+- **animation**: Name of a preloaded animation.
 
-**needsUpdate**: <span style="color: orange;">Optional</span>. If its true, forces to bound animation to the current character
+- **needsUpdate**: _Optional_. If its true, forces to bound animation to the current character
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">changePlayState</span>( play<span style="color: orange;">*</span>: <span style="color: gray;">Boolean</span> )
+```javascript
+changePlayState( play:* Boolean )
+```
 
-**play**: <span style="color: orange;">Optional</span>. New play state. For Keyframe mode, play/stop current animation. If **play** is `NULL`, switches the current state.
+- **play**: _Optional_. New play state. For Keyframe mode, play/stop current animation. If **play** is `NULL`, switches the current state.
 For Script mode, replay the animation from the begining.
+<br>
+<br>
 
 
-#### <span style="color: #049EF4;">getSpeed</span>(): <span style="color: gray;">Number</span>
+```javascript
+getSpeed(): Number
+```
 
 Returns the current speed of the animation player.
+<br>
+<br>
 
-#### <span style="color: #049EF4;">getBackPlaneColor</span>(): <span style="color: gray;">String(Hex)</span>
+```javascript
+getBackPlaneColor(): String(Hex)
+```
 
 Returns the current color of the scene background.
+<br>
+<br>
 
-#### <span style="color: #049EF4;">init</span>( options: <span style="color: gray;">JSON</span>)</span>
+```javascript
+init( options: JSON)
+```
 
 Initializes the application, creates the scene and loads the assets.
 
-**options**: Configuration options (position, rotation, scale, animations, autoplay, etc). See [available options](IntegrationGuide.md) for more info.
+- **options**: Configuration options (position, rotation, scale, animations, autoplay, etc). See [available options](IntegrationGuide.md) for more info.
+<br>
+<br>
 
-#### <span style="color: #049EF4;">setConfiguration</span>( options: <span style="color: gray;">JSON</span>, callback<span style="color: orange;">*</span>: <span style="color: gray;">function</span>)</span>
+```javascript
+setConfiguration( options: JSON, callback*: function)
+```
 
 Changes the current configuration of the scene based on passed options.
 
-**options**: Configuration options (position, rotation, scale, animations, autoplay, etc). See [available options](IntegrationGuide.md) for more info.
+- **options**: Configuration options (position, rotation, scale, animations, autoplay, etc). See [available options](IntegrationGuide.md) for more info.
 
-**callback**: <span style="color: orange;">Optional</span>. Function called when changers are completed.
+- **callback**: _Optional_. Function called when changers are completed.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">loadAvatar</span>( avatarURL: <span style="color: gray;">String</span>, configFile: <span style="color: gray;">File URL</span> or <span style="color: gray;">JSON</span>, avatarRotation <span style="color: orange;">*</span> : <span style="color: gray;">THREE.Quaternion</span>, avatarName: <span style="color: gray;">String</span>, callback <span style="color: orange;">*</span>: <span style="color: gray;">function</span>, onerror<span style="color: orange;">*</span>: <span style="color: gray;">function</span>)
+```javascript
+loadAvatar( avatarURL: String, configFile: File URL or JSON, avatarRotation:* THREE.Quaternion, avatarName: String, callback:* function, onerror:* function)
+```
 
 Loads an avatar given a public URL and with a specific configuration for Script animations.
 
-**avatarURL**: Public URL where the avatar is hosted. Supported extensions are _glb_ and _gltf_.
+- **avatarURL**: Public URL where the avatar is hosted. Supported extensions are _glb_ and _gltf_.
 
-**configFile**: Avatar configuration for Script animations (it can be generated through [Atelier](https://atelier.gti.upf.edu/)).
+- **configFile**: Avatar configuration for Script animations (it can be generated through [Atelier](https://atelier.gti.upf.edu/)).
 
-**avatarRotation**: <span style="color: orange;">Optional</span>. Avatar rotation. It can be `NULL`.
+- **avatarRotation**: _Optional_. Avatar rotation. It can be `NULL`.
 
-**avatarName**: Avatar name.
+- **avatarName**: Avatar name.
 
-**callback**: <span style="color: orange;">Optional</span>. Function called when loading is completed.
+- **callback**: _Optional_. Function called when loading is completed.
 
-**onerror**: <span style="color: orange;">Optional</span>. Function called when the avatar can not be loaded.
+- **onerror**: _Optional_. Function called when the avatar can not be loaded.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">changeAvatar</span>( avatarName: <span style="color: gray;">String</span>)
+```javascript
+changeAvatar( avatarName: String)
+```
 
 Changes the current avatar given the name of a preloaded avatar.
 
-**avatarName**: Name of the new avatar.
+- **avatarName**: Name of the new avatar.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">changeCameraMode</span>( restrictView: <span style="color: gray;">Boolean</span> )
+```javascript
+changeCameraMode( restrictView: Boolean )
+```
 
 Changes the camera mode movements.
 
-**restrictView**: `true` restricts zoom, panning, etc. and `false` lets any camera movement.
+- **restrictView**: `true` restricts zoom, panning, etc. and `false` lets any camera movement.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">appendCanvasTo</span>( element: <span style="color: gray;">HTML element</span> )
+```javascript
+appendCanvasTo( element: HTML element )
+```
 
 If there isn't the default GUI, appends as a child the renderer DOM element of Performs (canvas) to the passed element. Useful when custom GUI is added and you want to append Performs into another element. Otherwise, Performs is appended to the HTML body.
 
-**element**: HTML element to be the parent of Performs' canvas.
+- **element**: HTML element to be the parent of Performs' canvas.
+<br>
+<br>
 
-
-#### <span style="color: #049EF4;">onLoading</span>( text: <span style="color: gray;">String</span> )
+```javascript
+onLoading( text: String )
+```
 
 If there isn't the default GUI, it's automatically called when an asset is loaded. Overwrite the function with your code. Useful to make/show custom modals while asset is loading. By default is `NULL`.
 
-**text**: Text to put in the modal.
+- **text**: Text to put in the modal.
+<br>
+<br>
 
-#### <span style="color: #049EF4;">onLoadingEnded</span>( )
+```javascript
+onLoadingEnded( )
+```
 
 If there isn't the default GUI, it's automatically called when loading of the asset is completed. Overwrite the function with your code. Useful to remove/hide custom modals. By default is `NULL`.
