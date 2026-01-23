@@ -19,11 +19,109 @@
 		</script>
     </head>
     <body>
-           <script type="module">
-            import {Performs} from './performs.nogui.module.js';
+        <div style="display: flex; flex-direction: column; width: 100%; height: 100%;">
+            <div style="width: 100%; height: 100px; color: #4f4f9c">
+                <h2 style="padding: 0 10px; text-align: center;">This is a simple demo with a custom GUI</h2>
+            </div>
+            <div style="display: flex; width: 100%; height: calc(100% - 100px);">
+                <div style="display: flex; flex-direction: column; padding: 10px; width: 200px;">
+                    <div>
+                        <input type="color" id="background-color" name="background" value="#e66465" />
+                        <label for="background">Background color</label>
+                    </div>
+                    <button id="play-btn">Play</button>
+                    <button id="trajectories-btn">Show trajectories</button>
+                    <div id="trajectories-container" style="display: none;">
+                        <div>
+                            <input type="range" id="trajectories-start" name="start" min="0" max="11" step="any" />
+                            <label for="start">Start of trajectories</label>
+                        </div>
+                        <div>
+                            <input type="range" id="trajectories-end" name="end" min="0" max="11" step="any" />
+                            <label for="end">End of trajectories</label>
+                        </div>
+                    </div>
+                </div>
+                <div style="width: calc(100% - 200px); padding: 10px;" id="performs"></div>
+            </div>
+        </div>
+
+        <script type="module">
+            // ------------------------ PERFORMS ------------------------ //
+            // Import Performs module without default GUI
+            import { Performs } from './performs.nogui.module.js';
+            
             const performs = new Performs();
-            performs.init({animations:[{name:"https://signon-lfs.gti.upf.edu/files/evalls/animics/clips/GSL-Omega.bvhe"}]});
+
+            // Init Performs with configuration options (default animation and onReady function)
+            performs.init({color: "#4f4f9c", animations:[{name:"https://signon-lfs.gti.upf.edu/files/evalls/animics/clips/GSL-Omega.bvhe"}], onReady: () => {
+                const div = document.getElementById("performs");
+                // Append the Performs' render dom element (canvas) to specified HTML element as a child node
+                performs.appendCanvasTo(div);
+                colorBtn.value = performs.getBackPlaneColor();
+            }});
             window.global = {app: performs};
+
+            // ------------------------ CUSTOM GUI ------------------------ //
+
+            // Manage background color input
+            const colorBtn = document.getElementById("background-color");
+            
+            colorBtn.oninput = ( event ) => {
+                // Change background color
+                performs.setBackPlaneColor( event.target.value );
+            }
+
+            // Manage play/stop current animation button
+            const playBtn = document.getElementById("play-btn");
+            playBtn.onclick = () => {
+                if( playBtn.innerText == "Play" ) {
+                    playBtn.innerText = "Stop";
+                }
+                else {
+                    playBtn.innerText = "Play";
+                }
+                // Switch state
+                performs.changePlayState();
+            }
+
+            // Manage start and end trajectories window inputs
+            const startInput = document.getElementById("trajectories-start");
+            const endInput = document.getElementById("trajectories-end");
+
+            startInput.oninput = ( event ) => {
+                const start = event.target.value;
+                const end = performs.keyframeApp.trajectoriesEnd;
+                // Update trajectories range
+                performs.keyframeApp.updateTrajectories( start, end );
+            }
+            endInput.oninput = ( event ) => {
+                const start = performs.keyframeApp.trajectoriesStart;
+                const end = event.target.value;
+                // Update trajectories range
+                performs.keyframeApp.updateTrajectories( start, end );
+            }
+
+            // Manage show/hide trajectories of current animation button
+            const trajectoriesBtn = document.getElementById("trajectories-btn");
+            const trajectoriesContainer = document.getElementById("trajectories-container");
+            trajectoriesBtn.onclick = () => {
+                if( trajectoriesBtn.innerText == "Show trajectories" ) {
+                    trajectoriesBtn.innerText = "Hide trajectories";
+                    performs.keyframeApp.showTrajectories();
+    
+                    // Update min/max range buttons based on actual trajectories range (make sure covers animation duration)
+                    startInput.max = endInput.value = performs.keyframeApp.trajectoriesEnd;
+                    endInput.min = startInput.value = performs.keyframeApp.trajectoriesStart;
+                    trajectoriesContainer.style.display = "block";
+                }
+                else {
+                    trajectoriesBtn.innerText = "Show trajectories";
+                    performs.keyframeApp.hideTrajectories();
+                    trajectoriesContainer.style.display = "none";
+                }
+            }
+            
         </script>
     </body>
 </html>

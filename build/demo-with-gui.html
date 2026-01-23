@@ -19,9 +19,15 @@
 		</script>
     </head>
     <body>
+        <!-- Modal with id and child p. Necessary to show a modal when loading assets with default GUI -->
+        <div id="loading" style="width: 100%; height: 100%; z-index: 1000; display: flex; justify-content: center; align-items: center;"><p>Loading</p></div>
         <script type="module">
+            // ------------------------ PERFORMS ------------------------ //
+            // Import Performs module with default GUI
             import {Performs} from './performs.module.js';
             const performs = new Performs();
+            
+            // Init Performs with configuration options
             performs.init({restrictView: false});
         </script>
     </body>

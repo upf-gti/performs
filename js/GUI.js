@@ -38,7 +38,7 @@ class GUI {
         }
 
         // take canvas from dom, detach from dom, attach to lexgui 
-        this.performs.renderer.domElement.remove(); // removes from dom
+        //this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.mainArea;
         this.mainArea.root.ondrop = this.onDropFiles.bind(this);
 
@@ -47,10 +47,10 @@ class GUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
-        canvasArea.attach( this.performs.renderer.domElement );
+        //canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
-        canvasArea.root.appendChild(this.performs.renderer.domElement);
-
+        //canvasArea.root.appendChild(this.performs.renderer.domElement);
+        performs.appendCanvasTo( canvasArea.root )
         this.panel = panelArea.addPanel({height: "100%"});
         panelArea.addOverlayButtons([{
             icon: "X",
@@ -284,7 +284,7 @@ class GUI {
         color = new THREE.Color(color);
 
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
-            this.performs.setBackPlaneColour(value);
+            this.performs.setBackPlaneColor(value);
         });
         
         // Open space
@@ -554,9 +554,9 @@ class GUI {
         p.addSeparator();
 
         if ( this.performs.avatarShirt ){
-            let topsColor = this.performs.getClothesColour();
+            let topsColor = this.performs.getClothesColor();
             p.addColor("Clothes", '#' + topsColor, (value, event) => {
-                this.performs.setClothesColour(value);; // css works in sRGB
+                this.performs.setClothesColor(value);; // css works in sRGB
             });
         }
 
@@ -2258,7 +2258,7 @@ class GUI {
         avatar = avatar.split('?')[0];
         
         // Background color
-        let color = this.performs.getBackPlaneColour();
+        let color = this.performs.getBackPlaneColor();
         if(typeof(color) == 'string') {
             color = color.replace("#", "0x");
         }
@@ -2274,7 +2274,7 @@ class GUI {
 
         const toExport = {
             avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : avatar.includes('https'), text: "Character file URL", value: avatar},
-            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColour()},
+            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColor()},
             color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
             background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
             img         : {state: localStorage.getItem("img") != undefined ? JSON.parse(localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},

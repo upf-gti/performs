@@ -63,7 +63,7 @@ class GUI {
         };
 
         // take canvas from dom, detach from dom, attach to lexgui 
-        this.performs.renderer.domElement.remove(); // removes from dom
+        //this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.mainArea;
         this.mainArea.root.ondrop = this.onDropFiles.bind(this);
 
@@ -72,10 +72,10 @@ class GUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
-        canvasArea.attach( this.performs.renderer.domElement );
+        //canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
-        canvasArea.root.appendChild(this.performs.renderer.domElement);
-
+        //canvasArea.root.appendChild(this.performs.renderer.domElement);
+        performs.appendCanvasTo( canvasArea.root );
         this.panel = panelArea.addPanel({height: "100%"});
         panelArea.addOverlayButtons([{
             icon: "X",
@@ -309,7 +309,7 @@ class GUI {
         color = new THREE.Color(color);
 
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
-            this.performs.setBackPlaneColour(value);
+            this.performs.setBackPlaneColor(value);
         });
         
         // Open space
@@ -579,9 +579,9 @@ class GUI {
         p.addSeparator();
 
         if ( this.performs.avatarShirt ){
-            let topsColor = this.performs.getClothesColour();
+            let topsColor = this.performs.getClothesColor();
             p.addColor("Clothes", '#' + topsColor, (value, event) => {
-                this.performs.setClothesColour(value);            });
+                this.performs.setClothesColor(value);            });
         }
 
         for(let avatar in this.avatarOptions) {
@@ -2281,7 +2281,7 @@ class GUI {
         avatar = avatar.split('?')[0];
         
         // Background color
-        let color = this.performs.getBackPlaneColour();
+        let color = this.performs.getBackPlaneColor();
         if(typeof(color) == 'string') {
             color = color.replace("#", "0x");
         }
@@ -2297,7 +2297,7 @@ class GUI {
 
         const toExport = {
             avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : avatar.includes('https'), text: "Character file URL", value: avatar},
-            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColour()},
+            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColor()},
             color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
             background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
             img         : {state: localStorage.getItem("img") != undefined ? JSON.parse(localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},
@@ -15990,7 +15990,7 @@ class Performs {
         this.pendingMessageReceived = null;
         this.showControls = true;
 
-        this.sceneColor = 0x46c219;
+        this.sceneColor = "#46c219";
         this.background = PERFORMS.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
@@ -16005,8 +16005,8 @@ class Performs {
     }
 
     setSpeed( value ){ this.speed = value; }
-    // value (hex colour) in sRGB space 
-    setBackPlaneColour( value ){
+    // value (hex color) in sRGB space 
+    setBackPlaneColor( value ){
         this.sceneColor = value;
         this.scene.background.set(value);
 
@@ -16169,8 +16169,8 @@ class Performs {
         this.texturePosition = position;
     }
 
-    // value (hex colour) in sRGB space 
-    setClothesColour( value ){
+    // value (hex color) in sRGB space 
+    setClothesColor( value ){
         if ( !this.avatarShirt ){ return false; }
         this.avatarShirt.material.color.set( value );   
         return true;
@@ -16209,7 +16209,7 @@ class Performs {
                 if(typeof(clothColor) == 'string'){
                     clothColor = clothColor.replace('0x', '#');
                 }
-                this.setClothesColour(clothColor);
+                this.setClothesColor(clothColor);
             }
             if(rotation) {
                 this.currentCharacter.rotation = new THREE.Quaternion().fromArray(rotation);
@@ -16245,12 +16245,12 @@ class Performs {
 
                             this.currentCharacter.model.scale.fromArray(scale);
                         }
-
-                        if(settings.onReady) {
-                            settings.onReady();
-                        }
+                        
                         if(callback) {
                             callback();
+                        }
+                        if(settings.onReady) {
+                            settings.onReady();
                         }
                     }
                 );
@@ -16459,7 +16459,7 @@ class Performs {
                 }
             }
             this.sceneColor = settings.color;
-            this.setBackPlaneColour(this.sceneColor);                                  
+            this.setBackPlaneColor(this.sceneColor);                                  
         }
 
         if(settings.offset) {
@@ -16534,13 +16534,13 @@ class Performs {
 
     getSpeed( ){ return this.speed; }
 
-    // returns value (hex) with the colour in sRGB space
-    getBackPlaneColour(){       
+    // returns value (hex) with the color in sRGB space
+    getBackPlaneColor(){       
         return this.sceneColor; // css works in sRGB
     }
 
-    // returns value (hex) with the colour in sRGB space
-    getClothesColour(){
+    // returns value (hex) with the color in sRGB space
+    getClothesColor(){
         if ( !this.avatarShirt ){ return 0; }   
         return this.avatarShirt.material.color.getHexString(); // css works in sRGB
     }
@@ -16551,7 +16551,7 @@ class Performs {
 
     init(options) {        
         this.scene = new THREE.Scene();
-        const sceneColor = this.sceneColor = window.debugMode ? 0x4f4f9c : 0x46c219;
+        const sceneColor = this.sceneColor = window.debugMode ? "#4f4f9c ": "#46c219";
         this.scene.background = new THREE.Color( sceneColor );
 
         // renderer
@@ -16615,7 +16615,7 @@ class Performs {
         
         if( PERFORMS.GUI && this.showControls ) {
             this.gui = new PERFORMS.GUI( this );
-            this.gui.makeLoading("Loading avatar...");
+            this._onLoading( "Loading avatar...");
         }
         // Load default avatar
         this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
@@ -16630,11 +16630,11 @@ class Performs {
                         this.gui.avatarOptions[name] = modelToLoad;
                         this.gui.refresh();
                     }
-                    this.gui.hideLoading();
                 }
                 else {
                     window.document.body.appendChild(this.renderer.domElement);
                 }
+                this._onLoadingEnded();
                 
                 this._animate();
                 this.isAppReady = true;
@@ -16645,15 +16645,24 @@ class Performs {
                 }
             });
         }, (err) => {
-            if( this.gui ) {
-                this.gui.hideLoading();
-            }
+                this._onLoadingEnded();
             alert("There was an error loading the avatar", "Avatar not loaded");
         } );
 
         // Create event listeners
         window.addEventListener( "message", this._onMessage.bind(this) );
         window.addEventListener( 'resize', this._onWindowResize.bind(this) );
+    }
+
+    appendCanvasTo( element ) {
+        if( !element ) {
+            return;
+        }
+
+        this.renderer.domElement.remove();
+        element.appendChild(this.renderer.domElement);
+        
+        this._onWindowResize();
     }
     
     _newCameraFrom({azimuthAngle = 0, polarAngle = 0, depth = 0, controlsEnabled = false}) {
@@ -17110,12 +17119,30 @@ class Performs {
         }
     }
     
-    _onWindowResize() {
+    _onWindowResize( ) {
+        const parent = this.renderer.domElement.parentElement;
+
+        let width = window.innerWidth;
+        let height = window.innerHeight;
+
+        if( parent ) {
+            width = parent.clientWidth;
+            height = parent.clientHeight;
+    
+            const paddingTop = parent.style.paddingTop ? Number(parent.style.paddingTop.replace("px", "")) : 0;
+            const paddingBottom = parent.style.paddingBottom ? Number(parent.style.paddingBottom.replace("px", "")) : 0;
+            const paddingLeft = parent.style.paddingLeft ? Number(parent.style.paddingLeft.replace("px", "")) : 0;
+            const paddingRight = parent.style.paddingRight ? Number(parent.style.paddingRight.replace("px", "")) : 0;
+        
+            width-= ( paddingLeft + paddingRight );
+            height-= ( paddingTop + paddingBottom );
+        }
+
         for (let i = 0; i < this.cameras.length; i++) {
-            this.cameras[i].aspect = window.innerWidth / window.innerHeight;
+            this.cameras[i].aspect = width / height;
             this.cameras[i].updateProjectionMatrix();
         }
-        this.renderer.setSize( window.innerWidth, window.innerHeight );
+        this.renderer.setSize( width, height );
     }
         
     changeAvatar( avatarName ) {
@@ -17280,6 +17307,25 @@ class Performs {
                     options
                 );
                 break;
+        }
+    }
+
+    _onLoading( text ) {
+
+        if(this.onLoading) {
+            this.onLoading( text);
+        }
+        else if( this.gui ) {
+            this.gui.makeLoading(text);
+        }
+    }
+
+    _onLoadingEnded( ) {
+        if(this.onLoadingEnded) {
+            this.onLoadingEnded();
+        }
+        else if( this.gui ) {
+            this.gui.hideLoading();
         }
     }
 }

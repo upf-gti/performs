@@ -8,11 +8,11 @@ Changes the speed of the animation player.
 **speed**: New speed. Negative values means playing the animations backwards
 
 
-#### <span style="color: #049EF4;">setBackPlaneColour</span>( colour: <span style="color: gray;">String </span>) 
+#### <span style="color: #049EF4;">setBackPlaneColor</span>( color: <span style="color: gray;">String </span>) 
 
-Changes the colour of the scene background.
+Changes the color of the scene background.
 
-**colour**: The colour in Hex sRGB space
+**color**: The color in Hex sRGB space
 
 
 #### <span style="color: #049EF4;">setBackground</span>( type:  <span style="color: gray;">Number</span>, image<span style="color: orange;">*</span>: <span style="color: gray;">String (base64)</span>, <span style="color: gray;">THREE.Texture</span> or <span style="color: gray;">THREE.VideoTexture</span>)
@@ -82,9 +82,9 @@ For Script mode, replay the animation from the begining.
 
 Returns the current speed of the animation player.
 
-#### <span style="color: #049EF4;">gettBackPlaneColour</span>(): <span style="color: gray;">String(Hex)</span>
+#### <span style="color: #049EF4;">getBackPlaneColor</span>(): <span style="color: gray;">String(Hex)</span>
 
-Returns the current colour of the scene background.
+Returns the current color of the scene background.
 
 #### <span style="color: #049EF4;">init</span>( options: <span style="color: gray;">JSON</span>)</span>
 
@@ -113,7 +113,7 @@ Loads an avatar given a public URL and with a specific configuration for Script 
 
 **avatarName**: Avatar name.
 
-**callback**: <span style="color: orange;">Optional</span>. Function called when loading is complete.
+**callback**: <span style="color: orange;">Optional</span>. Function called when loading is completed.
 
 **onerror**: <span style="color: orange;">Optional</span>. Function called when the avatar can not be loaded.
 
@@ -130,3 +130,21 @@ Changes the current avatar given the name of a preloaded avatar.
 Changes the camera mode movements.
 
 **restrictView**: `true` restricts zoom, panning, etc. and `false` lets any camera movement.
+
+
+#### <span style="color: #049EF4;">appendCanvasTo</span>( element: <span style="color: gray;">HTML element</span> )
+
+If there isn't the default GUI, appends as a child the renderer DOM element of Performs (canvas) to the passed element. Useful when custom GUI is added and you want to append Performs into another element. Otherwise, Performs is appended to the HTML body.
+
+**element**: HTML element to be the parent of Performs' canvas.
+
+
+#### <span style="color: #049EF4;">onLoading</span>( text: <span style="color: gray;">String</span> )
+
+If there isn't the default GUI, it's automatically called when an asset is loaded. Overwrite the function with your code. Useful to make/show custom modals while asset is loading. By default is `NULL`.
+
+**text**: Text to put in the modal.
+
+#### <span style="color: #049EF4;">onLoadingEnded</span>( )
+
+If there isn't the default GUI, it's automatically called when loading of the asset is completed. Overwrite the function with your code. Useful to remove/hide custom modals. By default is `NULL`.
