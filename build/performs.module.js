@@ -59,6 +59,12 @@ class GUI {
             "Kevin": [PERFORMS.AVATARS_URL+'Kevin/Kevin.glb', PERFORMS.AVATARS_URL+'Kevin/Kevin.json', 0, PERFORMS.AVATARS_URL+'Kevin/Kevin.png'],
             "Ada": [PERFORMS.AVATARS_URL+'Ada/Ada.glb', PERFORMS.AVATARS_URL+'Ada/Ada.json', 0, PERFORMS.AVATARS_URL+'Ada/Ada.png'],
             "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.json', 0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68'],
+            "Sara": [PERFORMS.AVATARS_URL+'Sara/Sara.glb', PERFORMS.AVATARS_URL+'Sara/Sara.json', 0, PERFORMS.AVATARS_URL+'Sara/Sara.png'],
+            "Nia": [PERFORMS.AVATARS_URL+'Nia/Nia.glb', PERFORMS.AVATARS_URL+'Nia/Nia.json', 0, PERFORMS.AVATARS_URL+'Nia/Nia.png'],
+            "Joan": [PERFORMS.AVATARS_URL+'Joan/Joan.glb', PERFORMS.AVATARS_URL+'Joan/Joan.json', 0, PERFORMS.AVATARS_URL+'Joan/Joan.png'],
+            "David": [PERFORMS.AVATARS_URL+'David/David.glb', PERFORMS.AVATARS_URL+'David/David.json', 0, PERFORMS.AVATARS_URL+'David/David.png'],
+            "Alex": [PERFORMS.AVATARS_URL+'Alex/Alex.glb', PERFORMS.AVATARS_URL+'Alex/Alex.json', 0, PERFORMS.AVATARS_URL+'Alex/Alex.png'],
+            "Noa": [PERFORMS.AVATARS_URL+'Noa/Noa.glb', PERFORMS.AVATARS_URL+'Noa/Noa.json', 0, PERFORMS.AVATARS_URL+'Noa/Noa.png'],
             // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
         };
 
