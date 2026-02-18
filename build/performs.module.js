@@ -150,6 +150,26 @@ class GUI {
 
     }
 
+    setTransparentBackground() {
+        document.body.classList.add("transparent");
+        LX.mainArea.root.parentElement.classList.add("transparent");
+        LX.mainArea.root.classList.add("transparent");
+        this.canvasArea.root.classList.add("transparent");
+        if( this.canvasArea.root.parentElement ) {
+            this.canvasArea.root.parentElement.classList.add("transparent");
+        }
+    }
+
+    restoreColorBackground() {
+        document.body.classList.remove("transparent");
+        LX.mainArea.root.parentElement.classList.remove("transparent");
+        LX.mainArea.root.classList.remove("transparent");
+        this.canvasArea.root.classList.remove("transparent");
+        if( this.canvasArea.root.parentElement ) {
+            this.canvasArea.root.parentElement.classList.remove("transparent");
+        }
+    }
+
     resize(width, height) {
         
         const aspect = width / height;
@@ -16038,12 +16058,17 @@ class Performs {
             this.scene.background = null;
             this.ground.material.color.set("#ffffff");
             this.ground.material.opacity = 0.01;
-            // this.renderer.setClearColor( this.sceneColor, 0 )
+            if( this.gui ) {
+                this.gui.setTransparentBackground();
+            }
             return;
         }
-        this.ground.material.opacity = 0.1;
         if( !this.scene.background ) {
             this.scene.background = new THREE.Color( value );
+            if( this.gui ) {
+                this.gui.restoreColorBackground();
+            }
+            this.ground.material.opacity = 0.1;
         }
         
         this.sceneColor = value;

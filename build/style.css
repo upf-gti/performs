@@ -357,3 +357,7 @@
     display: block;
     opacity: 1;
 }
+
+.transparent {
+	background: transparent!important;
+}

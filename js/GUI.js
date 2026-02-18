@@ -125,6 +125,26 @@ class GUI {
 
     }
 
+    setTransparentBackground() {
+        document.body.classList.add("transparent");
+        LX.mainArea.root.parentElement.classList.add("transparent");
+        LX.mainArea.root.classList.add("transparent");
+        this.canvasArea.root.classList.add("transparent");
+        if( this.canvasArea.root.parentElement ) {
+            this.canvasArea.root.parentElement.classList.add("transparent");
+        }
+    }
+
+    restoreColorBackground() {
+        document.body.classList.remove("transparent");
+        LX.mainArea.root.parentElement.classList.remove("transparent");
+        LX.mainArea.root.classList.remove("transparent");
+        this.canvasArea.root.classList.remove("transparent");
+        if( this.canvasArea.root.parentElement ) {
+            this.canvasArea.root.parentElement.classList.remove("transparent");
+        }
+    }
+
     resize(width, height) {
         
         const aspect = width / height;

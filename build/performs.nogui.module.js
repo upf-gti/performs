@@ -13524,12 +13524,17 @@ class Performs {
             this.scene.background = null;
             this.ground.material.color.set("#ffffff");
             this.ground.material.opacity = 0.01;
-            // this.renderer.setClearColor( this.sceneColor, 0 )
+            if( this.gui ) {
+                this.gui.setTransparentBackground();
+            }
             return;
         }
-        this.ground.material.opacity = 0.1;
         if( !this.scene.background ) {
             this.scene.background = new THREE.Color( value );
+            if( this.gui ) {
+                this.gui.restoreColorBackground();
+            }
+            this.ground.material.opacity = 0.1;
         }
         
         this.sceneColor = value;
