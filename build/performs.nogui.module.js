@@ -13519,7 +13519,19 @@ class Performs {
         }
     }
     // value (hex color) in sRGB space 
-    setBackPlaneColor( value ){
+    setBackPlaneColor( value ) {
+        if(value == "#transparent") {
+            this.scene.background = null;
+            this.ground.material.color.set("#ffffff");
+            this.ground.material.opacity = 0.01;
+            // this.renderer.setClearColor( this.sceneColor, 0 )
+            return;
+        }
+        this.ground.material.opacity = 0.1;
+        if( !this.scene.background ) {
+            this.scene.background = new THREE.Color( value );
+        }
+        
         this.sceneColor = value;
         this.scene.background.set(value);
 
@@ -14090,7 +14102,7 @@ class Performs {
         this.scene.background = new THREE.Color( sceneColor );
 
         // renderer
-        this.renderer = new THREE.WebGLRenderer( { antialias: true } );
+        this.renderer = new THREE.WebGLRenderer( { antialias: true, alpha: true } );
         this.renderer.setPixelRatio( window.devicePixelRatio );
         this.renderer.setSize( window.innerWidth, window.innerHeight );
 
