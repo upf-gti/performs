@@ -28,21 +28,7 @@ class GUI {
         this.performs = performs;
         this.randomSignAmount = 0;
         // available model models paths - [model, config, rotation, thumbnail]
-        this.avatarOptions = {
-            "EvaLow": [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.png'],
-            "Witch": [PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
-            "Kevin": [PERFORMS.AVATARS_URL+'Kevin/Kevin.glb', PERFORMS.AVATARS_URL+'Kevin/Kevin.json', 0, PERFORMS.AVATARS_URL+'Kevin/Kevin.png'],
-            "Ada": [PERFORMS.AVATARS_URL+'Ada/Ada.glb', PERFORMS.AVATARS_URL+'Ada/Ada.json', 0, PERFORMS.AVATARS_URL+'Ada/Ada.png'],
-            "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.json', 0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68'],
-            "Sara": [PERFORMS.AVATARS_URL+'Sara/Sara.glb', PERFORMS.AVATARS_URL+'Sara/Sara.json', 0, PERFORMS.AVATARS_URL+'Sara/Sara.png'],
-            "Nia": [PERFORMS.AVATARS_URL+'Nia/Nia.glb', PERFORMS.AVATARS_URL+'Nia/Nia.json', 0, PERFORMS.AVATARS_URL+'Nia/Nia.png'],
-            "Joan": [PERFORMS.AVATARS_URL+'Joan/Joan.glb', PERFORMS.AVATARS_URL+'Joan/Joan.json', 0, PERFORMS.AVATARS_URL+'Joan/Joan.png'],
-            "David": [PERFORMS.AVATARS_URL+'David/David.glb', PERFORMS.AVATARS_URL+'David/David.json', 0, PERFORMS.AVATARS_URL+'David/David.png'],
-            "Alex": [PERFORMS.AVATARS_URL+'Alex/Alex.glb', PERFORMS.AVATARS_URL+'Alex/Alex.json', 0, PERFORMS.AVATARS_URL+'Alex/Alex.png'],
-            "Noa": [PERFORMS.AVATARS_URL+'Noa/Noa.glb', PERFORMS.AVATARS_URL+'Noa/Noa.json', 0, PERFORMS.AVATARS_URL+'Noa/Noa.png'],
-            // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
-        }
-
+        this.avatarOptions = performs.avatars;
         // take canvas from dom, detach from dom, attach to lexgui 
         //this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.mainArea;
@@ -53,6 +39,7 @@ class GUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
+        this.canvasArea = canvasArea;
         //canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
         //canvasArea.root.appendChild(this.performs.renderer.domElement);
@@ -744,42 +731,11 @@ class GUI {
                 class: "larger",
                 state: false,
                 callback: (b) => {
-                    this.controlsActive = !this.controlsActive;   
-                    if(!this.controlsActive) {
-                        area.panels[0].root.classList.add("hide");
+                    if( !this.controlsActive ) {
+                        this.showControls();
                     }
                     else {
-                        area.panels[0].root.classList.remove("hide");
-                    }
-
-                    let el = document.getElementById('overlay-controls');
-                    for(let i = 1; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
-                    }
-
-                    el = document.getElementById('overlay-playbuttons');
-                    for(let i = 0; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
-                    }
-
-                    el = document.getElementById('overlay-buttons');
-                    for(let i = 0; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
+                        this.hideControls();
                     }
                 }
             },
@@ -2192,6 +2148,48 @@ class GUI {
         return result;
     }
 
+    showControls() {
+        this.controlsActive = true;
+        this.canvasArea.panels[0].root.classList.remove("hide");
+        
+        const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
+        if( controlsBtn.options.icon == "Eye" ) {
+            controlsBtn.swap(true);
+        }
+
+        controlsBtn.root.firstChild.title = "Hide controls";
+        let el = document.getElementById('overlay-controls');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.remove("hide");
+        }
+
+        el = document.getElementById('overlay-buttons');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.remove("hide");
+        }
+    }
+
+    hideControls() {
+        this.controlsActive = false;
+        const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
+        if( controlsBtn.options.icon == "EyeOff" ) {
+            controlsBtn.swap(true);
+        }
+        controlsBtn.root.firstChild.title = "Show controls";
+
+        this.canvasArea.panels[0].root.classList.add("hide");
+
+        let el = document.getElementById('overlay-controls');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.add("hide");
+        }
+
+        el = document.getElementById('overlay-buttons');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.add("hide");
+        }
+    }
+
     showCaptureModal(capture) {
 
         if(!capture) {
@@ -2288,7 +2286,7 @@ class GUI {
             light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
             lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
             restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: this.performs.cameraRestricted ?? false},
-            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
+            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.controlsActive},
             autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
         }
 

@@ -53,21 +53,7 @@ class GUI {
         this.performs = performs;
         this.randomSignAmount = 0;
         // available model models paths - [model, config, rotation, thumbnail]
-        this.avatarOptions = {
-            "EvaLow": [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.png'],
-            "Witch": [PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
-            "Kevin": [PERFORMS.AVATARS_URL+'Kevin/Kevin.glb', PERFORMS.AVATARS_URL+'Kevin/Kevin.json', 0, PERFORMS.AVATARS_URL+'Kevin/Kevin.png'],
-            "Ada": [PERFORMS.AVATARS_URL+'Ada/Ada.glb', PERFORMS.AVATARS_URL+'Ada/Ada.json', 0, PERFORMS.AVATARS_URL+'Ada/Ada.png'],
-            "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.json', 0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68'],
-            "Sara": [PERFORMS.AVATARS_URL+'Sara/Sara.glb', PERFORMS.AVATARS_URL+'Sara/Sara.json', 0, PERFORMS.AVATARS_URL+'Sara/Sara.png'],
-            "Nia": [PERFORMS.AVATARS_URL+'Nia/Nia.glb', PERFORMS.AVATARS_URL+'Nia/Nia.json', 0, PERFORMS.AVATARS_URL+'Nia/Nia.png'],
-            "Joan": [PERFORMS.AVATARS_URL+'Joan/Joan.glb', PERFORMS.AVATARS_URL+'Joan/Joan.json', 0, PERFORMS.AVATARS_URL+'Joan/Joan.png'],
-            "David": [PERFORMS.AVATARS_URL+'David/David.glb', PERFORMS.AVATARS_URL+'David/David.json', 0, PERFORMS.AVATARS_URL+'David/David.png'],
-            "Alex": [PERFORMS.AVATARS_URL+'Alex/Alex.glb', PERFORMS.AVATARS_URL+'Alex/Alex.json', 0, PERFORMS.AVATARS_URL+'Alex/Alex.png'],
-            "Noa": [PERFORMS.AVATARS_URL+'Noa/Noa.glb', PERFORMS.AVATARS_URL+'Noa/Noa.json', 0, PERFORMS.AVATARS_URL+'Noa/Noa.png'],
-            // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
-        };
-
+        this.avatarOptions = performs.avatars;
         // take canvas from dom, detach from dom, attach to lexgui 
         //this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.mainArea;
@@ -78,6 +64,7 @@ class GUI {
         this.glossInputData = { openButton: null, dialog: null, textArea: null,  glosses: "" };
 
         const [canvasArea, panelArea] = this.mainArea.split({type:"horizontal", sizes: ["88%", "12%"], minimizable: true});
+        this.canvasArea = canvasArea;
         //canvasArea.attach( this.performs.renderer.domElement );
         canvasArea.onresize = (bounding) => this.resize(bounding.width, bounding.height);
         //canvasArea.root.appendChild(this.performs.renderer.domElement);
@@ -768,42 +755,11 @@ class GUI {
                 class: "larger",
                 state: false,
                 callback: (b) => {
-                    this.controlsActive = !this.controlsActive;   
-                    if(!this.controlsActive) {
-                        area.panels[0].root.classList.add("hide");
+                    if( !this.controlsActive ) {
+                        this.showControls();
                     }
                     else {
-                        area.panels[0].root.classList.remove("hide");
-                    }
-
-                    let el = document.getElementById('overlay-controls');
-                    for(let i = 1; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
-                    }
-
-                    el = document.getElementById('overlay-playbuttons');
-                    for(let i = 0; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
-                    }
-
-                    el = document.getElementById('overlay-buttons');
-                    for(let i = 0; i < el.children.length; i++) {
-                        if(!this.controlsActive) {
-                            el.children[i].classList.add("hide");
-                        }
-                        else {
-                            el.children[i].classList.remove("hide");
-                        }
+                        this.hideControls();
                     }
                 }
             },
@@ -2215,6 +2171,48 @@ class GUI {
         return result;
     }
 
+    showControls() {
+        this.controlsActive = true;
+        this.canvasArea.panels[0].root.classList.remove("hide");
+        
+        const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
+        if( controlsBtn.options.icon == "Eye" ) {
+            controlsBtn.swap(true);
+        }
+
+        controlsBtn.root.firstChild.title = "Hide controls";
+        let el = document.getElementById('overlay-controls');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.remove("hide");
+        }
+
+        el = document.getElementById('overlay-buttons');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.remove("hide");
+        }
+    }
+
+    hideControls() {
+        this.controlsActive = false;
+        const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
+        if( controlsBtn.options.icon == "EyeOff" ) {
+            controlsBtn.swap(true);
+        }
+        controlsBtn.root.firstChild.title = "Show controls";
+
+        this.canvasArea.panels[0].root.classList.add("hide");
+
+        let el = document.getElementById('overlay-controls');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.add("hide");
+        }
+
+        el = document.getElementById('overlay-buttons');
+        for(let i = 1; i < el.children.length; i++) {
+            el.children[i].classList.add("hide");
+        }
+    }
+
     showCaptureModal(capture) {
 
         if(!capture) {
@@ -2311,7 +2309,7 @@ class GUI {
             light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
             lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
             restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: this.performs.cameraRestricted ?? false},
-            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.showControls},
+            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.controlsActive},
             autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
         };
 
@@ -15993,7 +15991,7 @@ class Performs {
         
         this.isAppReady = false;
         this.pendingMessageReceived = null;
-        this.showControls = true;
+        this.controlsActive = true;
 
         this.sceneColor = "#46c219";
         this.background = PERFORMS.Backgrounds.OPEN;
@@ -16007,6 +16005,23 @@ class Performs {
         this._atelier = null;
 
         this.raycaster = new THREE.Raycaster();
+
+        this.avatars = {
+            "Eva": [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.png'],
+            "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json', 0, PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.png'],
+            "Victor": [PERFORMS.AVATARS_URL+'Victor/Victor.glb', PERFORMS.AVATARS_URL+'Victor/Victor.json', 0, PERFORMS.AVATARS_URL+'Victor/Victor.png'],
+            "Sara": [PERFORMS.AVATARS_URL+'Sara/Sara.glb', PERFORMS.AVATARS_URL+'Sara/Sara.json', 0, PERFORMS.AVATARS_URL+'Sara/Sara.png'],
+            "Nia": [PERFORMS.AVATARS_URL+'Nia/Nia.glb', PERFORMS.AVATARS_URL+'Nia/Nia.json', 0, PERFORMS.AVATARS_URL+'Nia/Nia.png'],
+            "Joan": [PERFORMS.AVATARS_URL+'Joan/Joan.glb', PERFORMS.AVATARS_URL+'Joan/Joan.json', 0, PERFORMS.AVATARS_URL+'Joan/Joan.png'],
+            "David": [PERFORMS.AVATARS_URL+'David/David.glb', PERFORMS.AVATARS_URL+'David/David.json', 0, PERFORMS.AVATARS_URL+'David/David.png'],
+            "Alex": [PERFORMS.AVATARS_URL+'Alex/Alex.glb', PERFORMS.AVATARS_URL+'Alex/Alex.json', 0, PERFORMS.AVATARS_URL+'Alex/Alex.png'],
+            "Noa": [PERFORMS.AVATARS_URL+'Noa/Noa.glb', PERFORMS.AVATARS_URL+'Noa/Noa.json', 0, PERFORMS.AVATARS_URL+'Noa/Noa.png'],
+            "Witch": [PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.glb', PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.json', 0, PERFORMS.AVATARS_URL+'Eva_Witch/Eva_Witch.png'],
+            "Kevin": [PERFORMS.AVATARS_URL+'Kevin/Kevin.glb', PERFORMS.AVATARS_URL+'Kevin/Kevin.json', 0, PERFORMS.AVATARS_URL+'Kevin/Kevin.png'],
+            "Ada": [PERFORMS.AVATARS_URL+'Ada/Ada.glb', PERFORMS.AVATARS_URL+'Ada/Ada.json', 0, PERFORMS.AVATARS_URL+'Ada/Ada.png'],
+            // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
+        };
+
     }
 
     setSpeed( value ){ 
@@ -16268,6 +16283,9 @@ class Performs {
                 );
             }
             else if(settings.scripts) {
+                if(typeof(settings.scripts) == 'string') {
+                    settings.scripts = JSON.parse(settings.scripts);
+                }
                 this.scriptApp.processMessageFiles(settings.scripts).then(
                     (results) => {
                         this.scriptApp.onMessage(results);
@@ -16355,13 +16373,26 @@ class Performs {
         if(settings.avatar) {
             let avatar = settings.avatar;
             const path = avatar.split(".");
-            let filename = path[path.length-2];
-            filename = filename.split("/");
-            filename = filename.pop();
-            
+            let filename = "";
+            let thumbnail = null;
+
+            if( path.length > 1 ) {
+                filename = path[path.length-2];
+                filename = filename.split("/");
+                filename = filename.pop();
+                
+                // avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
+                // modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
+            }
+            else if( this.avatars[path] ) {
+                filename = path;
+                avatar = this.avatars[path][0];
+                settings.config = settings.config || this.avatars[path][1];
+                thumbnail = this.avatars[path][3];
+            }
+
             if(!this.currentCharacter || this.currentCharacter && this.currentCharacter.model.name != filename) {
                 loadConfig = false;
-                let thumbnail = null;
                 if( avatar.includes('models.readyplayer.me') ) {
                     avatar+= '?pose=T&morphTargets=ARKit&lod=1';
                     thumbnail =  "https://models.readyplayer.me/" + filename + ".png?background=68,68,68";
@@ -16380,7 +16411,6 @@ class Performs {
                     }
                 } );
             }
-            
         }
         if(loadConfig) {
             innerAvatarSettings(settings);
@@ -16416,7 +16446,7 @@ class Performs {
         }
 
         if(settings.controls != undefined) {
-            this.showControls = !(settings.controls === "false" || settings.controls === false);
+            this.controlsActive = !(settings.controls === "false" || settings.controls === false);
         }
 
         // Default background
@@ -16617,13 +16647,21 @@ class Performs {
         if(options.avatar) {
             let avatar = options.avatar;
             const path = avatar.split(".");
-            let filename = path[path.length-2];
-            filename = filename.split("/");
-            filename = filename.pop();
-            
-            avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
-
-            modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
+            let filename = "";
+            if( path.length > 1 ) {
+                filename = path[path.length-2];
+                filename = filename.split("/");
+                filename = filename.pop();
+                
+                avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
+                modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
+            }
+            else if( this.avatars[path] ) {
+                modelToLoad = this.avatars[path];
+            }
+        }
+        else {
+            options.avatar = "Eva";
         }
 
         if(options.rotation) {
@@ -16632,42 +16670,38 @@ class Performs {
             modelToLoad[2].fromArray(rotation);
         }
         
-        if( PERFORMS.GUI && this.showControls ) {
+        if( PERFORMS.GUI ) {
             this.gui = new PERFORMS.GUI( this );
         }
         this._onLoading( "Loading avatar...");
         // Load default avatar
-        this.loadAvatar(modelToLoad[0], modelToLoad[1], modelToLoad[2], modelToLoad[3], () => {
-            this.changeAvatar( modelToLoad[3] );
-          
-            this.setConfiguration(options, ( err ) => {
-                // Create the GUI only if the class exists or the showControls flag is true
-                if ( this.gui) {
-                    if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                        const name = modelToLoad[3];
-                        modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
-                        this.gui.avatarOptions[name] = modelToLoad;
-                        this.gui.refresh();
-                    }
+        this.setConfiguration(options, ( err ) => {
+            // Create the GUI only if the class exists or the controlsActive flag is true
+            if ( this.gui ) {
+                if(!this.gui.avatarOptions[modelToLoad[3]]) {
+                    const name = modelToLoad[3];
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
+                    this.gui.avatarOptions[name] = modelToLoad;
+                    this.gui.refresh();
                 }
-                else {
-                    window.document.body.appendChild(this.renderer.domElement);
+                if( !this.controlsActive ) {
+                    this.gui.hideControls();
                 }
-                this._onLoadingEnded();
-                
-                this._animate();
-                this.isAppReady = true;
-                            
-                if(this.pendingMessageReceived) {
-                    this._onMessage( this.pendingMessageReceived );
-                    this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
-                }
-            });
-        }, (err) => {
-                this._onLoadingEnded();
-            alert("There was an error loading the avatar", "Avatar not loaded");
-        } );
-
+            }
+            else {
+                window.document.body.appendChild(this.renderer.domElement);
+            }
+            this._onLoadingEnded();
+            
+            this._animate();
+            this.isAppReady = true;
+                        
+            if(this.pendingMessageReceived) {
+                this._onMessage( this.pendingMessageReceived );
+                this.pendingMessageReceived = null; // although onMessage is async, the variable this.pendingMessageReceived is not used. So it is safe to delete
+            }
+        });
+        
         // Create event listeners
         window.addEventListener( "message", this._onMessage.bind(this) );
         window.addEventListener( 'resize', this._onWindowResize.bind(this) );
