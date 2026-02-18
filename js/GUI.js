@@ -126,6 +126,7 @@ class GUI {
     }
 
     setTransparentBackground() {
+        document.body.parentElement.classList.add("transparent");
         document.body.classList.add("transparent");
         LX.mainArea.root.parentElement.classList.add("transparent");
         LX.mainArea.root.classList.add("transparent");
@@ -136,6 +137,7 @@ class GUI {
     }
 
     restoreColorBackground() {
+        document.body.parentElement.classList.remove("transparent");
         document.body.classList.remove("transparent");
         LX.mainArea.root.parentElement.classList.remove("transparent");
         LX.mainArea.root.classList.remove("transparent");

@@ -238,6 +238,58 @@
     background-color: #BB86FC;
 }
 
+@media (max-height: 300px) {
+	.lexoverlaybuttons .lexcomponent.larger button:hover svg {
+		width: 1.2rem!important;
+		height: 1.2rem!important;
+	}
+	.lexoverlaybuttons .lexcomponent button {
+		border-radius: 80px!important;
+		height: auto!important;
+		--button-color: #3131323f;
+	}
+
+	.lexoverlaybuttons .lexcomponent.larger button {
+
+		width: 37px!important;
+		height: 37px!important;	
+		max-height: 80px!important;
+		max-width: 80px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.larger button svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.no-padding{
+		padding: 5px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large {
+		margin: 0 10px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large button {
+		width: 35px!important;
+		height: 35px!important;
+		max-height: 80px!important;
+		max-width: 80px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large button svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.lexoverlaybuttons .lexcomponent.large button:hover svg {
+		width: 1.4rem;
+		height: 1.4rem;
+	}
+
+	.lexoverlaybuttons .lexcomponent.relative.left {    
+		margin-right: 50px;
+	}
+}
+
 /* GUIDE */ 
 
 .guide-modal {

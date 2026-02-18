@@ -354,7 +354,12 @@ class Performs {
             }
             else if(settings.scripts) {
                 if(typeof(settings.scripts) == 'string') {
-                    settings.scripts = JSON.parse(settings.scripts);
+                    try {
+                        // direct parse
+                        settings.scripts = JSON.parse(settings.scripts);
+                    } catch (e) {
+                        console.warn(e);
+                    }
                 }
                 this.scriptApp.processMessageFiles(settings.scripts).then(
                     (results) => {
