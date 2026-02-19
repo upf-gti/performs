@@ -479,11 +479,12 @@ class Performs {
                 // avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
                 // modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
             }
-            else if( this.avatars[path] ) {
-                filename = path;
-                avatar = this.avatars[path][0];
-                settings.config = settings.config || this.avatars[path][1];
-                thumbnail = this.avatars[path][3];
+            else if( this.avatars[path[0]] ) {
+
+                filename = path[0];
+                avatar = this.avatars[filename][0];
+                settings.config = settings.config || this.avatars[filename][1];
+                thumbnail = this.avatars[filename][3];
             }
 
             if(!this.currentCharacter || this.currentCharacter && this.currentCharacter.model.name != filename) {
@@ -751,7 +752,7 @@ class Performs {
             }
         }
 
-        let modelToLoad = [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
+        let modelToLoad = {};//[PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
         const defaultAvatar = window.localStorage.getItem("avatar") || "Eva";
         // Default avatar & config file
         if(options.avatar) {
@@ -764,10 +765,11 @@ class Performs {
                 filename = filename.pop();
                 
                 avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
-                modelToLoad = [ avatar, options.config, new THREE.Quaternion(), filename];          
+                modelToLoad = [ avatar, options.config, new THREE.Quaternion(), null, filename];          
             }
-            else if( this.avatars[path] ) {
+            else if( path.length == 1 && this.avatars[path] ) {
                 modelToLoad = this.avatars[path];
+                modelToLoad.push(path[0]);
             }
             else {                
                 options.avatar = defaultAvatar;
@@ -791,8 +793,8 @@ class Performs {
         this.setConfiguration(options, ( err ) => {
             // Create the GUI only if the class exists or the controlsActive flag is true
             if ( this.gui ) {
-                if(!this.gui.avatarOptions[modelToLoad[3]]) {
-                    const name = modelToLoad[3];
+                if(!this.gui.avatarOptions[modelToLoad[4]]) {
+                    const name = modelToLoad.pop();
                     modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
                     this.gui.avatarOptions[name] = modelToLoad;
                     this.gui.refresh();

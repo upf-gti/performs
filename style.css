@@ -26,7 +26,7 @@
 	background-color: #111;
 	opacity: 1;
 	z-index: 1000;
-	font-size: var(--global-font-size);;
+	/* font-size: var(--global-font-size);; */
 }
 
 
@@ -58,12 +58,12 @@
 .floating-button {
 	/* border-radius: 80px !important;
     width: 23% !important;
-    background-color: var(--global-selected)!important;
+    background-color: var(--accent)!important;
 	justify-content: center; */
 
 	border-radius: 80px !important;
 	width: 30px !important;
-    background-color: var(--global-selected) !important;
+    background-color: var(--accent) !important;
     padding: var(--global-padding-sm) 0.1875rem !important;
     min-width: 0% !important;
 }
@@ -119,7 +119,7 @@
     border-radius: 49px;
     justify-content: center;
     align-items: center;
-    border: 4px solid var(--global-branch-darker);
+    border: 4px solid var(--secondary);
 	background-color: rgb(42, 42, 42)!important;
 	--button-color: rgb(42, 42, 42)!important;
 }
@@ -127,7 +127,7 @@
 	border: 4px solid whitesmoke
 }
 .roundedbtn:hover{
-	border: 4px solid var(--global-selected-light);;
+	border: 4px solid var(--accent-light);;
 }
 .roundedbtn img{
 	width: 120px;
@@ -143,16 +143,16 @@
     justify-content: start;
     gap: 0px;
     z-index: 95;
-    --button-color: var(--global-color-secondary);
+    --button-color: var(--accent);
     margin: 8px;
     padding: 0.25em;
     border-radius: 12px;
 }
 .lexoverlaybuttonscontainer .lexcomponent button:hover {
-	--button-color: #313132cf!important;
+	/* --button-color: #313132cf!important; */
 }
 .lexoverlaybuttonscontainer .lexcomponent button.selected {
-	--button-color: #313132cf!important;
+	/* --button-color: #313132cf!important; */
 }
 .lexoverlaybuttons .lexcomponent.larger button:hover svg {
 	width: 1.4rem!important;
@@ -211,7 +211,7 @@
 
 .lexoverlaybuttons .lexcomponent.relative button a {
     line-height: 19px;
-    font-size: var(--global-font-size);
+    /* font-size: var(--global-font-size); */
 }
 
 .lexoverlaybuttons .lexcomponent.relative.left {    
@@ -219,8 +219,8 @@
 }
 
 .lexbutton.selected {
-    --button-color: var(--global-selected);
-    outline: 1px solid var(--global-color-terciary);
+    --button-color: var(--primary);
+    /* outline: 1px solid var(--primary); */
     color: #DDD;
 }
 .lexoverlaybuttons .lexcomponent {
@@ -376,7 +376,7 @@
 }
 
 .iframe-text textarea{
-	color: var(--global-text-secondary)!important;
+	color: var(--color-secondary)!important;
 }
 
 .close-button {
@@ -412,4 +412,8 @@
 
 .transparent {
 	background: transparent!important;
+}
+
+.hidden {
+	display: none!important;
 }

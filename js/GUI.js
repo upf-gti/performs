@@ -1,17 +1,18 @@
 import * as THREE from "three"
 import { PERFORMS } from "./Core.js";
 import { LX } from 'lexgui';
-import 'lexgui/extensions/codeeditor.js';
+import 'lexgui/extensions/CodeEditor.js';
 
 LX.mainArea = await LX.init();
 
-LX.registerIcon("CircleRecording", 
+LX.registerIcon("CircleRecording",
     '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640"><!--!Font Awesome Free v7.0.1 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free Copyright 2025 Fonticons, Inc.--><path d="M64 320C64 178.6 178.6 64 320 64C461.4 64 576 178.6 576 320C576 461.4 461.4 576 320 576C178.6 576 64 461.4 64 320z"/></svg>'
 );
 
-LX.setThemeColor("global-selected", "#6200EA");
-LX.setThemeColor("global-selected-light", "#bb86fc");
-LX.setThemeColor("global-selected-dark", "#a100ff");
+LX.setThemeColor( 'purple' );
+// LX.setThemeColor("global-selected", "#6200EA");
+// LX.setThemeColor("global-selected-light", "#bb86fc");
+// LX.setThemeColor("global-selected-dark", "#a100ff");
 
 class GUI {
 
@@ -29,7 +30,7 @@ class GUI {
         this.randomSignAmount = 0;
         // available model models paths - [model, config, rotation, thumbnail]
         this.avatarOptions = performs.avatars;
-        // take canvas from dom, detach from dom, attach to lexgui 
+        // take canvas from dom, detach from dom, attach to lexgui
         //this.performs.renderer.domElement.remove(); // removes from dom
         this.mainArea = LX.mainArea;
         this.mainArea.root.ondrop = this.onDropFiles.bind(this);
@@ -60,13 +61,13 @@ class GUI {
             let text;
             text = window.sessionStorage.getItem( "msg" );
             this.performs.scriptApp.msg = text ? JSON.parse( text ) : null;
-            text = window.sessionStorage.getItem( "bmlInput" ); 
+            text = window.sessionStorage.getItem( "bmlInput" );
             this.bmlInputData.prevInstanceText = text ? text : "";
-            text = window.sessionStorage.getItem( "sigmlInput" ); 
+            text = window.sessionStorage.getItem( "sigmlInput" );
             this.sigmlInputData.prevInstanceText = text ? text : "";
-            text = window.sessionStorage.getItem( "glossInput" ); 
+            text = window.sessionStorage.getItem( "glossInput" );
             this.glossInputData.glosses = text ? text : "";
-            
+
             window.addEventListener("beforeunload", (event) => {
                 // event.returnValue = "\\o/";
                 window.sessionStorage.setItem( "msg", JSON.stringify(this.performs.scriptApp.msg) );
@@ -97,7 +98,7 @@ class GUI {
                             return;
                         }
                         this.performs.scriptApp.replay();
-                    }                    
+                    }
                 }
                 else if(event.key == 'Escape') {
                     if(this.activePanelType) {
@@ -112,7 +113,7 @@ class GUI {
         this.playing = false;
         this.captureEnabled = false;
         this.controlsActive = true;
-        
+
         this.activePanelType = GUI.ACTIVEPANEL_NONE;
         this.prevActivePanelType = GUI.ACTIVEPANEL_NONE;
         this.setActivePanel( GUI.ACTIVEPANEL_NONE );
@@ -148,7 +149,7 @@ class GUI {
     }
 
     resize(width, height) {
-        
+
         const aspect = width / height;
         for(let i = 0; i < this.performs.cameras.length; i++) {
             this.performs.cameras[i].aspect = aspect;
@@ -181,13 +182,13 @@ class GUI {
         if (type){
             if( this.activePanelType == GUI.ACTIVEPANEL_NONE ){ // only move split if it was closed before
               this.mainArea._moveSplit(0.3 * window.innerWidth);
-            }          
+            }
             this.panel.parent.show();
         }else{
             this.mainArea._moveSplit(-window.innerWidth);
             this.panel.parent.hide();
         }
-      
+
         if ( type != this.activePanelType ){
             this.prevActivePanelType = this.activePanelType;
         }
@@ -196,65 +197,110 @@ class GUI {
 
     createSettingsPanel(force = false) {
         const p = this.panel;
-        
-        if(p.getBranch("Animation")) {
+        let branch = p.getBranch("Animation");
+        if( branch ) {
             this.branchesOpened["Animation"] = !p.getBranch("Animation").content.parentElement.classList.contains("closed");
         }
-        
+
         p.clear();
-        p.branch("Animation", {icon: "ASL", closed: !this.branchesOpened["Animation"]});
-        
-        p.addText(null,"Animation mode options", null, {disabled: true, inputClass:"nobg"});
-        p.sameLine();
+        branch = p.branch("Animation", {icon: "ASL", closed: !this.branchesOpened["Animation"]});
 
-        let btn = p.addButton(null, "Script animation", (v, e) => {
-            if (this.performs.currentCharacter.config) {
-                this.performs.changeMode(PERFORMS.Modes.SCRIPT);
-                if(this.performs.scriptApp.currentIdle) {
-                    this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
-                }
-            }
-            else {
-                this.performs.changeMode(-1);   
-            }
-            this.createSettingsPanel();
-            this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
-        }, {
-            icon: "Code2", 
+        p.addLabel("Animation mode options", {disabled: true, inputClass:"nobg"});
+
+        const tabsArea = new LX.Area({height: "fit-content"});
+        const tabs = tabsArea.addTabs({fit:true, sizes: [ "auto", "auto" ]});
+        const scriptArea = new LX.Area({id: 'script'});
+        let scriptPanel = scriptArea.addPanel({className: "h-fit"});
+        this.createBMLPanel(scriptPanel);
+
+        const keyframeArea = new LX.Area({id: 'keyframe'});
+        let keyframePanel = keyframeArea.addPanel();
+        this.createKeyframePanel(keyframePanel);
+
+        tabs.add( "Script animation", scriptArea, {
+            selected: this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1,
+            icon: "Code2",
             width: "50%",
-            selectable: true, 
-            selected: this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1
-        } );
+            selectable: true,
+            onSelect: (e,v) => {
+                if (this.performs.currentCharacter.config) {
+                    this.performs.changeMode(PERFORMS.Modes.SCRIPT);
+                    if(this.performs.scriptApp.currentIdle) {
+                        this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
+                    }
+                }
+                else {
+                    this.performs.changeMode(-1);
+                }
+               
+                this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
+            }
+        }  );
 
-        btn = p.addButton(null, "Keyframing animation",  (v, e) => {
-            this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
-            this.createSettingsPanel(); 
-            this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
-        }, {
+        tabs.add( "Keyframe animation", keyframeArea, {
+            selected: this.performs.mode == PERFORMS.Modes.KEYFRAME,
             icon: "Film",
             width: "50%",
             selectable: true,
-            selected: this.performs.mode == PERFORMS.Modes.KEYFRAME
-        } );
-        
-        p.endLine();
-        p.sameLine();
-     
-        p.addText(null, "Script animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
-        p.addText(null, "Clip animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
-
-        p.endLine();
-
-        p.addSeparator();
-
-        if(!force) {
-            if(this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1) {
-                this.createBMLPanel(p, this.createSettingsPanel.bind(this));
+            onSelect: (e,v) => {
+                this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
+                
+                this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
             }
-            else {
-                this.createKeyframePanel(p, this.createSettingsPanel.bind(this));
-            }
-        }
+    }  );
+    
+    branch.content.appendChild(tabsArea.root);
+
+        // p.sameLine();
+
+        // let btn = p.addButton(null, "Script animation", (v, e) => {
+        //     if (this.performs.currentCharacter.config) {
+        //         this.performs.changeMode(PERFORMS.Modes.SCRIPT);
+        //         if(this.performs.scriptApp.currentIdle) {
+        //             this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
+        //         }
+        //     }
+        //     else {
+        //         this.performs.changeMode(-1);
+        //     }
+        //     this.createSettingsPanel();
+        //     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
+        // }, {
+        //     icon: "Code2",
+        //     width: "50%",
+        //     selectable: true,
+        //     selected: this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1
+        // } );
+
+        // btn = p.addButton(null, "Keyframing animation",  (v, e) => {
+        //     this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
+        //     this.createSettingsPanel();
+        //     this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
+        // }, {
+        //     icon: "Film",
+        //     width: "50%",
+        //     selectable: true,
+        //     selected: this.performs.mode == PERFORMS.Modes.KEYFRAME
+        // } );
+
+        // p.endLine();
+        // p.sameLine();
+
+        // p.addText(null, "Script animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
+        // p.addText(null, "Clip animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
+
+        // p.endLine();
+
+        // p.addSeparator();
+
+        // if(!force) {
+        //     if(this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1) {
+        //         this.createBMLPanel(p, this.createSettingsPanel.bind(this));
+        //     }
+        //     else {
+        //         this.createKeyframePanel(p, this.createSettingsPanel.bind(this));
+        //     }
+        // }
 
         p.branch( "Transformations", { icon: "Move", closed: !this.branchesOpened["Transformations"]} );
 
@@ -271,14 +317,14 @@ class GUI {
         p.addNumber("Scale", model.scale.x, (value, event) => {
             model.scale.set(value, value, value);
             window.localStorage.setItem("scale", value.toString());
-        }, {step:0.01});      
+        }, {step:0.01});
 
         if(p.getBranch("Export")) {
             this.branchesOpened["Export"] = !p.getBranch("Export").content.parentElement.classList.contains("closed");
         }
         p.branch( "Export", { icon: "FileOutput", closed: !this.branchesOpened["Export"]} );
-        
-        if( this.performs.mode == PERFORMS.Modes.KEYFRAME ) {            
+
+        if( this.performs.mode == PERFORMS.Modes.KEYFRAME ) {
             p.addButton(null, "Export avatar", (v) => {
                 this.showExportAvatarDialog();
             })
@@ -288,6 +334,9 @@ class GUI {
         })
     }
 
+    createAnimationBranch() {
+
+    }
     createBackgroundsPanel() {
 
         const p = this.panel;
@@ -305,24 +354,24 @@ class GUI {
         p.addColor("Color", "#" + color.getHexString(), (value, event) => {
             this.performs.setBackPlaneColor(value);
         });
-        
+
         // Open space
         const openBtn = p.addButton("openBtn", "Open space", (value)=> {
             this.performs.setBackground( PERFORMS.Backgrounds.OPEN);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/open-space.png", className: "centered", buttonClass: "roundedbtn", hideName: true}).root;
+        }, {img: "./data/imgs/open-space.png", className: "centered", buttonClass: "roundedbtn secondary", hideName: true}).root;
         if( this.performs.background == PERFORMS.Backgrounds.OPEN ) {
             openBtn.children[0].classList.add('selected');
         }
-        
-        
+
+
         // Studio background
         const studioP = new LX.Panel();
-       
+
         const studioBtn = p.addButton("studioBtn", "Studio", (value)=> {
             this.performs.setBackground( PERFORMS.Backgrounds.STUDIO);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/studio-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true }).root;
+        }, {img: "./data/imgs/studio-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn secondary", hideName: true }).root;
         if( this.performs.background == PERFORMS.Backgrounds.STUDIO ) {
             studioBtn.children[0].classList.add('selected');
             const ebtn = studioP.addButton(null, "Edit properties", (e) => {
@@ -330,18 +379,18 @@ class GUI {
             }, {icon: "PenBox", className: "centered", width: "40px", height: "40px"}).root;
             studioBtn.append(ebtn);
         }
-        
+
         // Photocall background
         const photocallP = new LX.Panel();
-      
+
         const photocallBtn = p.addButton("photocallBtn", "Photocall", (value)=> {
             this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL);
             this.createBackgroundsPanel();
-        }, {img: "./data/imgs/photocall-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn", hideName: true}).root;
+        }, {img: "./data/imgs/photocall-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn secondary", hideName: true}).root;
         if( this.performs.background == PERFORMS.Backgrounds.PHOTOCALL ) {
             photocallBtn.children[0].classList.add('selected');
             const ebtn = photocallP.addButton(null, "Edit properties", (e) => {
-                this.showPhotocallPropertiesDialog( );                
+                this.showPhotocallPropertiesDialog( );
             }, {icon: "PenBox", className: "centered", width: "40px"}).root;
             photocallBtn.append(ebtn);
         }
@@ -354,7 +403,7 @@ class GUI {
             panel.addComboButtons(null, [
                 {
                     value: "From File",
-                    callback: (v, e) => {                            
+                    callback: (v, e) => {
                         formFile = true;
                         panel.components["Image/Video URL"].root.classList.add('hidden');
                         panel.components["File"].root.classList.remove('hidden');
@@ -369,9 +418,9 @@ class GUI {
                     }
                 }
             ], {selected: formFile ? "From File" : "From URL", width: "100%"});
-            
+
             const logoFile = panel.addFile("File", (v, e) => {
-                
+
                 const files = panel.components["File"].root.children[1].files;
                 if(!files.length) {
                     return;
@@ -379,7 +428,7 @@ class GUI {
                 const path = files[0].name.split(".");
                 const filename = path[0];
                 const extension = path[1].toLowerCase();
-                if (extension == "png" || extension == "jpeg" || extension == "jpg" || extension == "mp4") { 
+                if (extension == "png" || extension == "jpeg" || extension == "jpg" || extension == "mp4") {
                      const imgCallback = ( event ) => {
 
                         if(extension == "mp4") {
@@ -393,8 +442,8 @@ class GUI {
                         this.performs.setBackground( PERFORMS.Backgrounds.STUDIO, this.performs.backgroundTexture);
                     }
                     if( extension != "mp4") {
-                        const img = new Image();            
-                        img.onload = imgCallback;            
+                        const img = new Image();
+                        img.onload = imgCallback;
                         img.src = v;
                         this.performs.videoBackground = null;
                     }
@@ -420,15 +469,15 @@ class GUI {
                 filename = filename.pop();
                 let extension = path[path.length-1];
                 extension = extension.split("?")[0];
-                
+
                 const imgCallback = ( event ) => {
 
-                    this.performs.backgroundTexture = event.target;        
-                    this.performs.setBackground( PERFORMS.Backgrounds.STUDIO, this.performs.backgroundTexture);            
+                    this.performs.backgroundTexture = event.target;
+                    this.performs.setBackground( PERFORMS.Backgrounds.STUDIO, this.performs.backgroundTexture);
                 }
 
-                const img = new Image();            
-                img.onload = imgCallback;    
+                const img = new Image();
+                img.onload = imgCallback;
                 fetch(v)
                 .then(function (response) {
                     if (response.ok) {
@@ -442,13 +491,13 @@ class GUI {
                 })
                 .catch(function (error) {
                     console.log("Error:" + error.message);
-                });        
+                });
 
             }, {className: "hidden", read: true});
 
             panel.addSelect("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
                 this.performs.setBackgroundSettings(v);
-                this.performs.backgroundSettings = v;               
+                this.performs.backgroundSettings = v;
             } );
 
             panel.addNumber("Scale", this.performs.textureScale, (v) => {
@@ -463,12 +512,12 @@ class GUI {
 
     showPhotocallPropertiesDialog() {
         const dialog = new LX.Dialog("Properties", (panel) => {
-            
+
             let formFile = true;
             panel.addComboButtons(null, [
                 {
                     value: "From File",
-                    callback: (v, e) => {                            
+                    callback: (v, e) => {
                         formFile = true;
                         panel.components["Logo URL"].root.classList.add('hidden');
                         panel.components["File"].root.classList.remove('hidden');
@@ -492,15 +541,15 @@ class GUI {
                 const path = files[0].name.split(".");
                 const filename = path[0];
                 const extension = path[1].toLowerCase();
-                if (extension == "png" || extension == "jpeg" || extension == "jpg") { 
+                if (extension == "png" || extension == "jpeg" || extension == "jpg") {
                      const imgCallback = ( event ) => {
 
-                        this.performs.logo = event.target;        
-                        this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);            
+                        this.performs.logo = event.target;
+                        this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);
                     }
-    
-                    const img = new Image();            
-                    img.onload = imgCallback;            
+
+                    const img = new Image();
+                    img.onload = imgCallback;
                     img.src = v;
 
                 }
@@ -517,15 +566,15 @@ class GUI {
                 filename = filename.pop();
                 let extension = path[path.length-1];
                 extension = extension.split("?")[0];
-                
+
                 const imgCallback = ( event ) => {
 
-                    this.performs.logo = event.target;        
-                    this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);            
+                    this.performs.logo = event.target;
+                    this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL, this.performs.logo);
                 }
 
-                const img = new Image();            
-                img.onload = imgCallback;    
+                const img = new Image();
+                img.onload = imgCallback;
                 fetch(v)
                 .then(function (response) {
                     if (response.ok) {
@@ -539,7 +588,7 @@ class GUI {
                 })
                 .catch(function (error) {
                     console.log("Error:" + error.message);
-                });        
+                });
 
             }, {read: true, className: "hidden"});
 
@@ -555,7 +604,7 @@ class GUI {
 
     createAvatarsPanel() {
         const p = this.panel;
-        
+
         if(p.getBranch("Avatars")) {
             this.branchesOpened["Avatars"] = !p.getBranch("Avatars").content.parentElement.classList.contains("closed");
         }
@@ -565,11 +614,11 @@ class GUI {
 
         p.addButton( "Upload yours", "Upload Avatar", (v) => {
             // uploadAvatar opens avatar upload ui and, when done, calls the callback
-            this.uploadAvatar((avatarName, config) => { 
+            this.uploadAvatar((avatarName, config) => {
                 this.selectAvatar(avatarName);
             });
-        } ,{ nameWidth: "100px", icon: "UploadCloud", width: "140px"} );        
-      
+        } ,{ nameWidth: "100px", icon: "UploadCloud", width: "140px"} );
+
         p.addSeparator();
 
         if ( this.performs.avatarShirt ){
@@ -579,29 +628,85 @@ class GUI {
             });
         }
 
-        for(let avatar in this.avatarOptions) {
-            const btn = p.addButton(null, avatar, (avatarName)=> {
-                this.performs.scriptApp.mood = "Neutral";
-                if(this.performs.scriptApp.ECAcontroller) {
-                    this.performs.scriptApp.ECAcontroller.reset();
-                }
-                this.selectAvatar(avatarName);
-            }, {
-                img: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL,
-                className: "centered flex flex-col items-center",
-                buttonClass: "roundedbtn",
-                title: avatar
-            }).root;
-            
-            if(avatar == this.performs.currentCharacter.model.name) {
-                btn.children[0].classList.add("selected");
-                const panel = new LX.Panel();
+        const _makeProjectOptionItem = ( icon, outerText, id, selected = false ) => {
+            const item = LX.makeContainer( ["100%", "auto"], `flex flex-col gap-3 p-3 items-center text-md rounded-lg hover:bg-accent cursor-pointer ${selected ? "bg-secondary" : ""}`, ``, null );
+            const card = LX.makeContainer( ["200px", "auto"], `flex flex-col py-6 justify-center items-center content-center rounded-lg gap-3 card-button card-color hover:scale`, `
+               <img src="${icon}" height="120px">
+            `, item );
 
-                let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
+            let button = null;
+            if(selected) {
+                button = new LX.Button(null, "Edit Character", (e, v) => {
                     this.createEditAvatarDialog(v);
-                } ,{ icon: "UserRoundPen", width: "40px"} ).root;
-                btn.append(ebtn);
+                } ,{ icon: "UserRoundPen", className: "justify-center", width: "50px", buttonClass: ""} );
             }
+            const flexContainer = LX.makeContainer( ["auto", "auto"], "flex items-center", `<p>${ outerText }</p>`, item );
+            if( selected ) {
+                flexContainer.appendChild(button.root);
+            }
+            item.id = id;
+            
+            card.addEventListener("click", async (e, v) => {
+                if ( item.id != this.performs.currentCharacter.model.name ){
+                   this.performs.scriptApp.mood = "Neutral";
+                    if(this.performs.scriptApp.ECAcontroller) {
+                        this.performs.scriptApp.ECAcontroller.reset();
+                    }
+                    this.selectAvatar(item.id);
+                }
+            });
+
+            return item;
+        };
+        
+        const characterContainer = LX.makeContainer( ["100%", "auto"], "grid gap-2", "" );
+        characterContainer.style.gridTemplateColumns = "repeat(auto-fill, minmax(220px, 1fr))";
+        characterContainer.classList.add("showScrollBar");
+
+        p.root.appendChild(characterContainer);
+
+       
+        for(let avatar in this.avatarOptions) {
+            const isSelected = avatar == this.performs.currentCharacter.model.name;
+            const container = _makeProjectOptionItem(this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL, avatar, avatar, isSelected);
+           
+            characterContainer.appendChild( container );
+
+            if ( isSelected ){
+                if ( container.scrollIntoViewIfNeeded ){
+                    setTimeout(container.scrollIntoViewIfNeeded.bind(container), 1);
+                }
+                //this.characterPanel.selectedCard = container;
+                // const panel = new LX.Panel();
+
+                // let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
+                //     this.createEditAvatarDialog(v);
+                // } ,{ icon: "UserRoundPen", width: "40px"} ).root;
+                // container.append(ebtn);
+            }
+
+            // const btn = p.addButton(null, avatar, (avatarName)=> {
+            //     this.performs.scriptApp.mood = "Neutral";
+            //     if(this.performs.scriptApp.ECAcontroller) {
+            //         this.performs.scriptApp.ECAcontroller.reset();
+            //     }
+            //     this.selectAvatar(avatarName);
+            // }, {
+            //     img: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL,
+            //     className: "centered flex flex-col items-center",
+            //     buttonClass: "roundedbtn",
+            //     title: avatar
+            // }).root;
+
+            // if(avatar == this.performs.currentCharacter.model.name) {
+            //     btn.children[0].classList.add("selected");
+            //     const panel = new LX.Panel();
+
+            //     let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
+            //         this.createEditAvatarDialog(v);
+            //     } ,{ icon: "UserRoundPen", width: "40px"} ).root;
+            //     btn.append(ebtn);
+            // }
         }
     }
 
@@ -617,8 +722,8 @@ class GUI {
                     this.refresh();
                 }
                 this.avatarOptions[name][2] = rotation;
-                
-                const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation ); 
+
+                const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation );
                 this.performs.currentCharacter.model.quaternion.premultiply( modelRotation );
                 if(this.performs.currentCharacter.config && this.performs.currentCharacter.config == config) {
                     return;
@@ -628,15 +733,15 @@ class GUI {
                     this.avatarOptions[name][1] = config._filename;
                     this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
                     this.performs.currentCharacter.skeleton.pose();
-                    this.performs.scriptApp.ECAcontroller.reset();                        
+                    this.performs.scriptApp.ECAcontroller.reset();
                     this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
-                        this.createSettingsPanel();             
+                        this.createSettingsPanel();
                     }
                     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
                 }
 
-            }, 
+            },
             name, modelFilePath: this.avatarOptions[name][0], modelConfigPath: this.avatarOptions[name][1]
         });
     }
@@ -645,7 +750,7 @@ class GUI {
         if(p.getBranch("Recording")) {
             this.branchesOpened["Recording"] = !p.getBranch("Recording").content.parentElement.classList.contains("closed");
         }
-        
+
         p.clear();
         p.branch( "Recording", { icon: "Video", closed: !this.branchesOpened["Recording"]} );
 
@@ -660,7 +765,7 @@ class GUI {
                 }
             }
 
-            cameras.push(camera);                  
+            cameras.push(camera);
         }
 
         p.addComboButtons("View Type", [
@@ -668,7 +773,7 @@ class GUI {
                 value: "Restricted View",
                 icon: "Camera",
                 callback: (v, e) => {
-                    this.performs.changeCameraMode(true); 
+                    this.performs.changeCameraMode(true);
                     this.createCameraPanel();
                 }
             },
@@ -676,16 +781,16 @@ class GUI {
                 value: "Free View",
                 icon: "Move",
                 callback: (v, e) => {
-                    this.performs.changeCameraMode(false); 
+                    this.performs.changeCameraMode(false);
                     this.createCameraPanel();
                 }
             }
         ], {selected: this.performs.cameraRestricted ? "Restricted View" : "Free View" });
 
         p.addSeparator();
-        
+
         p.sameLine();
-        p.addComboButtons("Camera", cameras, {selected: (this.performs.camera + 1).toString(), width: "80%"});    
+        p.addComboButtons("Camera", cameras, {selected: (this.performs.camera + 1).toString(), width: "80%"});
         p.addButton(null, "Reset", (V) => {
             this.performs.controls[this.performs.camera].reset();
 
@@ -707,17 +812,17 @@ class GUI {
             label: "",
             suboptions: (sp)=>{
                 sp.addText(null, "Select cameras to be recorded:", null, {disabled: true, inputClass:"nobg"});
-               
+
                 sp.sameLine();
 
                 for( let i = 0; i < this.performs.cameras.length; ++i){
                     sp.addCheckbox((i+1).toString(), this.performs.cameras[i].record, (value, event) => {
                         this.performs.cameras[i].record = value;
                     },{className:"contrast", label: ""});
-                    
+
                 }
                 sp.endLine();
-    
+
                 sp.addTitle("Automatic exportation")
                 sp.addCheckbox("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
                     this.performs.animationRecorder.exportZip = v;
@@ -726,21 +831,21 @@ class GUI {
                     className: "contrast",
                     label: "",
                     title:"Pack all videos into a single ZIP or download each file individually"});
-                    
-            }            
+
+            }
         });
     }
 
     createLightsPanel() {
         const p = this.panel;
-        
+
         p.clear();
         p.branch( "Lights", { icon: "Lightbulb"} );
 
         p.addColor("Color", "#" + this.performs.dirLight.color.getHexString(), (value, event) => {
             this.performs.dirLight.color.set(value);
         });
-        
+
         const position = [this.performs.dirLight.position.x , this.performs.dirLight.position.y, this.performs.dirLight.position.z];
         p.addVector3("Position", position, (v) => {
             this.performs.dirLight.position.set(v[0], v[1], v[2]);
@@ -809,7 +914,7 @@ class GUI {
                         this.overlayButtonsMenu.buttons[b].root.children[0].classList.add("selected");
                     }
                 }
-            },            
+            },
             {
                 name: "Camera",
                 selectable: false,
@@ -846,7 +951,7 @@ class GUI {
                 icon: "CircleQuestionMark",
                 class: "larger",
                 callback: (b) => {
-                    this.showGuide();     
+                    this.showGuide();
                 }
             },
         ];
@@ -874,7 +979,7 @@ class GUI {
                 }
             }
         ];
-        let playButtons = [ 
+        let playButtons = [
             {
                 name: "Record video",
                 icon: "CircleRecording@solid",
@@ -891,7 +996,7 @@ class GUI {
                         setTimeout(() => {
                             this.performs.animationRecorder.manageCapture();
                             this.createCameraPanel();
-                            
+
                             if(this.performs.animationRecorder.isRecording) {
                                 recordBtn.classList.remove("floating-button");
                                 recordBtn.classList.add("floating-button-playing");
@@ -902,7 +1007,7 @@ class GUI {
                             }
                         }, 100);
                     }
-                    else { 
+                    else {
                         this.showRecordingDialog(() => {
                             this.performs.animationRecorder.manageMultipleCapture(this.performs.keyframeApp);
                             this.createCameraPanel();
@@ -916,7 +1021,7 @@ class GUI {
                     else {
                         recordBtn.classList.remove("floating-button-playing");
                         recordBtn.classList.add("floating-button");
-                    }                    
+                    }
                 }
             },
             {
@@ -960,20 +1065,20 @@ class GUI {
                     }
                     this.changePlayButtons(false);
                 }
-            },            
+            },
         ];
         this.overlayButtonsPlay = area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
         this.overlayButtonsReset = area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
         area.panels[1].root.style.visibility = "hidden";
         area.panels[2].root.style.visibility = "hidden";
-        
-        
+
+
         this.overlayButtonsPlay.buttons["Stop"].root.classList.add("hidden");
-        
+
         this.overlayButtonsPlay.buttons["Record video"].root.classList.add("hidden");
         this.overlayButtonsPlay.buttons["Record video"].root.style.justifyContent = "right";
         this.overlayButtonsPlay.buttons["Record video"].root.children[0].classList.add("floating-button");
-        
+
         this.overlayButtonsReset.buttons["Reset pose"].root.children[0].classList.add("floating-button");
         if(this.performs.mode != PERFORMS.Modes.SCRIPT) {
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
@@ -994,11 +1099,11 @@ class GUI {
     onChangeMode(mode) {
         if(mode == PERFORMS.Modes.SCRIPT) {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: this.performs.scriptApp.moodIntensity, start: 0.0, shift: true } ] };
-            
+
             this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
             this.changePlayButtons(false);
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
-            
+
             if(this.performs.keyframeApp.trajectoriesActive) {
                 this.performs.keyframeApp.trajectoriesHelper.hide();
             }
@@ -1017,17 +1122,18 @@ class GUI {
     }
 
     createBMLPanel(panel, refresh) {
-        
+
         this.bmlGui = panel;
+        this.bmlGui.clear();
 
         if (!this.performs.currentCharacter.config) {
             this.bmlGui.addText(null, "To use this mode, the current character's configuration file is needed.", null, {disabled: true, inputClass: "nobg"});
-            this.bmlGui.addButton(null, "Edit avatar", () => { 
-                this.createEditAvatarDialog();                
-            }, {icon: "Edit"})  
+            this.bmlGui.addButton(null, "Edit avatar", () => {
+                this.createEditAvatarDialog();
+            }, {icon: "Edit"})
             return;
         }
-                
+
         this.bmlGui.addNumber("Speed", this.performs.scriptApp.speed, (value, event) => {
             // this.performs.speed = Math.pow( Math.E, (value - 1) );
             this.performs.setSpeed(value);
@@ -1037,12 +1143,12 @@ class GUI {
         this.bmlGui.addButton( null, "Reset pose", (value, event) =>{
             this.performs.scriptApp.mood = "Neutral";
             this.performs.scriptApp.ECAcontroller.reset();
-            refresh();
+            this.createBMLPanel(panel);
         }, {icon: "PersonStanding", width: "30%", buttonclass:"floating-button", title: "Reset pose"});
 
         this.bmlGui.addButton( null, "Replay", (value, event) =>{
-            this.performs.scriptApp.replay();         
-            this.changePlayButtons(false);    
+            this.performs.scriptApp.replay();
+            this.changePlayButtons(false);
         }, {icon: "Play@solid", width:"70%"});
 
         this.bmlGui.endLine();
@@ -1059,22 +1165,26 @@ class GUI {
                 }
 
                 let htmlStr = "Write in the text area below the bml instructions to move the avatar from the web application. A sample of BML instructions can be tested through the helper tabs in the right panel.";
-                p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-    
+                // p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                LX.makeElement('div', 'p-2', htmlStr, p.root);
+
                 p.addButton(null, "Click here to see BML instructions and attributes", () => {
                     window.open("https://github.com/upf-gti/performs/blob/main/docs/InstructionsBML.md");
-                });
-    
+                }, {buttonClass: "warning outline"});
+
                 htmlStr = "Note: In 'speech', all text between '%' is treated as actual words. An automatic translation from words (dutch) to phonemes (arpabet) is performed.";
-                htmlStr += "\n\nNote: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
                 p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-    
-                htmlStr = 'An example: [{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }]';
+
+                htmlStr = "Note: Each instruction is inside '{}'. Each instruction is separated by a coma ',' except que last one.";
                 p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
-    
+
+                htmlStr = 'An example: \n[{ "type":"speech", "start": 0, "text": "%hallo%.", "sentT": 1, "sentInt": 0.5 }, { "type": "gesture", "start": 0, "attackPeak": 0.5, "relax": 1, "end": 2, "locationBodyArm": "shoulder", "lrSym": true, "hand": "both", "distance": 0.1 }]';
+                // p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                LX.makeElement('div', 'p-2', htmlStr, p.root);
+
                 const area = new LX.Area({ height: "59%" });
                 p.attach( area.root );
-    
+
                 let editor = new LX.CodeEditor(area, {
                     highlight: 'JSON',
                     allowAddScripts: false,
@@ -1086,12 +1196,12 @@ class GUI {
                                     let obj = null;
                                     try{ obj = JSON.parse(text); }
                                     catch(e){ obj = null; }
-                
+
                                     if( !obj ){
                                         try{ obj = JSON.parse("["+text+"]"); }
                                         catch(e){ obj = null; }
                                     }
-                
+
                                     if ( !obj ){
                                         LX.popup( "Check your code for errors. Common errors include: " +
                                             "\n- Keys must be quoted: {\"intensity\" : 0.2}" +
@@ -1117,16 +1227,16 @@ class GUI {
                         type: "behaviours",
                         data: this._stringToBML( this.bmlInputData.codeObj.getText() )
                     };
-                    
+
                     if ( !msg.data.length ){ return; }
 
                     this.performs.scriptApp.processMessageRawBlocks( [{type: "bml", data: msg}] );
-                });
+                }, {buttonClass: "primary"});
 
                 p.addButton(null, "Edit on Animics", () => {
 
                     const sendData = () => {
-                        if(!this.animics.app.global) 
+                        if(!this.animics.app.global)
                         {
                             setTimeout(sendData, 1000)
                         }
@@ -1142,17 +1252,17 @@ class GUI {
                                 type: "behaviours",
                                 data: this._stringToBML( this.bmlInputData.codeObj.getText() )
                             };
-                            
+
                             //Send to ANIMICS
                             if(this.animics.app.global.app.editor.activeTimeline)
                                 this.animics.app.global.app.editor.clearAllTracks(false);
                             this.animics.app.global.app.editor.gui.loadBMLClip({behaviours: msg.data});
-                            
+
                         }
                     }
                     if(!this.animics || this.animics.closed) {
                         this.animics = window.open(PERFORMS.ANIMICS_URL);
-                        
+
                         this.animics.onload = (e, d) => {
                             this.animics.app = e.currentTarget;
                             sendData();
@@ -1165,7 +1275,7 @@ class GUI {
                         sendData();
                     }
                 })
-    
+
             }, { size: ["35%", "70%"], float: "left", className:"resizeable", draggable: true, closable: true, onBeforeClose: ()=>{
                 this.bmlInputData.prevInstanceText = this.bmlInputData.codeObj.getText();
                 this.bmlInputData.dialog = null;
@@ -1173,14 +1283,14 @@ class GUI {
             }});
 
             this.bmlInputData.dialog.root.children[1].classList.add("showScrollBar");
-    
+
         });
 
         this.sigmlInputData.openButton = this.bmlGui.addButton( null, "SiGML Input", (value, event) =>{
 
-            if ( this.sigmlInputData.dialog ){ 
+            if ( this.sigmlInputData.dialog ){
                 this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
-                this.sigmlInputData.dialog.close(); 
+                this.sigmlInputData.dialog.close();
             }
 
             this.sigmlInputData.dialog = new LX.PocketDialog( "SiGML Instruction", p => {
@@ -1198,14 +1308,15 @@ class GUI {
                 textCodeArea.attach( textCodePanel.root );
 
                 let htmlStr = "Write in the text area below the SiGML instructions (as in JaSigning) to move the avatar from the web application. Work in progress";
-                textCodePanel.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});       
-    
+                // textCodePanel.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                LX.makeElement('div', 'p-2', htmlStr, textCodePanel.root);
+
                 const codeArea = new LX.Area({ height: "85%" });
                 textCodePanel.attach( codeArea.root );
-    
+
                 let editor = new LX.CodeEditor(codeArea, {
                     highlight: 'XML',
-                    allowAddScripts: false, 
+                    allowAddScripts: false,
                     name : "XML"
                 });
                 editor.setText( this.sigmlInputData.prevInstanceText );
@@ -1217,19 +1328,19 @@ class GUI {
                 sendPanel.addButton(null, "Send", () => {
                     let text = this.sigmlInputData.codeObj.getText().replaceAll("\n", "").replaceAll("\r", "");
                     this.performs.scriptApp.processMessageRawBlocks( [ {type:"sigml", data: text } ] );
-                });
-    
+                }, {buttonClass: "primary"});
+
             }, { size: ["35%", "70%"], float: "left", className: "resizeable", draggable: true, closable: true, onclose: (root)=>{
                 this.sigmlInputData.prevInstanceText = this.sigmlInputData.codeObj.getText();
                 this.sigmlInputData.dialog = null;
                 this.sigmlInputData.codeObj = null;
                 root.remove();
             }});
-        
+
             this.sigmlInputData.dialog.root.children[1].classList.add("showScrollBar");
 
         });
-        
+
 
 
         let languages = Object.keys(this.performs.scriptApp.languageDictionaries);
@@ -1251,8 +1362,9 @@ class GUI {
                 p.refresh = () => {
                     p.clear();
                     let htmlStr = "Select or write in the text area below the glosses (NGT) to move the avatar from the web application. Work in progress";
-                    p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});  
-                    
+                    // p.addTextArea(null, htmlStr, null, {disabled: true, fitHeight: true});
+                    LX.makeElement('div', 'p-2', htmlStr, p.root);
+
                     p.addSelect("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
                         this.performs.scriptApp.selectedLanguage = value;
                         p.refresh();
@@ -1268,31 +1380,31 @@ class GUI {
                     }, {placeholder: "Hallo Leuk"});
 
                     p.addButton(null, "Send", () => {
-        
+
                         let glosses = this.glossInputData.glosses.replaceAll( "\n", " ").split( " " );
                         for ( let i = 0; i < glosses.length; ++i ){
-                            if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){ 
-                                glosses.splice( i, 1 ); 
-                                --i; 
-                                continue; 
+                            if ( typeof( glosses[i] ) != "string" || glosses[i].length < 1 ){
+                                glosses.splice( i, 1 );
+                                --i;
+                                continue;
                             }
                             glosses[i] = { type: "glossName", data: glosses[i].toUpperCase() };
                         }
                         if(!glosses.length) alert("Please, write or select at least one gloss");
-                        this.performs.scriptApp.processMessageRawBlocks(glosses);    
-                    });
+                        this.performs.scriptApp.processMessageRawBlocks(glosses);
+                    }, {buttonClass: "primary"});
                 }
                 p.refresh();
-            }, { size: ["35%"],float: "left", draggable: true, closable: true } );        
-        });    
+            }, { size: ["35%"],float: "left", draggable: true, closable: true } );
+        });
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
         this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "30%", width:"80%" } );
-        this.bmlGui.addButton( null, "Play random signs", (v,e)=>{ 
+        this.bmlGui.addButton( null, "Play random signs", (v,e)=>{
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
-            
+
             let m = [];
             for( let i = 0; i < this.randomSignAmount; ++i ){
                 m.push( { type: "glossName", data: k[ Math.floor( Math.random() * (k.length-1) ) ] } );
@@ -1315,7 +1427,7 @@ class GUI {
             this.performs.scriptApp.moodIntensity = v;
         }, {min: 0, max: 1.0, step: 0.01})
 
-        this.bmlGui.addCheckbox("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
+        this.bmlGui.addToggle("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
             this.performs.scriptApp.onApplyIdle(v);
         }, {
                 nameWidth: "auto",
@@ -1331,15 +1443,16 @@ class GUI {
                     }, {min: 0.1, max: 1.0, step: 0.01});
                 }
             });
-        
+
         this.bmlGui.merge(); // random signs
-             
+
     }
 
     createKeyframePanel(panel, refresh) {
-      
+
         this.keyframeGui = panel;
-  
+        this.keyframeGui.clear();
+
         this.keyframeGui.addNumber("Speed", this.performs.keyframeApp.speed, (value, event) => {
             // this.performs.speed = Math.pow( Math.E, (value - 1) );
             this.performs.setSpeed(value);
@@ -1357,12 +1470,10 @@ class GUI {
                 return;
             }
             this.performs.keyframeApp.loadFiles(files, (animations)=> {
-                
+
                 if(animations.length) {
                     this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
-                    if(refresh) {
-                        refresh();
-                    }
+                    this.createKeyframePanel(panel);
                 }
                 else {
                     LX.popup("This file doesn't contain any animation or a valid source avatar!");
@@ -1375,17 +1486,17 @@ class GUI {
 
         this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
             fileinput.root.children[1].click();
-           
+
         }, { icon: "Upload", width: "30%", className:"no-padding"});
 
         this.keyframeGui.addButton(null, null, (v,e) => {
             this.performs.changePlayState();
             this.changePlayButtons(this.performs.keyframeApp.playing );
         }, { icon: "Play@solid", width: "70%", className:"no-padding"});
-        this.keyframeGui.endLine(); 
+        this.keyframeGui.endLine();
 
         if( animations.length > 1 ) {
-            this.keyframeGui.addCheckbox("Blend animations", this.performs.keyframeApp.useCrossFade,
+            this.keyframeGui.addToggle("Blend animations", this.performs.keyframeApp.useCrossFade,
                 (v) => { this.performs.keyframeApp.useCrossFade = v; },
                 {
                     skipReset: true,
@@ -1399,21 +1510,21 @@ class GUI {
         }
 
         this.keyframeGui.branch("Retargeting", { icon: "Tags"} );
-           
-        this.keyframeGui.addCheckbox("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
+
+        this.keyframeGui.addToggle("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
             window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
-            
-        this.keyframeGui.addCheckbox("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
+
+        this.keyframeGui.addToggle("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
             window.localStorage.setItem("trgEmbedWorldTransforms", this.performs.keyframeApp.trgEmbedWorldTransforms);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
-        
+
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
@@ -1428,11 +1539,11 @@ class GUI {
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
-        
+
         if( this.performs.keyframeApp.trajectoriesHelper ) {
 
             this.keyframeGui.branch("Trajectories", { icon: "Spline"} );
-            this.keyframeGui.addCheckbox("Show trajectories", this.performs.keyframeApp.trajectoriesActive, (v) => {
+            this.keyframeGui.addToggle("Show trajectories", this.performs.keyframeApp.trajectoriesActive, (v) => {
                 const keyframeApp = this.performs.keyframeApp;
                 if( v ) {
                     keyframeApp.showTrajectories();
@@ -1441,7 +1552,7 @@ class GUI {
                     keyframeApp.hideTrajectories();
                 }
             },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
-            
+
             if( this.performs.keyframeApp.currentAnimation ) {
                 this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {
                     this.performs.keyframeApp.updateTrajectories(v[0], v[1]);
@@ -1467,13 +1578,13 @@ class GUI {
                 };
                 assetData.push(data);
             }
-            
-            let assetView = new LX.AssetView({ 
+
+            let assetView = new LX.AssetView({
                 skipBrowser: true,
                 skipPreview: true,
-                layout: LX.AssetView.LAYOUT_LIST,   
+                layout: LX.AssetView.LAYOUT_LIST,
                 contextMenu: false,
-                allowMultipleSelection: true          
+                allowMultipleSelection: true
             });
             assetView.load( assetData, event => {
                 if(event.type == LX.AssetViewEvent.ASSET_CHECKED) {
@@ -1481,7 +1592,7 @@ class GUI {
                     let animation = animations[item.id];
                     animation.record = item.selected;
                 }
-            }); 
+            });
 
             let panel = new LX.Panel({height: "calc(100% - 40px)"});
             let selectAllCheckbox = panel.addCheckbox("Select All", true, (v, e) => {
@@ -1492,10 +1603,10 @@ class GUI {
                 assetView._refreshContent();
             }, {label: "", className: "contrast"});
 
-            selectAllCheckbox.onSetValue(false, false);                       
-            
+            selectAllCheckbox.onSetValue(false, false);
+
             panel.attach(assetView);
-            
+
             p.attach(panel);
             p.sameLine(2);
             p.addButton("", "Record", () => {
@@ -1506,7 +1617,7 @@ class GUI {
         }, {size: ["40%", "60%"], resizable: true, draggable: true, scroll: false });
 
     }
-    
+
     createImportDialog(type, callback) {
         let isAvatar = false;
         const dialog = new LX.Dialog(type + " File Detected!", (panel) => {
@@ -1521,10 +1632,10 @@ class GUI {
     selectAvatar(avatarName){
         if ( !this.performs.loadedCharacters[avatarName] ) {
             this.makeLoading("Loading avatar...");
-            let modelFilePath = this.avatarOptions[avatarName][0];                    
+            let modelFilePath = this.avatarOptions[avatarName][0];
             let configFilePath = this.avatarOptions[avatarName][1];
-            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[avatarName][2] ); 
-            this.performs.loadAvatar(modelFilePath, configFilePath, modelRotation, avatarName, ()=>{ 
+            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[avatarName][2] );
+            this.performs.loadAvatar(modelFilePath, configFilePath, modelRotation, avatarName, ()=>{
                 this.performs.changeAvatar(avatarName);
                 if( this.activePanelType == GUI.ACTIVEPANEL_AVATARS){
                     this.createAvatarsPanel();
@@ -1539,7 +1650,7 @@ class GUI {
                 LX.popup("There was an error loading the avatar", "Avatar not loaded", {width: "30%"});
             } );
             return;
-        } 
+        }
 
         // use controller if it has been already loaded in the past
         this.performs.changeAvatar(avatarName);
@@ -1551,14 +1662,14 @@ class GUI {
     uploadAvatar(callback = null) {
         let name, model, config;
         let rotation = 0;
-        
+
         let afromFile = true;
         let cfromFile = true;
         this.avatarDialog = new LX.Dialog("Upload Avatar", panel => {
 
             panel.refresh = () => {
                 panel.clear();
-                
+
                 let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
                     if (this.avatarOptions[v]){
                         LX.popup("This avatar name is taken. Please, change it.", null, { size: ["300px", "auto"], position: ["45%", "20%"]});
@@ -1566,7 +1677,7 @@ class GUI {
                     name = v;
                 });
 
-                panel.sameLine();
+                panel.sameLine(null, "justify-between");
                 let avatarFile = panel.addFile("Avatar File", (v, e) => {
                     let files = panel.components["Avatar File"].root.children[1].files;
                     if(!files.length) {
@@ -1575,7 +1686,7 @@ class GUI {
                     const path = files[0].name.split(".");
                     const filename = path[0];
                     const extension = path[1];
-                    if (extension == "glb" || extension == "gltf") { 
+                    if (extension == "glb" || extension == "gltf") {
                         model = v;
                         if(!name) {
                             name = filename;
@@ -1583,7 +1694,7 @@ class GUI {
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
-                }, {type: "url", nameWidth: "41%"});
+                }, {type: "url", nameWidth: "41%", width: "70%"});
 
                 if(!afromFile) {
                     avatarFile.root.classList.add('hidden');
@@ -1604,26 +1715,26 @@ class GUI {
                     filename = filename.pop();
                     let extension = path[path.length-1];
                     extension = extension.split("?")[0];
-                    if (extension == "glb" || extension == "gltf") { 
-                        
-                        model = v;                             
+                    if (extension == "glb" || extension == "gltf") {
+
+                        model = v;
                         if(!name) {
                             name = filename;
                             nameWidget.set(name)
                         }
                         if(model.includes('models.readyplayer.me')) {
-                           
-                            const promptD = LX.prompt("It looks like you are importing an avatar from a Ready Player Me. Would you like to use the default configuration for this character?\nPlease note that the contact settings may vary. We recommend customizing the settings based on the default to better suit your avatar.", 
+
+                            const promptD = LX.prompt("It looks like you are importing an avatar from a Ready Player Me. Would you like to use the default configuration for this character?\nPlease note that the contact settings may vary. We recommend customizing the settings based on the default to better suit your avatar.",
                                                     "Ready Player Me detected!", (value, event)=> {
                                 cfromFile = false;
                                 panel.refresh();
                                 panel.setValue("Config URL", PERFORMS.AVATARS_URL+"ReadyEva/ReadyEva_v3.json");
-                                
-                            },{input: false, fitHeight: true})                            
+
+                            },{input: false, fitHeight: true})
                         }
                     }
                     else { LX.popup("Only accepts GLB and GLTF formats!"); }
-                }, {nameWidth: "43%"});
+                }, {nameWidth: "43%", width: "70%"});
                 if(afromFile) {
                     avatarURL.root.classList.add('hidden');
                 }
@@ -1631,12 +1742,12 @@ class GUI {
                 panel.addComboButtons(null, [
                     {
                         value: "From File",
-                        callback: (v, e) => {                            
+                        callback: (v, e) => {
                             afromFile = true;
                             if(!avatarURL.root.classList.contains('hidden')) {
-                                avatarURL.root.classList.add('hidden');          
+                                avatarURL.root.classList.add('hidden');
                             }
-                            avatarFile.root.classList.remove('hidden');                                                          
+                            avatarFile.root.classList.remove('hidden');
                             panel.refresh();
                         }
                     },
@@ -1645,31 +1756,31 @@ class GUI {
                         callback: (v, e) => {
                             afromFile = false;
                             if(!avatarFile.root.classList.contains('hidden')) {
-                                avatarFile.root.classList.add('hidden');           
-                            }                                               
-                            avatarURL.root.classList.remove('hidden');          
+                                avatarFile.root.classList.add('hidden');
+                            }
+                            avatarURL.root.classList.remove('hidden');
                         }
                     }
-                ], {selected: afromFile ? "From File" : "From URL"});                
+                ], {selected: afromFile ? "From File" : "From URL"});
                 panel.endLine();
-            
-                panel.sameLine();
+
+                panel.sameLine(null, "justify-between");
                 let configFile = panel.addFile("Config File", (v, e) => {
-                
+
                     if(!v) {
                         return;
                     }
                     const filename = panel.components["Config File"].root.children[1].files[0].name;
                     let extension = filename.split(".");
                     extension = extension.pop();
-                    if (extension == "json") { 
-                        config = JSON.parse(v); 
-                        config._filename = filename; 
+                    if (extension == "json") {
+                        config = JSON.parse(v);
+                        config._filename = filename;
                         editConfigBtn.classList.remove('hidden');
                     }
                     else { LX.popup("Config file must be a JSON!"); }
-                }, {type: "text", nameWidth: "41%"});
-                
+                }, {type: "text", nameWidth: "41%", width: "70%"});
+
                 let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
                     if(!v) {
                         config = v;
@@ -1681,15 +1792,15 @@ class GUI {
                     filename = filename.pop();
                     let extension = path[path.length-1];
                     extension = extension.split("?")[0].toLowerCase();
-                    if (extension == "json") { 
-                        if (extension == "json") { 
+                    if (extension == "json") {
+                        if (extension == "json") {
                             try {
                                 const response = await fetch(v);
                                 if (!response.ok) {
                                     throw new Error(`Response status: ${response.status}`);
                                 }
-                                config = await response.json();                        
-                                config._filename = v; 
+                                config = await response.json();
+                                config._filename = v;
                                 editConfigBtn.root.classList.remove('hidden');
                             }
                             catch (error) {
@@ -1698,19 +1809,19 @@ class GUI {
                         }
                     }
                     else { LX.popup("Config file must be a JSON!"); }
-                }, {nameWidth: "43%"});
+                }, {nameWidth: "43%", width: "70%"});
 
                 if(cfromFile) {
                     configURL.root.classList.add('hidden');
                 }else {
                     configFile.root.classList.add('hidden');
                 }
-                
+
                 const editConfigBtn = panel.addButton(null, "Edit config file", () => {
                     this.performs.openAtelier(name, model, config, true, rotation);
 
                 }, {icon: "Settings", width: "40px"});
-                
+
                 if(!config) {
                     editConfigBtn.root.classList.add('hidden');
                 }
@@ -1718,13 +1829,13 @@ class GUI {
                 panel.addComboButtons(null, [
                     {
                         value: "From File",
-                        callback: (v, e) => {                            
+                        callback: (v, e) => {
                             cfromFile = true;
                             // panel.refresh();
                             if(!configURL.root.classList.contains('hidden')) {
-                                configURL.root.classList.add('hidden');          
+                                configURL.root.classList.add('hidden');
                             }
-                            configFile.root.classList.remove('hidden');                                                          
+                            configFile.root.classList.remove('hidden');
                         }
                     },
                     {
@@ -1733,9 +1844,9 @@ class GUI {
                             cfromFile = false;
                             // panel.refresh();
                             if(!configFile.root.classList.contains('hidden')) {
-                                configFile.root.classList.add('hidden');           
-                            }                                               
-                            configURL.root.classList.remove('hidden');  
+                                configFile.root.classList.add('hidden');
+                            }
+                            configURL.root.classList.remove('hidden');
                         }
                     }
                 ], {selected: cfromFile ? "From File" : "From URL"});
@@ -1745,16 +1856,16 @@ class GUI {
             panel.addNumber("Apply Rotation", 0, (v) => {
                 rotation = v * Math.PI / 180;
             }, { min: -180, max: 180, step: 1 } );
-            
+
             panel.sameLine(2);
             panel.addButton(null, "Create Config File", () => {
                 this.performs.openAtelier(name, model, config, true, rotation);
             }, {width: "50%"});
             panel.addButton(null, "Upload", () => {
                 if (name && model) {
-                    if (this.avatarOptions[name]) { 
-                        LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]}); 
-                        return; 
+                    if (this.avatarOptions[name]) {
+                        LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
+                        return;
                     }
                     let thumbnail = GUI.THUMBNAIL;
                     if( model.includes('models.readyplayer.me') ) {
@@ -1762,7 +1873,7 @@ class GUI {
                         thumbnail =  "https://models.readyplayer.me/" + name + ".png";
                     }
                     if (config) {
-                        this.avatarOptions[name] = [model, config, rotation, thumbnail];               
+                        this.avatarOptions[name] = [model, config, rotation, thumbnail];
                         panel.clear();
                         this.avatarDialog.root.remove();
                         this.avatarOptions[name][1] = config._filename;
@@ -1771,12 +1882,12 @@ class GUI {
                     else {
                         LX.prompt("Uploading without config file will disable BML animations for this avatar. Do you want to proceed?", "Warning!", (result) => {
                             this.avatarOptions[name] = [model, null, rotation, thumbnail];
-                            
+
                             panel.clear();
                             this.avatarDialog.root.remove();
                             if (callback) callback(name);
                         }, {input: false, on_cancel: () => {}});
-                        
+
                     }
                 }
                 else {
@@ -1789,7 +1900,7 @@ class GUI {
                 let files = v.dataTransfer.files;
                 this.onDropAvatarFiles(files);
             })
-            
+
         }
         panel.refresh();
 
@@ -1803,12 +1914,12 @@ class GUI {
         const callback = options.callback;
         let config = data.config;
         let rotation = 0;
-        
+
         let fromFile = !config ?? false;
         this.avatarDialog = new LX.Dialog("Edit Avatar", panel => {
-          
+
         panel.refresh = () => {
-            panel.clear();                
+            panel.clear();
             let nameWidget = panel.addText("Name Your Avatar", name, (v, e) => {
                 if (this.avatarOptions[v]){
                     LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
@@ -1816,7 +1927,7 @@ class GUI {
                 name = v;
             });
 
-            panel.sameLine();
+            panel.sameLine(null, "justify-between");
 
             let configFile = panel.addFile("Config File", (v, e) => {
                 if(!v) {
@@ -1825,9 +1936,9 @@ class GUI {
                 const filename = panel.components["Config File"].root.children[1].files[0].name;
                 let extension = filename.split(".");
                 extension = extension.pop();
-                if (extension == "json") { 
-                    config = JSON.parse(v); 
-                    config._filename = filename; 
+                if (extension == "json") {
+                    config = JSON.parse(v);
+                    config._filename = filename;
                 }
                 else { LX.popup("Config file must be a JSON!"); }
             }, {
@@ -1836,7 +1947,7 @@ class GUI {
             });
 
             let configURL = panel.addText("Config URL", config ? config._filename : "", async (v, e) => {
-                    
+
                 if(!v) {
                     return;
                 }
@@ -1846,15 +1957,15 @@ class GUI {
                 filename = filename.pop();
                 let extension = path[path.length-1];
                 extension = extension.split("?")[0].toLowerCase();
-                    if (extension == "json") { 
-                        if (extension == "json") { 
+                    if (extension == "json") {
+                        if (extension == "json") {
                             try {
                                 const response = await fetch(v);
                                 if (!response.ok) {
                                     throw new Error(`Response status: ${response.status}`);
                                 }
-                                config = await response.json();                        
-                                config._filename = v; 
+                                config = await response.json();
+                                config._filename = v;
                             }
                             catch (error) {
                                 LX.popup(error.message, "File error!");
@@ -1862,23 +1973,23 @@ class GUI {
                         }
                     }
                 else { LX.popup("Config file must be a JSON!"); }
-            }, { className: fromFile ? "hidden": "" });
+            }, { className: fromFile ? "hidden": "", width: "70%" });
 
             panel.addComboButtons(null, [
                 {
                     value: "From File",
-                    callback: (v, e) => {                            
+                    callback: (v, e) => {
                         fromFile = true;
-                        panel.components["Config URL"].root.classList.add('hidden');          
-                        panel.components["Config File"].root.classList.remove('hidden');                                                                                  
+                        panel.components["Config URL"].root.classList.add('hidden');
+                        panel.components["Config File"].root.classList.remove('hidden');
                     }
                 },
                 {
                     value: "From URL",
                     callback: (v, e) => {
                         fromFile = false;
-                        panel.components["Config File"].root.classList.add('hidden');           
-                        panel.components["Config URL"].root.classList.remove('hidden');  
+                        panel.components["Config File"].root.classList.add('hidden');
+                        panel.components["Config URL"].root.classList.remove('hidden');
                     }
                 }
             ], {selected: fromFile ? "From File" : "From URL"});
@@ -1888,10 +1999,10 @@ class GUI {
             panel.addNumber("Apply Rotation", 0, (v) => {
                 rotation = v * Math.PI / 180;
             }, { min: -180, max: 180, step: 1 } );
-            
-            panel.sameLine(2);
+
+            panel.sameLine(2, "justify-between");
             panel.addButton(null, (config ? "Edit": "Create") + " Config File", () => {
-                this.performs.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);                                       
+                this.performs.openAtelier(name, this.avatarOptions[name][0], config, false, rotation);
             },{ width:"50%"});
 
             panel.addButton(null, "Update", () => {
@@ -1904,7 +2015,7 @@ class GUI {
                     if (config) {
                         // this.avatarOptions[name][1] = config._filename;
                         // this.avatarOptions[name][2] = rotation;
-                        
+
                         panel.clear();
                         this.avatarDialog.root.remove();
                         if (callback) callback(name, rotation, config);
@@ -1916,7 +2027,7 @@ class GUI {
                             this.avatarDialog.root.remove();
                             if (callback) callback(name, rotation);
                         }, {input: false, on_cancel: () => {}});
-                        
+
                     }
                 }
                 else {
@@ -1937,10 +2048,10 @@ class GUI {
         return name;
     }
 
-    onDropFiles(e) {        
+    onDropFiles(e) {
         e.preventDefault();
         e.stopPropagation();
-        
+
         let animations = [];
         let config = null;
         let gltfs = [];
@@ -1948,11 +2059,11 @@ class GUI {
 
         // Supported formats
         const formats = ['json', 'bvh', 'bvhe', 'glb', 'gltf', 'fbx', 'bml', 'sigml'];
-        
+
         // Parse file formats
         let files = e.dataTransfer.files;
         for(let i = 0; i < files.length; i++) {
-   
+
             const file = files[i];
             const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
             if(formats.indexOf(extension) < 0) {
@@ -1981,7 +2092,7 @@ class GUI {
                     this.uploadAvatar((avatarName) => {
                         this.selectAvatar(avatarName);
                     });
-                    
+
                     // Create a data transfer object
                     let dataTransfer = new DataTransfer();
                     // Add file to the file list of the object
@@ -1990,8 +2101,8 @@ class GUI {
                     const fileList = dataTransfer.files;
                     this.avatarDialog.panel.components["Avatar File"].root.children[1].files = fileList;
                     this.avatarDialog.panel.components["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
-                    
-                    if (config) { 
+
+                    if (config) {
                         // Create a data transfer object
                         dataTransfer = new DataTransfer();
                         // Add file to the file list of the object
@@ -1999,7 +2110,7 @@ class GUI {
                         // Save the file list to a new variable
                         const fileList = dataTransfer.files;
                         this.avatarDialog.panel.components["Config File"].root.children[1].files = fileList;
-                        this.avatarDialog.panel.components["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });    
+                        this.avatarDialog.panel.components["Config File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
                     }
                 }
                 else {
@@ -2015,9 +2126,9 @@ class GUI {
                         else {
                             LX.popup("This file doesn't contain any animation or a valid source avatar!");
                         }
-                    });    
+                    });
                 }
-            });            
+            });
         }
         else if(config) {
             let name = this.performs.currentCharacter.model.name;
@@ -2030,22 +2141,22 @@ class GUI {
                     this.performs.currentCharacter.config = data;
                     this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
                     this.performs.currentCharacter.skeleton.pose();
-                    this.performs.scriptApp.ECAcontroller.reset();                        
+                    this.performs.scriptApp.ECAcontroller.reset();
                     this.performs.changeMode(PERFORMS.Modes.SCRIPT);
                     if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                         this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
-                        this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");   
+                        this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
                     }
                 }
                 else {
                     this.performs.setConfiguration(data, () => {
                         if(this.activePanelType == GUI.ACTIVEPANEL_SETTINGS) {
                             this.setActivePanel( GUI.ACTIVEPANEL_SETTINGS );
-                            this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");             
+                            this.overlayButtonsMenu.buttons["Settings"].root.children[0].classList.add("selected");
                         }
                     });
                 }
-            }                
+            }
         }
 
         if(bml) {
@@ -2060,13 +2171,13 @@ class GUI {
                             this.setSIGMLInputText( data );
                         }
                         if(extension == 'bml' || extension == 'sigml') {
-                            this.setBMLInputText( 
+                            this.setBMLInputText(
                                 JSON.stringify(result.msg.data, function(key, val) {
                                     return val.toFixed ? Number(val.toFixed(3)) : val;
-                                }) 
+                                })
                             );
                         }
-                        
+
                     });
                 }
             }
@@ -2086,7 +2197,7 @@ class GUI {
                 else {
                     LX.popup("This file doesn't contain any animation or a valid source avatar!");
                 }
-            });      
+            });
         }
     }
 
@@ -2099,7 +2210,7 @@ class GUI {
             const path = files[i].name.split(".");
             const filename = path[0];
             const extension = path[1];
-            if (extension == "glb" || extension == "gltf") { 
+            if (extension == "glb" || extension == "gltf") {
                 // Create a data transfer object
                 const dataTransfer = new DataTransfer();
                 // Add file to the file list of the object
@@ -2108,9 +2219,9 @@ class GUI {
                 const fileList = dataTransfer.files;
 
                 this.avatarDialog.panel.components["Avatar File"].root.children[1].files = fileList;
-                this.avatarDialog.panel.components["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });                
+                this.avatarDialog.panel.components["Avatar File"].root.children[1].dispatchEvent(new Event('change'), { bubbles: true });
             }
-            else if (extension == "json") { 
+            else if (extension == "json") {
                 // Create a data transfer object
                 const dataTransfer = new DataTransfer();
                 // Add file to the file list of the object
@@ -2144,7 +2255,7 @@ class GUI {
             parseSuccess = true;
         } catch (error ) { parseSuccess = false; }
         if ( !parseSuccess ){
-            try{ 
+            try{
                 result = JSON.parse( "[" + text + "]" );
             }
             catch( error ){
@@ -2154,13 +2265,13 @@ class GUI {
                     "\n- Numbers use points (.) for decimal numbers: 0.2" +
                     "\n- Elements of an array/object are separated by commas EXCEPT the last element {\"a\": 1, \"b\":2}");
                 return [];
-            }       
+            }
         }
 
         if ( !Array.isArray( result ) ){
                 if ( Array.isArray( result.behaviours ) ){ result = result.behaviours; }
                 else{ result = [ result ]; }
-        } 
+        }
 
         // for mouthing, find those words that need to be translated into phonemes (ARPA)
         for( let i = 0; i < result.length; ++i ){
@@ -2187,7 +2298,7 @@ class GUI {
         window.localStorage.setItem("controls", this.controlsActive);
 
         this.canvasArea.panels[0].root.classList.remove("hide");
-        
+
         const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
         if( controlsBtn.options.icon == "Eye" ) {
             controlsBtn.swap(true);
@@ -2244,7 +2355,7 @@ class GUI {
         const modal = document.getElementById("guide-modal");
         modal.classList.remove('hidden');
         const modals = document.querySelectorAll('.guide-modal .container');
-        
+
         const innerChange = (id) => {
             modals.forEach(modalContent => {
                 modalContent.classList.remove('show');
@@ -2253,7 +2364,7 @@ class GUI {
                     modalContent.classList.add('show');
                     modalContent.classList.remove('hidden');
                 }
-            });            
+            });
         }
         innerChange("modal0");
         for(let i = 0; i < modals.length; i++) {
@@ -2286,7 +2397,7 @@ class GUI {
     }
 
     showExportAvatarDialog(callback) {
-        
+
         this.performs.export('GLB', this.performs.currentCharacter.model.name, (error) =>{
             LX.popup("Error: " + error, null, {size:["800px", "auto"], timeout: 6000})
         });
@@ -2298,16 +2409,16 @@ class GUI {
         const currentCharacterInfo = this.avatarOptions[this.performs.currentCharacter.model.name];
         let avatar = currentCharacterInfo[0];
         avatar = avatar.split('?')[0];
-        
+
         // Background color
         let color = this.performs.getBackPlaneColor();
         if(typeof(color) == 'string') {
             color = color.replace("#", "0x");
         }
 
-        // Background type 
+        // Background type
         const backgrounds = Object.keys(PERFORMS.Backgrounds);
-        
+
         // Photocall image
         let img = this.performs.logo;
         if(typeof(img) != 'string') {
@@ -2352,7 +2463,7 @@ class GUI {
         }
 
         const dialog = new LX.Dialog("Export configuration", p => {
-            
+
             p.sameLine();
             p.addButton("Select the configuration settings you want to export. ", 'More info...', (v) => {
                 window.open('https://github.com/upf-gti/performs/blob/main/docs/IntegrationGuide.md', '_blank');
@@ -2364,26 +2475,26 @@ class GUI {
             urlPanel.refresh = () => {
                 urlPanel.clear();
                 urlPanel.sameLine();
-                urlPanel.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text nobg"});              
+                urlPanel.addTextArea("Iframe", url.toJSON(), null, {nameWidth: "80px", fitHeight: true, disabled:true, className: "iframe-text nobg"});
                 urlPanel.addButton(null, 'Copy', (value, event) => {
-    
+
                     navigator.clipboard.writeText(url);
                     const bubble = document.getElementById('bubble');
-                    
-                    // Get the bounding rect of button                    
+
+                    // Get the bounding rect of button
                     const rect = event.target.getBoundingClientRect();
                     // Set the bubble position
                     bubble.style.left = `${rect.left - 20}px`; //`${x - 25}px`;
                     bubble.style.top = `${rect.top - 35}px`; //`${y - bubble.offsetHeight - 35}px`; // Position above the mouse click
                     bubble.classList.add('show');
-                    
+
                     setTimeout(function() {
                         bubble.classList.remove('show');
                     }, 2000); // Bubble will show for 2 seconds
                 }, {icon:'Clipboard', width:"40px"})
                 urlPanel.endLine();
             }
-            
+
             let tabsPanel = new LX.Area({height: 'fit-content'});
             let tabs = tabsPanel.addTabs();
 
@@ -2391,19 +2502,19 @@ class GUI {
                 const attrPanel = new LX.Panel({height:'auto'});
                 const tabPanel = new LX.Panel({height:'auto'});
 
-                // make selectAll checkbox sepparate from the rest of attributes. A refresh of attributes will not change the selectAll checkbox 
+                // make selectAll checkbox sepparate from the rest of attributes. A refresh of attributes will not change the selectAll checkbox
                 tabPanel.addCheckbox("Select All", false, (v, e) => {
-                    for(let key in attributes) {                    
+                    for(let key in attributes) {
                         attributes[key].state = v;
-                        localStorage.setItem(key, v);               
+                        localStorage.setItem(key, v);
                     }
                     attrPanel.refresh();
                 },{nameWidth: "auto", className: "contrast", label:"", skipReset: true});
                 tabPanel.addSeparator();
 
-                // attributes to show 
+                // attributes to show
                 attrPanel.refresh = () => {
-                    attrPanel.clear();               
+                    attrPanel.clear();
                     for(let key in attributes) {
                         url.searchParams.delete(key);
                         attrPanel.sameLine();
@@ -2414,13 +2525,13 @@ class GUI {
                         },{nameWidth: "auto", className: "contrast", label:key})
                         attrPanel.addText(null, attributes[key].text, null, {disabled: true, inputClass: "nobg"});
                         attrPanel.endLine();
-    
+
                         if ( attributes[key].state ){
                             url.searchParams.append(key, attributes[key].value);
                         }
                     }
-                    
-                    attrPanel.addSeparator();                
+
+                    attrPanel.addSeparator();
                     urlPanel.refresh();
                 };
                 attrPanel.refresh();
@@ -2443,10 +2554,10 @@ class GUI {
             // Transforms mode options
             [tabPanel,attrPanel]  = makeTab( toExportTransform );
             tabs.add("Transforms", tabPanel.root, () => toExportTransform.refresh());
-              
+
             p.root.appendChild(tabsPanel.root);
             urlPanel.refresh();
-            p.root.appendChild(urlPanel.root);        
+            p.root.appendChild(urlPanel.root);
 
             p.addButton(null, "Download configuration as file (.json)", () => {
 
@@ -2490,11 +2601,11 @@ class GUI {
     }
 
     /**
-	 * 
-	 * @param {float} targetOpacity 
-	 * @param {float} fadeTime 
+	 *
+	 * @param {float} targetOpacity
+	 * @param {float} fadeTime
 	 * @param {bool} adaptTime if true, fadeTime is the time it takes to transition from 0 to 1. Final fading time will be computed using the current state opacity
-	 * @returns 
+	 * @returns
 	 */
 	fadeCSSAnimation( element, targetOpacity, fadeTime, adaptTime = true ){
 		let anims = element.getAnimations({subtree: true});
@@ -2504,7 +2615,7 @@ class GUI {
 			if (a.isOpacityFade){
 				// css animations do not update element.style properties
 				// sets current animation state into the element style properties
-				a.commitStyles(); 
+				a.commitStyles();
 
 				// will automatically remove itself from the list
 				a.finish();
@@ -2546,7 +2657,7 @@ class GUI {
 			return;
 		}
 		const anim = this.fadeCSSAnimation( loading, 0, 200, true );
-		anim.onfinish = ()=>{ 
+		anim.onfinish = ()=>{
 			if(string == loading.getElementsByTagName("p")[0].innerText) {
 				loading.classList.add("hidden");
 			}
