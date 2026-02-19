@@ -16395,7 +16395,7 @@ class Performs {
         this.controlsActive = true;
 
         this.sceneColor = "#46c219";
-        this.background = window.localStorage.getItem("background") || window.getIPERFORMS.Backgrounds.OPEN;
+        this.background = window.localStorage.getItem("background") || PERFORMS.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
         this.videoBackground = null;
