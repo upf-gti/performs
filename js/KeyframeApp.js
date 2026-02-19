@@ -860,16 +860,21 @@ class KeyframeApp {
     }
 
     showTrajectories() {
-        if( ! this.trajectoriesHelper ) {
+        if( !this.trajectoriesHelper ) {
             return;
         }
+        this.trajectoriesHelper.show();
+        this.trajectoriesActive = true;
 
+        window.localStorage.setItem("trajectories", this.trajectoriesActive);
+        
+        if( !this.bindedAnimations[this.currentAnimation] ) {
+            return;
+        }
         if( this.trajectoriesComputationPending ) {
             const boundAnim = this.bindedAnimations[this.currentAnimation][this.currentCharacter];
             this.computeTrajectories( boundAnim );
         }
-        this.trajectoriesHelper.show();
-        this.trajectoriesActive = true;
     }
 
     hideTrajectories() {
@@ -878,6 +883,7 @@ class KeyframeApp {
         }
         this.trajectoriesHelper.hide();
         this.trajectoriesActive = false;
+        window.localStorage.setItem("trajectories", this.trajectoriesActive);
     }
 }
 

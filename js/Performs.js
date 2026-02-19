@@ -47,7 +47,7 @@ class Performs {
         this.controlsActive = true;
 
         this.sceneColor = "#46c219";
-        this.background = PERFORMS.Backgrounds.OPEN;
+        this.background = window.localStorage.getItem("background") || window.getIPERFORMS.Backgrounds.OPEN;
 
         this.logo = "./data/imgs/performs2.png";
         this.videoBackground = null;
@@ -87,6 +87,8 @@ class Performs {
     }
     // value (hex color) in sRGB space 
     setBackPlaneColor( value ) {
+        window.localStorage.setItem("color", value);
+
         if(value == "#transparent") {
             this.scene.background = null;
             this.ground.material.color.set("#ffffff");
@@ -126,6 +128,7 @@ class Performs {
     
     setBackground( type, image = null ) {
         this.background = type;
+        window.localStorage.setItem("background", this.background);
 
         switch(type) {
             case PERFORMS.Backgrounds.OPEN:
@@ -277,24 +280,21 @@ class Performs {
     // Change the default settings for the scene and the applications mode options
     async setConfiguration(settings, callback) {
 
-        let rotation = null;
-        if(settings.rotation) {
-            rotation = settings.rotation;
+        let rotation = settings.rotation || window.localStorage.getItem("rotation");
+        if(rotation) {
             rotation = rotation.split(',');    
             rotation = rotation.map(v => v = Number(v));        
         }
 
-        let position = null;
-        if(settings.position) {
-            position = settings.position;
+        let position = settings.position || window.localStorage.getItem("position");
+        if(position) {
             position = position.split(',');
             position = position.map(v => v = Number(v));
             // this.currentCharacter.model.position.fromArray(position);
         }
 
-        let scale = null;
-        if(settings.scale) {
-            scale = settings.scale;
+        let scale = settings.scale || window.localStorage.getItem("scale");;
+        if(scale) {
             scale = Number(scale);
             scale = [scale, scale, scale];
             // this.currentCharacter.model.scale.fromArray([scale, scale, scale]);
@@ -421,27 +421,47 @@ class Performs {
         if(settings.trajectories != undefined) {
             this.keyframeApp.trajectoriesActive = JSON.parse(settings.trajectories);
         }
+        else if(window.localStorage.getItem("trajectories") != undefined ){
+            this.keyframeApp.trajectoriesActive = JSON.parse(window.localStorage.getItem("trajectories"));
+        }
        
         if(settings.autoplay != undefined) {
             this.autoplay = settings.autoplay;
+        }
+        else if(window.localStorage.getItem("autoplay") != undefined ){
+            this.autoplay = window.localStorage.getItem("autoplay");
         }
         
         if(settings.crossfade != undefined) {
             this.keyframeApp.useCrossFade = settings.crossfade;
         }
-
-        if(settings.srcEmbeddedTransforms != undefined) {
+        
+        if(settings.srcEmbeddedTransforms != undefined) {    
             this.keyframeApp.srcEmbedWorldTransforms = settings.srcEmbeddedTransforms;
         }
+        else if(window.localStorage.getItem("srcEmbeddedTransforms") != undefined ){
+            this.keyframeApp.srcEmbedWorldTransforms = window.localStorage.getItem("srcEmbeddedTransforms")
+        }
+
         if(settings.trgEmbeddedTransforms != undefined) {
             this.keyframeApp.trgEmbedWorldTransforms = settings.trgEmbeddedTransforms;
+        }
+        else if(window.localStorage.getItem("trgEmbedWorldTransforms") != undefined ){
+            this.keyframeApp.trgEmbedWorldTransforms = window.localStorage.getItem("trgEmbedWorldTransforms")
         }
 
         if(settings.srcReferencePose != undefined) {
             this.keyframeApp.srcPoseMode = settings.srcReferencePose;
         }
+        else if(window.localStorage.getItem("srcReferencePose") != undefined ){
+            this.keyframeApp.srcPoseMode = window.localStorage.getItem("srcReferencePose")
+        }
+
         if(settings.trgReferencePose != undefined) {
             this.keyframeApp.trgPoseMode = settings.trgReferencePose;
+        }
+        else if(window.localStorage.getItem("trgReferencePose") != undefined ){
+            this.keyframeApp.trgPoseMode = window.localStorage.getItem("trgReferencePose")
         }
 
         let loadConfig = true;
@@ -523,11 +543,15 @@ class Performs {
         if(settings.controls != undefined) {
             this.controlsActive = !(settings.controls === "false" || settings.controls === false);
         }
+        else if(window.localStorage.getItem("controls") != undefined ) {
+            const controls = window.localStorage.getItem("controls");
+            this.controlsActive = !(controls === "false" || controls === false);
+        }
 
         // Default background
-        if(settings.background) {
-            let background = settings.background;
-            switch(background.toLocaleLowerCase()) {
+        let defaultBackground = settings.background || window.localStorage.getItem("background");
+        if( defaultBackground ) {
+            switch(defaultBackground.toLocaleLowerCase()) {
                 case 'studio':
                     this.background = PERFORMS.Backgrounds.STUDIO;
                     break;
@@ -543,7 +567,7 @@ class Performs {
         if(settings.img) {
             this.setBackground( PERFORMS.Backgrounds.PHOTOCALL);         
 
-            let image =settings.img;
+            let image = settings.img;
             const imgCallback = ( event ) => {
 
                 this.logo = event.target;        
@@ -570,14 +594,15 @@ class Performs {
         }
 
         // Default background color
-        if(settings.color) {
-            if(typeof(settings.color) == 'string'){
-                settings.color = settings.color.replace('0x', '#');
-                if(!settings.color.includes("#")) {
-                    settings.color = "#" + settings.color;
+        let defaultColor = settings.color || window.localStorage.getItem("color");
+        if(defaultColor) {
+            if(typeof(defaultColor) == 'string'){
+                defaultColor = defaultColor.replace('0x', '#');
+                if(!defaultColor.includes("#")) {
+                    defaultColor = "#" + defaultColor;
                 }
             }
-            this.sceneColor = settings.color;
+            this.sceneColor = defaultColor;
             this.setBackPlaneColor(this.sceneColor);                                  
         }
 
@@ -608,9 +633,17 @@ class Performs {
             let view = (settings.restrictView === "false" || settings.restrictView === false);
             this.changeCameraMode( !view ); //moved here because it needs the backplane to exist
         }
+        else if(window.localStorage.getItem("restrictView") != undefined ) {
+            let view = window.localStorage.getItem("restrictView");
+            view = !(view === "false" || view === false);
+            this.changeCameraMode( !view ); //moved here because it needs the backplane to exist
+        }
 
         if(settings.applyIdle != undefined) {
             this.scriptApp.applyIdle = settings.applyIdle;
+        }
+        else if(window.localStorage.getItem("applyIdle") != undefined ) {
+            this.scriptApp.applyIdle = window.localStorage.getItem("applyIdle")
         }
     }
 
@@ -719,7 +752,7 @@ class Performs {
         }
 
         let modelToLoad = [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
-        
+        const defaultAvatar = window.localStorage.getItem("avatar") || "Eva";
         // Default avatar & config file
         if(options.avatar) {
             let avatar = options.avatar;
@@ -736,9 +769,12 @@ class Performs {
             else if( this.avatars[path] ) {
                 modelToLoad = this.avatars[path];
             }
+            else {                
+                options.avatar = defaultAvatar;
+            }
         }
         else {
-            options.avatar = "Eva"
+            options.avatar = defaultAvatar;
         }
 
         if(options.rotation) {
@@ -1282,7 +1318,7 @@ class Performs {
         if ( this.currentCharacter ) {
             this.scene.remove( this.currentCharacter.model ); // delete current model from scene
         }
-
+        
         // Update the current character and add the model to the scene
         this.currentCharacter = this.loadedCharacters[avatarName];
         this.scene.add( this.currentCharacter.model ); 
@@ -1320,6 +1356,8 @@ class Performs {
             }
         })
         
+        window.localStorage.setItem("avatar", avatarName);
+
         if ( this.gui ){ 
             this.gui.refresh(); 
         }
@@ -1353,7 +1391,8 @@ class Performs {
             }
         }
         this.controls[this.camera].update();
-        this.cameraRestricted = restrictView; 
+        this.cameraRestricted = restrictView;
+        window.localStorage.setItem("restrictView", restrictView);
     }
 
     openAtelier(name, model, config, fromFile = true, rotation = 0) {
