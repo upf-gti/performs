@@ -1400,7 +1400,7 @@ class GUI {
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
-        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "30%", width:"80%" } );
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "105px", width:"80%" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
@@ -1425,7 +1425,7 @@ class GUI {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
             this.performs.scriptApp.moodIntensity = v;
-        }, {min: 0, max: 1.0, step: 0.01})
+        }, {min: 0, max: 1.0, step: 0.01, nameWidth: "110px"})
 
         this.bmlGui.addToggle("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
             this.performs.scriptApp.onApplyIdle(v);
@@ -1433,7 +1433,8 @@ class GUI {
                 nameWidth: "auto",
                 skipReset: true,
                 label: "",
-                className: "contrast",
+                nameWidth: "135px",
+                className: "success",
                 suboptions: (p) => {
                     p.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
                         this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
@@ -1445,7 +1446,6 @@ class GUI {
             });
 
         this.bmlGui.merge(); // random signs
-
     }
 
     createKeyframePanel(panel, refresh) {

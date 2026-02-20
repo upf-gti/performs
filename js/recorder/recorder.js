@@ -26,16 +26,21 @@ class AnimationRecorder {
             offscreenRenderer.toneMappingExposure = 1;
             this.renderers.push(offscreenRenderer);
 
-            const stream = this.renderers[i].domElement.captureStream(60);
-            const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+            if (this.renderers[i].domElement.captureStream) {
+                const stream = this.renderers[i].domElement.captureStream(60);
+                const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
-            const mediaRecorder = new MediaRecorder(stream, options);
-            mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
-            mediaRecorder.onstop = () => this.handleStop(i);
-            mediaRecorder.onstart = () => this.handleStart(i);
+                const mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
+                mediaRecorder.onstop = () => this.handleStop(i);
+                mediaRecorder.onstart = () => this.handleStart(i);
 
-            this.mediaRecorders.push( mediaRecorder );
-            this.recordedChunks.push([]);
+                this.mediaRecorders.push( mediaRecorder );
+                this.recordedChunks.push([]);
+            }
+            else {
+                console.error("Animation Recorder Error: CaptureSteam not supported.");
+            }
         };
         this.app = app;
     }

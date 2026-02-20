@@ -1423,7 +1423,7 @@ class GUI {
 
         this.bmlGui.addSeparator();
         this.bmlGui.sameLine();
-        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "30%", width:"80%" } );
+        this.bmlGui.addNumber("Random Signs", this.randomSignAmount, (v,e)=>{this.randomSignAmount = v;}, { min:0, max:100, skipReset: true, nameWidth: "105px", width:"80%" } );
         this.bmlGui.addButton( null, "Play random signs", (v,e)=>{
             if (!this.randomSignAmount ){ return; }
             let k = Object.keys( this.performs.scriptApp.languageDictionaries[this.performs.scriptApp.selectedLanguage]["glosses"] );
@@ -1448,7 +1448,7 @@ class GUI {
             let msg = { type: "behaviours", data: [ { type: "faceEmotion", emotion: this.performs.scriptApp.mood.toUpperCase(), amount: v, start: 0.0, shift: true } ] };
             this.performs.scriptApp.ECAcontroller.processMsg(JSON.stringify(msg));
             this.performs.scriptApp.moodIntensity = v;
-        }, {min: 0, max: 1.0, step: 0.01});
+        }, {min: 0, max: 1.0, step: 0.01, nameWidth: "110px"});
 
         this.bmlGui.addToggle("Apply idle animation", this.performs.scriptApp.applyIdle, (v) => {
             this.performs.scriptApp.onApplyIdle(v);
@@ -1456,7 +1456,8 @@ class GUI {
                 nameWidth: "auto",
                 skipReset: true,
                 label: "",
-                className: "contrast",
+                nameWidth: "135px",
+                className: "success",
                 suboptions: (p) => {
                     p.addSelect("Animations", Object.keys(this.performs.scriptApp.loadedIdleAnimations), this.performs.scriptApp.currentIdle, (v) => {
                         this.performs.scriptApp.bindAnimationToCharacter(v, this.performs.currentCharacter.model.name);
@@ -1468,7 +1469,6 @@ class GUI {
             });
 
         this.bmlGui.merge(); // random signs
-
     }
 
     createKeyframePanel(panel, refresh) {
@@ -2714,16 +2714,21 @@ class AnimationRecorder {
             offscreenRenderer.toneMappingExposure = 1;
             this.renderers.push(offscreenRenderer);
 
-            const stream = this.renderers[i].domElement.captureStream(60);
-            const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+            if (this.renderers[i].domElement.captureStream) {
+                const stream = this.renderers[i].domElement.captureStream(60);
+                const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
-            const mediaRecorder = new MediaRecorder(stream, options);
-            mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
-            mediaRecorder.onstop = () => this.handleStop(i);
-            mediaRecorder.onstart = () => this.handleStart(i);
+                const mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
+                mediaRecorder.onstop = () => this.handleStop(i);
+                mediaRecorder.onstart = () => this.handleStart(i);
 
-            this.mediaRecorders.push( mediaRecorder );
-            this.recordedChunks.push([]);
+                this.mediaRecorders.push( mediaRecorder );
+                this.recordedChunks.push([]);
+            }
+            else {
+                console.error("Animation Recorder Error: CaptureSteam not supported.");
+            }
         }        this.app = app;
     }
 
@@ -5587,7 +5592,7 @@ class Lipsync {
     
         // Audio context
         if (!Lipsync.AContext)
-            Lipsync.AContext = new AudioContext();
+            Lipsync.AContext = new text();
         // Restart
         this.stopSample();
     
@@ -5735,9 +5740,14 @@ class Lipsync {
     init() {
     
         // Audio context
-        if (!Lipsync.AContext)
-            Lipsync.AContext = new AudioContext();
-        var context = this.context = Lipsync.AContext;
+        if ( !Lipsync.AContext ) {
+            if( !window.AudioContext ) {
+                return;
+            }
+            Lipsync.AContext = new AudioContext(); 
+        }
+        
+        const context = this.context = Lipsync.AContext;
         // Sound source
         this.sample = context.createBufferSource();
         // Gain Node
@@ -17209,7 +17219,7 @@ class Performs {
         }
 
         let modelToLoad = {};//[PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
-        const defaultAvatar = window.localStorage.getItem("avatar") || "Eva";
+        let defaultAvatar = window.localStorage.getItem("avatar") || "Eva";
         // Default avatar & config file
         if(options.avatar) {
             let avatar = options.avatar;
@@ -17221,11 +17231,13 @@ class Performs {
                 filename = filename.pop();
                 
                 avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
-                modelToLoad = [ avatar, options.config, new THREE.Quaternion(), null, filename];          
+                modelToLoad = [ avatar, options.config, new THREE.Quaternion(), null, filename];
+                defaultAvatar = filename;    
             }
-            else if( path.length == 1 && this.avatars[path] ) {
-                modelToLoad = this.avatars[path];
-                modelToLoad.push(path[0]);
+            else if( path.length == 1 && this.avatars[path[0]] ) {
+                defaultAvatar = path[0];
+                modelToLoad = this.avatars[defaultAvatar];
+                modelToLoad.push(defaultAvatar);
             }
             else {                
                 options.avatar = defaultAvatar;
@@ -17249,10 +17261,9 @@ class Performs {
         this.setConfiguration(options, ( err ) => {
             // Create the GUI only if the class exists or the controlsActive flag is true
             if ( this.gui ) {
-                if(!this.gui.avatarOptions[modelToLoad[4]]) {
-                    const name = modelToLoad.pop();
-                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=68,68,68") : PERFORMS.GUI.THUMBNAIL;
-                    this.gui.avatarOptions[name] = modelToLoad;
+                if(!this.gui.avatarOptions[defaultAvatar]) {
+                    modelToLoad[3] = modelToLoad[0].includes('models.readyplayer.me') ? ("https://models.readyplayer.me/" + name + ".png?background=transparent") : PERFORMS.GUI.THUMBNAIL;
+                    this.gui.avatarOptions[defaultAvatar] = modelToLoad;
                     this.gui.refresh();
                 }
                 if( !this.controlsActive ) {
