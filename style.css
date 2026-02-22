@@ -375,10 +375,6 @@
 	color: #BB86FC;
 }
 
-.iframe-text textarea{
-	color: var(--color-secondary)!important;
-}
-
 .close-button {
 	width: 24px;
 	height: 24px;

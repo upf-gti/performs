@@ -616,6 +616,7 @@ class GUI {
             // uploadAvatar opens avatar upload ui and, when done, calls the callback
             this.uploadAvatar((avatarName, config) => {
                 this.selectAvatar(avatarName);
+                window.localStorage.setItem("avatars", JSON.stringify(this.performs.avatars));
             });
         } ,{ nameWidth: "100px", icon: "UploadCloud", width: "140px"} );
 
@@ -2407,7 +2408,7 @@ class GUI {
 
         // Avatar URL
         const currentCharacterInfo = this.avatarOptions[this.performs.currentCharacter.model.name];
-        let avatar = currentCharacterInfo[0];
+        let avatar = this.performs.avatars[this.performs.currentCharacter.model.name] ? this.performs.currentCharacter.model.name : currentCharacterInfo[0];
         avatar = avatar.split('?')[0];
 
         // Background color
@@ -2426,40 +2427,40 @@ class GUI {
         }
 
         const toExport = {
-            avatar      : {state: localStorage.getItem("avatar") != undefined ? JSON.parse(localStorage.getItem("avatar")) : avatar.includes('https'), text: "Character file URL", value: avatar},
-            cloth       : {state: localStorage.getItem("cloth") != undefined ? JSON.parse(localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColor()},
-            color       : {state: localStorage.getItem("color") != undefined ? JSON.parse(localStorage.getItem("color")) : true, text: "Background color", value: color},
-            background  : {state: localStorage.getItem("background") != undefined ? JSON.parse(localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
-            img         : {state: localStorage.getItem("img") != undefined ? JSON.parse(localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},
-            offset      : {state: localStorage.getItem("offset") != undefined ? JSON.parse(localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.performs.repeatOffset},
-            light       : {state: localStorage.getItem("light") != undefined ? JSON.parse(localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
-            lightpos    : {state: localStorage.getItem("lightpos") != undefined ? JSON.parse(localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
-            restrictView: {state: localStorage.getItem("restrictView") != undefined ? JSON.parse(localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: this.performs.cameraRestricted ?? false},
-            controls    : {state: localStorage.getItem("controls") != undefined ? JSON.parse(localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.controlsActive},
-            autoplay    : {state: localStorage.getItem("autplay") != undefined ? JSON.parse(localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
+            avatar      : {state: localStorage.getItem("avatar") != undefined ? (localStorage.getItem("avatar")) : avatar.includes('https'), text: "Character file URL", value: avatar},
+            cloth       : {state: localStorage.getItem("cloth") != undefined ? (localStorage.getItem("cloth")) : false, text: "Top cloth color value", value: "0x" + this.performs.getClothesColor()},
+            color       : {state: localStorage.getItem("color") != undefined ? (localStorage.getItem("color")) : true, text: "Background color", value: color},
+            background  : {state: localStorage.getItem("background") != undefined ? (localStorage.getItem("background")) : true, text: "Background design", value: backgrounds[this.performs.background]},
+            img         : {state: localStorage.getItem("img") != undefined ? (localStorage.getItem("img")) : false, text: "Logo/image file URL for photocall", value: img},
+            offset      : {state: localStorage.getItem("offset") != undefined ? (localStorage.getItem("offset")) : false, text: "Logo space repetition", value: this.performs.repeatOffset},
+            light       : {state: localStorage.getItem("light") != undefined ? (localStorage.getItem("light")) : false, text: "Light color", value: "0x" + this.performs.dirLight.color.getHexString()},
+            lightpos    : {state: localStorage.getItem("lightpos") != undefined ? (localStorage.getItem("lightpos")) : false, text: "Light position", value: this.performs.dirLight.position.x + ',' + this.performs.dirLight.position.y + ',' + this.performs.dirLight.position.z},
+            restrictView: {state: localStorage.getItem("restrictView") != undefined ? (localStorage.getItem("restrictView")) : false, text: "Restrict camera controls", value: this.performs.cameraRestricted ?? false},
+            controls    : {state: localStorage.getItem("controls") != undefined ? (localStorage.getItem("controls")) : false, text: "Show GUI controls", value: this.performs.controlsActive},
+            autoplay    : {state: localStorage.getItem("autplay") != undefined ? (localStorage.getItem("autoplay")) : false, text: "Play animation automatically after load it", value: this.performs.autoplay},
         }
 
         const toExportScript = {
-            config      : {state: localStorage.getItem("config") != undefined ? JSON.parse(localStorage.getItem("config")) : (currentCharacterInfo[1] ?? false), text: "Configuration file URL", value: currentCharacterInfo[1]},
-            applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? JSON.parse(localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.performs.scriptApp.applyIdle},
+            config      : {state: localStorage.getItem("config") != undefined ? (localStorage.getItem("config")) : (currentCharacterInfo[1] ?? false), text: "Configuration file URL", value: currentCharacterInfo[1]},
+            applyIdle   : {state: localStorage.getItem("applyIdle") != undefined ? (localStorage.getItem("applyIdle")) : (currentCharacterInfo[1] ?? false), text: "Apply idle animation", value: this.performs.scriptApp.applyIdle},
         }
 
         let hasAnimations = this.performs.keyframeApp.currentAnimation ?? false;
         const toExportKeyframe = {
-            srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.performs.keyframeApp.srcEmbedWorldTransforms},
-            trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? JSON.parse(localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.performs.keyframeApp.trgEmbedWorldTransforms},
-            srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? JSON.parse(localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.performs.keyframeApp.srcPoseMode},
-            trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? JSON.parse(localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
-            crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? JSON.parse(localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.useCrossFade},
-            blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? JSON.parse(localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
-            trajectories               : {state: localStorage.getItem("trajectories") != undefined ? JSON.parse(localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.trajectoriesActive},
+            srcEmbeddedTransforms      : {state: localStorage.getItem("srcEmbeddedTransforms") != undefined ? (localStorage.getItem("srcEmbeddedTransforms")) : hasAnimations, text: "Source embedded transformations", value: this.performs.keyframeApp.srcEmbedWorldTransforms},
+            trgEmbeddedTransforms      : {state: localStorage.getItem("trgEmbeddedTransforms") != undefined ? (localStorage.getItem("trgEmbeddedTransforms")) : hasAnimations, text: "Target embedded transformations", value: this.performs.keyframeApp.trgEmbedWorldTransforms},
+            srcReferencePose           : {state: localStorage.getItem("srcReferencePose") != undefined ? (localStorage.getItem("srcReferencePose")) : hasAnimations, text: "Source reference pose", value: this.performs.keyframeApp.srcPoseMode},
+            trgReferencePose           : {state: localStorage.getItem("trgReferencePose") != undefined ? (localStorage.getItem("trgReferencePose")) : hasAnimations, text: "Target reference pose", value: this.performs.keyframeApp.trgPoseMode},
+            crossfade                  : {state: localStorage.getItem("crossfade") != undefined ? (localStorage.getItem("crossfade")) : hasAnimations, text: "Concatenate and blend animations", value: this.performs.keyframeApp.useCrossFade},
+            blendTime                  : {state: localStorage.getItem("blendTime") != undefined ? (localStorage.getItem("blendTime")) : hasAnimations, text: "Time interval between animations", value: this.performs.keyframeApp.blendTime},
+            trajectories               : {state: localStorage.getItem("trajectories") != undefined ? (localStorage.getItem("trajectories")) : false, text: "Show trajectories", value: this.performs.keyframeApp.trajectoriesActive},
 
         }
 
         const toExportTransform = {
-            position: {state: localStorage.getItem("position") != undefined ? JSON.parse(localStorage.getItem("position")) : false, text: "Character position", value: this.performs.currentCharacter.model.position.x + ',' + this.performs.currentCharacter.model.position.y + ',' + this.performs.currentCharacter.model.position.z},
-            rotation: {state: localStorage.getItem("rotation") != undefined ? JSON.parse(localStorage.getItem("rotation")) : false, text: "Character rotation", value: this.performs.currentCharacter.model.quaternion.x + ',' + this.performs.currentCharacter.model.quaternion.y + ',' + this.performs.currentCharacter.model.quaternion.z + ',' + this.performs.currentCharacter.model.quaternion.w},
-            scale:    {state: localStorage.getItem("scale") != undefined ? JSON.parse(localStorage.getItem("scale")) : false, text: "Character scale", value: this.performs.currentCharacter.model.scale.x}
+            position: {state: localStorage.getItem("position") != undefined ? (localStorage.getItem("position")) : false, text: "Character position", value: this.performs.currentCharacter.model.position.x + ',' + this.performs.currentCharacter.model.position.y + ',' + this.performs.currentCharacter.model.position.z},
+            rotation: {state: localStorage.getItem("rotation") != undefined ? (localStorage.getItem("rotation")) : false, text: "Character rotation", value: this.performs.currentCharacter.model.quaternion.x + ',' + this.performs.currentCharacter.model.quaternion.y + ',' + this.performs.currentCharacter.model.quaternion.z + ',' + this.performs.currentCharacter.model.quaternion.w},
+            scale:    {state: localStorage.getItem("scale") != undefined ? (localStorage.getItem("scale")) : false, text: "Character scale", value: this.performs.currentCharacter.model.scale.x}
         }
 
         const dialog = new LX.Dialog("Export configuration", p => {
@@ -2506,7 +2507,7 @@ class GUI {
                 tabPanel.addCheckbox("Select All", false, (v, e) => {
                     for(let key in attributes) {
                         attributes[key].state = v;
-                        localStorage.setItem(key, v);
+                        localStorage.setItem(key, attributes[key].value);
                     }
                     attrPanel.refresh();
                 },{nameWidth: "auto", className: "contrast", label:"", skipReset: true});
@@ -2519,7 +2520,7 @@ class GUI {
                         url.searchParams.delete(key);
                         attrPanel.sameLine();
                         attrPanel.addCheckbox("", attributes[key].state, (v, e) => {
-                            localStorage.setItem(key, v);
+                            localStorage.setItem(key, attributes[key].value);
                             attributes[key].state = v;
                             attrPanel.refresh();
                         },{nameWidth: "auto", className: "contrast", label:key})

@@ -13865,7 +13865,7 @@ class Performs {
 
         this.raycaster = new THREE.Raycaster();
 
-        this.avatars = {
+        this.avatars = window.localStorage.getItem("avatars") ? JSON.parse(window.localStorage.getItem("avatars")) : {
             "Eva": [PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', 0, PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.png'],
             "Ready Eva": [PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json', 0, PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva.png'],
             "Victor": [PERFORMS.AVATARS_URL+'Victor/Victor.glb', PERFORMS.AVATARS_URL+'Victor/Victor.json', 0, PERFORMS.AVATARS_URL+'Victor/Victor.png'],
@@ -14556,10 +14556,10 @@ class Performs {
         }
 
         let modelToLoad = {};//[PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.glb', PERFORMS.AVATARS_URL+'Eva_Low/Eva_Low.json', (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), 0 ), "EvaLow" ];
-        let defaultAvatar = window.localStorage.getItem("avatar") || "Eva";
+        let defaultAvatar = options.avatar || window.localStorage.getItem("avatar") || "Eva";
         // Default avatar & config file
-        if(options.avatar) {
-            let avatar = options.avatar;
+        if(defaultAvatar) {
+            let avatar = defaultAvatar;
             const path = avatar.split(".");
             let filename = "";
             if( path.length > 1 ) {
@@ -14576,13 +14576,17 @@ class Performs {
                 modelToLoad = this.avatars[defaultAvatar];
                 modelToLoad.push(defaultAvatar);
             }
-            else {                
-                options.avatar = defaultAvatar;
+            else {
+                defaultAvatar = "Eva";
+                modelToLoad = this.avatars[defaultAvatar];
+                modelToLoad.push(defaultAvatar); 
             }
         }
-        else {
-            options.avatar = defaultAvatar;
-        }
+        // else {
+        //     options.avatar = defaultAvatar;
+        // }
+
+        options.avatar = defaultAvatar;
 
         if(options.rotation) {
             let rotation = options.rotation;
@@ -14903,7 +14907,7 @@ class Performs {
             model.name = avatarName;
 
             this.loadedCharacters[avatarName] ={
-                model, skeleton, config: null, morphTargets
+                model, skeleton, config: null, morphTargets, path: modelFilePath
             };
 
             // Load config file and set automatically the Script mode
@@ -15158,7 +15162,7 @@ class Performs {
             }
         });
         
-        window.localStorage.setItem("avatar", avatarName);
+        window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
 
         if ( this.gui ){ 
             this.gui.refresh(); 
