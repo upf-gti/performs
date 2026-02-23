@@ -138,15 +138,17 @@
 
 /* Overlay buttons*/
 .lexoverlaybuttons {
-    width: auto !important;
+    /* width: auto !important;
     height: auto !important;
-    justify-content: start;
+    justify-content: start; */
     gap: 0px;
-    z-index: 95;
+    /* z-index: 95;
     --button-color: var(--accent);
     margin: 8px;
     padding: 0.25em;
-    border-radius: 12px;
+    border-radius: 12px; */
+	background: transparent;
+	border: none;
 }
 .lexoverlaybuttonscontainer .lexcomponent button:hover {
 	/* --button-color: #313132cf!important; */

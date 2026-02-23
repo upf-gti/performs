@@ -17,6 +17,7 @@ class AnimationRecorder {
         this.enabledCameras = 0;
         this.exportZip = true;
 
+        this.mimeType = MediaRecorder.isTypeSupported('video/webm;') ? 'video/webm;' : 'video/mp4';
         for (let i = 0; i < numCameras; i++) {
             // offscreen renderer for each camera
             const offscreenRenderer = new THREE.WebGLRenderer( {antialias: true} );
@@ -28,7 +29,7 @@ class AnimationRecorder {
 
             if (this.renderers[i].domElement.captureStream) {
                 const stream = this.renderers[i].domElement.captureStream(60);
-                const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+                const options = { mimeType: this.mimeType, videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
                 const mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
@@ -140,7 +141,7 @@ class AnimationRecorder {
 
     handleStop (idx) {
         const animationName = this.currentAnimationName;
-        const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
+        const blob = new Blob(this.recordedChunks[idx], {type: this.mimeType});
         const name =  `${animationName} ${idx + 1}.webm`;
 
         blobToBase64(blob, (binaryData) => {

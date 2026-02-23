@@ -866,7 +866,7 @@ class KeyframeApp {
         this.trajectoriesHelper.show();
         this.trajectoriesActive = true;
 
-        window.localStorage.setItem("trajectories", this.trajectoriesActive);
+        // window.localStorage.setItem("trajectories", this.trajectoriesActive);
         
         if( !this.bindedAnimations[this.currentAnimation] ) {
             return;
@@ -883,7 +883,7 @@ class KeyframeApp {
         }
         this.trajectoriesHelper.hide();
         this.trajectoriesActive = false;
-        window.localStorage.setItem("trajectories", this.trajectoriesActive);
+        // window.localStorage.setItem("trajectories", this.trajectoriesActive);
     }
 }
 

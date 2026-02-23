@@ -75,6 +75,34 @@ class Performs {
             // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
         }
 
+        window.onbeforeunload = () => {
+            // window.localStorage.setItem("color", value);
+            window.localStorage.setItem("background", this.background);
+            if( this.currentCharacter ) {
+                const model = this.currentCharacter.model;
+                const avatarName = model.name;
+                window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
+                window.localStorage.setItem("config", this.avatars[avatarName] && this.avatars[avatarName][1] ? this.avatars[avatarName][1] : JSON.stringify(this.currentCharacter.config));
+
+                //GUI
+                window.localStorage.setItem("position", model.position.x.toString() + "," + model.position.y.toString() + "," + model.position.z.toString());
+                window.localStorage.setItem("rotation", model.quaternion.x.toString() + "," + model.quaternion.y.toString() + "," + model.quaternion.z.toString() + "," + model.quaternion.w.toString());
+                window.localStorage.setItem("scale", model.scale.x.toString());
+                window.localStorage.setItem("avatars", JSON.stringify(this.avatars));
+
+                if( this.gui ) {
+                    window.localStorage.setItem("controls", this.gui.controlsActive);
+                }
+            }
+            window.localStorage.setItem("restrictView", this.cameraRestricted);
+
+            // Keyframe app
+            window.localStorage.setItem("trajectories", this.keyframeApp.trajectoriesActive);
+            window.localStorage.setItem("srcEmbeddedTransforms", this.keyframeApp.srcEmbedWorldTransforms);
+            window.localStorage.setItem("srcEmbeddedTransforms", this.keyframeApp.srcEmbedWorldTransforms);
+            window.localStorage.setItem("srcReferencePose", this.keyframeApp.srcPoseMode);
+            window.localStorage.setItem("trgReferencePose", this.keyframeApp.trgPoseMode);
+        }
     }
 
     setSpeed( value ){ 
@@ -128,7 +156,7 @@ class Performs {
     
     setBackground( type, image = null ) {
         this.background = type;
-        window.localStorage.setItem("background", this.background);
+        // window.localStorage.setItem("background", this.background);
 
         switch(type) {
             case PERFORMS.Backgrounds.OPEN:
@@ -1363,7 +1391,7 @@ class Performs {
             }
         })
         
-        window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
+        // window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
 
         if ( this.gui ){ 
             this.gui.refresh(); 
@@ -1399,7 +1427,7 @@ class Performs {
         }
         this.controls[this.camera].update();
         this.cameraRestricted = restrictView;
-        window.localStorage.setItem("restrictView", restrictView);
+        // window.localStorage.setItem("restrictView", restrictView);
     }
 
     openAtelier(name, model, config, fromFile = true, rotation = 0) {

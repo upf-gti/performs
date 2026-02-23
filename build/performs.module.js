@@ -332,16 +332,16 @@ class GUI {
         const model = this.performs.currentCharacter.model;
         p.addVector3("Position", [model.position.x, model.position.y, model.position.z], (value, event) => {
             model.position.set(value[0], value[1], value[2]);
-            window.localStorage.setItem("position", value[0].toString() + "," + value[1].toString() + "," + value[2].toString());
+            // window.localStorage.setItem("position", value[0].toString() + "," + value[1].toString() + "," + value[2].toString());
         }, {step:0.01});
         p.addVector3("Rotation", [THREE.MathUtils.radToDeg(model.rotation.x), THREE.MathUtils.radToDeg(model.rotation.y), THREE.MathUtils.radToDeg(model.rotation.z)], (value, event) => {
             model.rotation.set(THREE.MathUtils.degToRad(value[0]), THREE.MathUtils.degToRad(value[1]), THREE.MathUtils.degToRad(value[2]));
-            window.localStorage.setItem("rotation", model.quaternion.x.toString() + "," + model.quaternion.y.toString() + "," + model.quaternion.z.toString() + "," + model.quaternion.w.toString());
+            // window.localStorage.setItem("rotation", model.quaternion.x.toString() + "," + model.quaternion.y.toString() + "," + model.quaternion.z.toString() + "," + model.quaternion.w.toString());
 
         }, {step:0.01});
         p.addNumber("Scale", model.scale.x, (value, event) => {
             model.scale.set(value, value, value);
-            window.localStorage.setItem("scale", value.toString());
+            // window.localStorage.setItem("scale", value.toString());
         }, {step:0.01});
 
         if(p.getBranch("Export")) {
@@ -641,7 +641,7 @@ class GUI {
             // uploadAvatar opens avatar upload ui and, when done, calls the callback
             this.uploadAvatar((avatarName, config) => {
                 this.selectAvatar(avatarName);
-                window.localStorage.setItem("avatars", JSON.stringify(this.performs.avatars));
+                // window.localStorage.setItem("avatars", JSON.stringify(this.performs.avatars));
             });
         } ,{ nameWidth: "100px", icon: "UploadCloud", width: "140px"} );
 
@@ -750,11 +750,13 @@ class GUI {
 
                 const modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), rotation );
                 this.performs.currentCharacter.model.quaternion.premultiply( modelRotation );
-                if(this.performs.currentCharacter.config && this.performs.currentCharacter.config == config) {
+                // window.localStorage.setItem("rotation", this.performs.currentCharacter.model.quaternion.x.toString() + "," + this.performs.currentCharacter.model.quaternion.y.toString() + "," + this.performs.currentCharacter.model.quaternion.z.toString() + "," + this.performs.currentCharacter.model.quaternion.w.toString());
+                if(this.performs.currentCharacter.config && config && this.performs.currentCharacter.config == config) {
                     return;
                 }
-                this.performs.currentCharacter.config = config;
+
                 if(config) {
+                    this.performs.currentCharacter.config = config;
                     this.avatarOptions[name][1] = config._filename;
                     this.performs.scriptApp.onLoadAvatar(this.performs.currentCharacter.model, this.performs.currentCharacter.config, this.performs.currentCharacter.skeleton);
                     this.performs.currentCharacter.skeleton.pose();
@@ -764,6 +766,7 @@ class GUI {
                         this.createSettingsPanel();
                     }
                     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
+                    // window.localStorage.setItem("config", JSON.stringify(config));
                 }
 
             },
@@ -981,8 +984,8 @@ class GUI {
             },
         ];
 
-        this.overlayButtonsMenu = area.addOverlayButtons(buttons, {className:"hiddenBackground", float: "vr", id: "overlay-controls"});
-        area.panels[0].root.style.visibility = "hidden";
+        this.overlayButtonsMenu = area.addOverlayButtons(buttons, { float: "vr", id: "overlay-controls"});
+        // area.panels[0].root.style.visibility = "hidden";
         this.createPlayButtons();
     }
 
@@ -1094,8 +1097,8 @@ class GUI {
         ];
         this.overlayButtonsPlay = area.addOverlayButtons(playButtons, {float: "vbr", id: "overlay-playbuttons"});
         this.overlayButtonsReset = area.addOverlayButtons(buttons, {float: "hbr", id: "overlay-buttons"});
-        area.panels[1].root.style.visibility = "hidden";
-        area.panels[2].root.style.visibility = "hidden";
+        // area.panels[1].root.style.visibility = "hidden";
+        // area.panels[2].root.style.visibility = "hidden";
 
 
         this.overlayButtonsPlay.buttons["Stop"].root.classList.add("hidden");
@@ -1537,14 +1540,14 @@ class GUI {
 
         this.keyframeGui.addToggle("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
-            window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
+            // window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"});
 
         this.keyframeGui.addToggle("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
-            window.localStorage.setItem("trgEmbedWorldTransforms", this.performs.keyframeApp.trgEmbedWorldTransforms);
+            // window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "auto", skipReset: true, label: "", className: "contrast"});
@@ -1552,14 +1555,14 @@ class GUI {
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
-            window.localStorage.setItem("srcReferencePose", this.performs.keyframeApp.srcPoseMode);
+            // window.localStorage.setItem("srcReferencePose", this.performs.keyframeApp.srcPoseMode);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
 
         this.keyframeGui.addSelect("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
-            window.localStorage.setItem("trgReferencePose", this.performs.keyframeApp.trgPoseMode);
+            // window.localStorage.setItem("trgReferencePose", this.performs.keyframeApp.trgPoseMode);
 
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
         }, {nameWidth: "200px", skipReset: true});
@@ -1945,7 +1948,7 @@ class GUI {
         panel.refresh = () => {
             panel.clear();
             panel.addText("Name Your Avatar", name, (v, e) => {
-                if (this.avatarOptions[v]){
+                if (this.avatarOptions[v] && name != v){
                     LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
                 }
                 name = v;
@@ -2031,7 +2034,7 @@ class GUI {
 
             panel.addButton(null, "Update", () => {
                 if (name) {
-                    if (this.avatarOptions[name]){
+                    if (this.avatarOptions[name] && data.model.name != name){
                         LX.popup("This avatar name is taken. Please, change it.", null, { position: ["45%", "20%"]});
                         return;
                     }
@@ -2319,7 +2322,7 @@ class GUI {
 
     showControls() {
         this.controlsActive = true;
-        window.localStorage.setItem("controls", this.controlsActive);
+        // window.localStorage.setItem("controls", this.controlsActive);
 
         this.canvasArea.panels[0].root.classList.remove("hide");
 
@@ -2342,7 +2345,7 @@ class GUI {
 
     hideControls() {
         this.controlsActive = false;
-        window.localStorage.setItem("controls", this.controlsActive);
+        // window.localStorage.setItem("controls", this.controlsActive);
 
         const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
         if( controlsBtn.options.icon == "EyeOff" ) {
@@ -2706,6 +2709,7 @@ class AnimationRecorder {
         this.enabledCameras = 0;
         this.exportZip = true;
 
+        this.mimeType = MediaRecorder.isTypeSupported('video/webm;') ? 'video/webm;' : 'video/mp4';
         for (let i = 0; i < numCameras; i++) {
             // offscreen renderer for each camera
             const offscreenRenderer = new THREE.WebGLRenderer( {antialias: true} );
@@ -2717,7 +2721,7 @@ class AnimationRecorder {
 
             if (this.renderers[i].domElement.captureStream) {
                 const stream = this.renderers[i].domElement.captureStream(60);
-                const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+                const options = { mimeType: this.mimeType, videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
                 const mediaRecorder = new MediaRecorder(stream, options);
                 mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
@@ -2828,7 +2832,7 @@ class AnimationRecorder {
 
     handleStop (idx) {
         const animationName = this.currentAnimationName;
-        const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
+        const blob = new Blob(this.recordedChunks[idx], {type: this.mimeType});
         const name =  `${animationName} ${idx + 1}.webm`;
 
         blobToBase64(blob, (binaryData) => {
@@ -16460,7 +16464,7 @@ class KeyframeApp {
         this.trajectoriesHelper.show();
         this.trajectoriesActive = true;
 
-        window.localStorage.setItem("trajectories", this.trajectoriesActive);
+        // window.localStorage.setItem("trajectories", this.trajectoriesActive);
         
         if( !this.bindedAnimations[this.currentAnimation] ) {
             return;
@@ -16477,7 +16481,7 @@ class KeyframeApp {
         }
         this.trajectoriesHelper.hide();
         this.trajectoriesActive = false;
-        window.localStorage.setItem("trajectories", this.trajectoriesActive);
+        // window.localStorage.setItem("trajectories", this.trajectoriesActive);
     }
 }
 
@@ -16545,6 +16549,34 @@ class Performs {
             // "Eva": ['https://models.readyplayer.me/66e30a18eca8fb70dcadde68.glb', PERFORMS.AVATARS_URL+'ReadyEva/ReadyEva_v3.json',0, 'https://models.readyplayer.me/66e30a18eca8fb70dcadde68.png?background=68,68,68']
         };
 
+        window.onbeforeunload = () => {
+            // window.localStorage.setItem("color", value);
+            window.localStorage.setItem("background", this.background);
+            if( this.currentCharacter ) {
+                const model = this.currentCharacter.model;
+                const avatarName = model.name;
+                window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
+                window.localStorage.setItem("config", this.avatars[avatarName] && this.avatars[avatarName][1] ? this.avatars[avatarName][1] : JSON.stringify(this.currentCharacter.config));
+
+                //GUI
+                window.localStorage.setItem("position", model.position.x.toString() + "," + model.position.y.toString() + "," + model.position.z.toString());
+                window.localStorage.setItem("rotation", model.quaternion.x.toString() + "," + model.quaternion.y.toString() + "," + model.quaternion.z.toString() + "," + model.quaternion.w.toString());
+                window.localStorage.setItem("scale", model.scale.x.toString());
+                window.localStorage.setItem("avatars", JSON.stringify(this.avatars));
+
+                if( this.gui ) {
+                    window.localStorage.setItem("controls", this.gui.controlsActive);
+                }
+            }
+            window.localStorage.setItem("restrictView", this.cameraRestricted);
+
+            // Keyframe app
+            window.localStorage.setItem("trajectories", this.keyframeApp.trajectoriesActive);
+            window.localStorage.setItem("srcEmbeddedTransforms", this.keyframeApp.srcEmbedWorldTransforms);
+            window.localStorage.setItem("srcEmbeddedTransforms", this.keyframeApp.srcEmbedWorldTransforms);
+            window.localStorage.setItem("srcReferencePose", this.keyframeApp.srcPoseMode);
+            window.localStorage.setItem("trgReferencePose", this.keyframeApp.trgPoseMode);
+        };
     }
 
     setSpeed( value ){ 
@@ -16598,7 +16630,7 @@ class Performs {
     
     setBackground( type, image = null ) {
         this.background = type;
-        window.localStorage.setItem("background", this.background);
+        // window.localStorage.setItem("background", this.background);
 
         switch(type) {
             case PERFORMS.Backgrounds.OPEN:
@@ -17826,7 +17858,7 @@ class Performs {
             }
         });
         
-        window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
+        // window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
 
         if ( this.gui ){ 
             this.gui.refresh(); 
@@ -17862,7 +17894,7 @@ class Performs {
         }
         this.controls[this.camera].update();
         this.cameraRestricted = restrictView;
-        window.localStorage.setItem("restrictView", restrictView);
+        // window.localStorage.setItem("restrictView", restrictView);
     }
 
     openAtelier(name, model, config, fromFile = true, rotation = 0) {
