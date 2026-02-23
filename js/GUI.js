@@ -857,6 +857,7 @@ class GUI {
     }
 
     createIcons(area) {
+        const starterTheme = LX.getMode();
         const buttons = [
             {
                 name: "Hide controls",
@@ -958,6 +959,16 @@ class GUI {
                     this.showGuide();
                 }
             },
+            {
+                name: "Change Theme",
+                selectable: false,
+                icon: starterTheme == "dark" ? "Moon" : "Sun",
+                class: "larger",
+                swap: starterTheme == "dark" ? "Sun" : "Moon",
+                callback:  (b) => { 
+                    LX.switchMode()
+                }
+            }
         ];
 
         this.overlayButtonsMenu = area.addOverlayButtons(buttons, { float: "vr", id: "overlay-controls"});

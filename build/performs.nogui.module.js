@@ -13889,7 +13889,9 @@ class Performs {
                 const model = this.currentCharacter.model;
                 const avatarName = model.name;
                 window.localStorage.setItem("avatar", this.avatars[avatarName] ? avatarName : this.loadedCharacters[avatarName].path);
-                window.localStorage.setItem("config", this.avatars[avatarName] && this.avatars[avatarName][1] ? this.avatars[avatarName][1] : JSON.stringify(this.currentCharacter.config));
+
+                const config = this.avatars[avatarName] && this.avatars[avatarName][1] && this.avatars[avatarName][1].includes("http") ? this.avatars[avatarName][1] : JSON.stringify(this.currentCharacter.config);
+                window.localStorage.setItem("config", config);
 
                 //GUI
                 window.localStorage.setItem("position", model.position.x.toString() + "," + model.position.y.toString() + "," + model.position.z.toString());
