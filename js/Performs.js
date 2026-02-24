@@ -354,7 +354,7 @@ class Performs {
             else if(window.localStorage.getItem("autoplay") != undefined ){
                 this.autoplay = window.localStorage.getItem("autoplay");
             }
-            
+
             if(settings.animations) {
                 if(typeof(settings.animations) == 'string') {
                     settings.animations = JSON.parse(settings.animations);
@@ -1287,7 +1287,10 @@ class Performs {
             return;
         }
 
-        if ( Array.isArray(data) ){
+        if ( data.type == "bml" || data.type == "sigml" || !data.type && Array.isArray(data) ){
+            if( data.data ) {
+                data = [{data:JSON.parse(data.data).behaviours, type:data.type}];
+            }
             this.scriptApp.onMessage(data, (processedData) => {
                 
                 this.changeMode(PERFORMS.Modes.SCRIPT);
