@@ -236,20 +236,37 @@ class KeyframeApp {
     }
 
     onMessage( data, callback ) {
-        this.processMessageFiles(data.data).then( (processedAnimationNames) => {
-            if( processedAnimationNames) {
-                for(let i = 0; i < processedAnimationNames.length; i++) {
-
-                    this.bindAnimationToCharacter(processedAnimationNames[i], this.currentCharacter);
-                }
-                this.currentAnimation = processedAnimationNames[0];
+        if( data.data.constructor == String ) {
+            let dataFile = this.BVHLoader.parseExtended(data.data);
+            let name = data.name;
+            if(this.loadedAnimations[name]) {
+                let filename = name.split(".");
+                filename.pop();
+                filename.join('.');
+                name = name + "_"+ filename;
             }
-            
+            this.loadBVHAnimation( name, dataFile );
+            this.currentAnimation = name;
             if(callback) {
-                callback(processedAnimationNames);
+                callback([name]);
             }
-            //this.gui.animationDialog.refresh();
-        });
+        }
+        else {
+            this.processMessageFiles(data.data).then( (processedAnimationNames) => {
+                if( processedAnimationNames) {
+                    for(let i = 0; i < processedAnimationNames.length; i++) {
+    
+                        this.bindAnimationToCharacter(processedAnimationNames[i], this.currentCharacter);
+                    }
+                    this.currentAnimation = processedAnimationNames[0];
+                }
+                
+                if(callback) {
+                    callback(processedAnimationNames);
+                }
+                //this.gui.animationDialog.refresh();
+            });
+        }
     }
     /* 
     * Given an array of animations of type { name: "", data: "" } where "data" is Blob of text/plain type 

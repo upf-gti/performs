@@ -13188,20 +13188,37 @@ class KeyframeApp {
     }
 
     onMessage( data, callback ) {
-        this.processMessageFiles(data.data).then( (processedAnimationNames) => {
-            if( processedAnimationNames) {
-                for(let i = 0; i < processedAnimationNames.length; i++) {
-
-                    this.bindAnimationToCharacter(processedAnimationNames[i], this.currentCharacter);
-                }
-                this.currentAnimation = processedAnimationNames[0];
+        if( data.data.constructor == String ) {
+            let dataFile = this.BVHLoader.parseExtended(data.data);
+            let name = data.name;
+            if(this.loadedAnimations[name]) {
+                let filename = name.split(".");
+                filename.pop();
+                filename.join('.');
+                name = name + "_"+ filename;
             }
-            
+            this.loadBVHAnimation( name, dataFile );
+            this.currentAnimation = name;
             if(callback) {
-                callback(processedAnimationNames);
+                callback([name]);
             }
-            //this.gui.animationDialog.refresh();
-        });
+        }
+        else {
+            this.processMessageFiles(data.data).then( (processedAnimationNames) => {
+                if( processedAnimationNames) {
+                    for(let i = 0; i < processedAnimationNames.length; i++) {
+    
+                        this.bindAnimationToCharacter(processedAnimationNames[i], this.currentCharacter);
+                    }
+                    this.currentAnimation = processedAnimationNames[0];
+                }
+                
+                if(callback) {
+                    callback(processedAnimationNames);
+                }
+                //this.gui.animationDialog.refresh();
+            });
+        }
     }
     /* 
     * Given an array of animations of type { name: "", data: "" } where "data" is Blob of text/plain type 
@@ -14154,6 +14171,13 @@ class Performs {
                 this.currentCharacter.scale = new THREE.Vector3().fromArray(scale);
             }
 
+            if(settings.autoplay != undefined) {
+                this.autoplay = settings.autoplay;
+            }
+            else if(window.localStorage.getItem("autoplay") != undefined ){
+                this.autoplay = window.localStorage.getItem("autoplay");
+            }
+            
             if(settings.animations) {
                 if(typeof(settings.animations) == 'string') {
                     settings.animations = JSON.parse(settings.animations);
@@ -14260,13 +14284,7 @@ class Performs {
         else if(window.localStorage.getItem("trajectories") != undefined ){
             this.keyframeApp.trajectoriesActive = JSON.parse(window.localStorage.getItem("trajectories"));
         }
-       
-        if(settings.autoplay != undefined) {
-            this.autoplay = settings.autoplay;
-        }
-        else if(window.localStorage.getItem("autoplay") != undefined ){
-            this.autoplay = window.localStorage.getItem("autoplay");
-        }
+    
         
         if(settings.crossfade != undefined) {
             this.keyframeApp.useCrossFade = settings.crossfade;

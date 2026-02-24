@@ -251,57 +251,6 @@ class GUI {
     
     branch.content.appendChild(tabsArea.root);
 
-        // p.sameLine();
-
-        // let btn = p.addButton(null, "Script animation", (v, e) => {
-        //     if (this.performs.currentCharacter.config) {
-        //         this.performs.changeMode(PERFORMS.Modes.SCRIPT);
-        //         if(this.performs.scriptApp.currentIdle) {
-        //             this.performs.scriptApp.bindAnimationToCharacter(this.performs.scriptApp.currentIdle, this.performs.currentCharacter.model.name);
-        //         }
-        //     }
-        //     else {
-        //         this.performs.changeMode(-1);
-        //     }
-        //     this.createSettingsPanel();
-        //     this.overlayButtonsReset.buttons["Reset pose"].root.classList.remove("hidden");
-        // }, {
-        //     icon: "Code2",
-        //     width: "50%",
-        //     selectable: true,
-        //     selected: this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1
-        // } );
-
-        // btn = p.addButton(null, "Keyframing animation",  (v, e) => {
-        //     this.performs.changeMode(PERFORMS.Modes.KEYFRAME);
-        //     this.createSettingsPanel();
-        //     this.overlayButtonsReset.buttons["Reset pose"].root.classList.add("hidden");
-        // }, {
-        //     icon: "Film",
-        //     width: "50%",
-        //     selectable: true,
-        //     selected: this.performs.mode == PERFORMS.Modes.KEYFRAME
-        // } );
-
-        // p.endLine();
-        // p.sameLine();
-
-        // p.addText(null, "Script animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
-        // p.addText(null, "Clip animation", null, {disabled: true, width: "50%", inputClass:"nobg justItm_c"});
-
-        // p.endLine();
-
-        // p.addSeparator();
-
-        // if(!force) {
-        //     if(this.performs.mode == PERFORMS.Modes.SCRIPT || this.performs.mode == -1) {
-        //         this.createBMLPanel(p, this.createSettingsPanel.bind(this));
-        //     }
-        //     else {
-        //         this.createKeyframePanel(p, this.createSettingsPanel.bind(this));
-        //     }
-        // }
-
         p.branch( "Transformations", { icon: "Move", closed: !this.branchesOpened["Transformations"]} );
 
         const model = this.performs.currentCharacter.model;
@@ -334,9 +283,6 @@ class GUI {
         })
     }
 
-    createAnimationBranch() {
-
-    }
     createBackgroundsPanel() {
 
         const p = this.panel;
@@ -355,70 +301,83 @@ class GUI {
             this.performs.setBackPlaneColor(value);
         });
 
-        // Open space
-        const openBtn = p.addButton("openBtn", "Open space", (value)=> {
-            this.performs.setBackground( PERFORMS.Backgrounds.OPEN);
-            this.createBackgroundsPanel();
-        }, {img: "./data/imgs/open-space.png", className: "centered", buttonClass: "roundedbtn secondary", hideName: true}).root;
-        if( this.performs.background == PERFORMS.Backgrounds.OPEN ) {
-            openBtn.children[0].classList.add('selected');
-        }
+        const _makeProjectOptionItem = ( icon, outerText, id, selected = false, callback ) => {
+            const item = LX.makeContainer( ["100%", "auto"], `flex flex-col gap-3 p-3 items-center text-md rounded-lg hover:bg-accent cursor-pointer ${selected ? "bg-secondary" : ""}`, ``, null );
+            const card = LX.makeContainer( ["200px", "auto"], `flex flex-col py-6 justify-center items-center content-center rounded-lg gap-3 card-button card-color hover:scale`, `
+               <img src="${icon}" height="120px">
+            `, item );
 
+            let button = null;
+            const flexContainer = LX.makeContainer( ["auto", "auto"], "flex items-center", `<p>${ outerText }</p>`, item );
+            if(selected && callback) {
+                button = new LX.Button(null, "Edit Character", (e, v) => {
+                    callback(v);
+                } ,{ icon: "UserRoundPen", className: "justify-center", width: "50px", buttonClass: "secondary"} );
+                flexContainer.appendChild(button.root);
+            }
+
+            item.id = id;
+            
+            card.addEventListener("click", async (e, v) => {
+                switch(item.id) {
+                    case "openBtn":
+                        this.performs.setBackground( PERFORMS.Backgrounds.OPEN);
+                    break;
+                    case "studioBtn":
+                        this.performs.setBackground( PERFORMS.Backgrounds.STUDIO);
+                    break;
+                    case "photocallBtn":
+                        this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL);
+                    break;
+                }
+                this.createBackgroundsPanel();
+            });
+
+            return item;
+        };
+        
+        const backgroundContainer = LX.makeContainer( ["100%", "auto"], "grid gap-2", "" );
+        backgroundContainer.style.gridTemplateColumns = "repeat(auto-fill, minmax(220px, 1fr))";
+        backgroundContainer.classList.add("showScrollBar");
+
+        p.root.appendChild(backgroundContainer);
+
+        // Open space
+        let isSelected = this.performs.background == PERFORMS.Backgrounds.OPEN;
+        let container = _makeProjectOptionItem("./data/imgs/open-space.png", "Open space", "openBtn", isSelected);
+        backgroundContainer.appendChild( container );
+        if ( isSelected ){
+            if ( container.scrollIntoViewIfNeeded ){
+                setTimeout(container.scrollIntoViewIfNeeded.bind(container), 1);
+            }
+        }
 
         // Studio background
-        const studioP = new LX.Panel();
-
-        const studioBtn = p.addButton("studioBtn", "Studio", (value)=> {
-            this.performs.setBackground( PERFORMS.Backgrounds.STUDIO);
-            this.createBackgroundsPanel();
-        }, {img: "./data/imgs/studio-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn secondary", hideName: true }).root;
-        if( this.performs.background == PERFORMS.Backgrounds.STUDIO ) {
-            studioBtn.children[0].classList.add('selected');
-            const ebtn = studioP.addButton(null, "Edit properties", (e) => {
-                this.showStudioPropertiesDialog( );
-            }, {icon: "PenBox", className: "centered", width: "40px", height: "40px"}).root;
-            studioBtn.append(ebtn);
+        isSelected = this.performs.background == PERFORMS.Backgrounds.STUDIO;
+        container = _makeProjectOptionItem( "./data/imgs/studio-space.png", "Studio", "studioBtn", isSelected, () => this.showStudioPropertiesDialog( ));
+        backgroundContainer.appendChild( container );
+        if ( isSelected ){
+            if ( container.scrollIntoViewIfNeeded ){
+                setTimeout(container.scrollIntoViewIfNeeded.bind(container), 1);
+            }
         }
-
+        
         // Photocall background
-        const photocallP = new LX.Panel();
-
-        const photocallBtn = p.addButton("photocallBtn", "Photocall", (value)=> {
-            this.performs.setBackground( PERFORMS.Backgrounds.PHOTOCALL);
-            this.createBackgroundsPanel();
-        }, {img: "./data/imgs/photocall-space.png", className: "centered flex flex-col items-center", buttonClass: "roundedbtn secondary", hideName: true}).root;
-        if( this.performs.background == PERFORMS.Backgrounds.PHOTOCALL ) {
-            photocallBtn.children[0].classList.add('selected');
-            const ebtn = photocallP.addButton(null, "Edit properties", (e) => {
-                this.showPhotocallPropertiesDialog( );
-            }, {icon: "PenBox", className: "centered", width: "40px"}).root;
-            photocallBtn.append(ebtn);
+        isSelected = this.performs.background == PERFORMS.Backgrounds.PHOTOCALL;
+        container = _makeProjectOptionItem( "./data/imgs/photocall-space.png", "Photocall", "photocallBtn", isSelected, () => this.showPhotocallPropertiesDialog( ));
+        backgroundContainer.appendChild( container );
+        if ( isSelected ){
+            if ( container.scrollIntoViewIfNeeded ){
+                setTimeout(container.scrollIntoViewIfNeeded.bind(container), 1);
+            }
         }
     }
 
     showStudioPropertiesDialog() {
         const dialog = new LX.Dialog("Properties", (panel) => {
             let formFile = true;
-
-            panel.addComboButtons(null, [
-                {
-                    value: "From File",
-                    callback: (v, e) => {
-                        formFile = true;
-                        panel.components["Image/Video URL"].root.classList.add('hidden');
-                        panel.components["File"].root.classList.remove('hidden');
-                    }
-                },
-                {
-                    value: "From URL",
-                    callback: (v, e) => {
-                        formFile = false;
-                        panel.components["File"].root.classList.add('hidden');
-                        panel.components["Image/Video URL"].root.classList.remove('hidden');
-                    }
-                }
-            ], {selected: formFile ? "From File" : "From URL", width: "100%"});
-
+            
+            panel.sameLine(null, "justify-between");
             const logoFile = panel.addFile("File", (v, e) => {
 
                 const files = panel.components["File"].root.children[1].files;
@@ -457,7 +416,7 @@ class GUI {
 
                 }
                 else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
-            }, {type: "url", read:true});
+            }, {type: "url", read: true});
 
             const textureURL = panel.addText("Image/Video URL", "", (v, e) => {
                 if(!v) {
@@ -493,7 +452,27 @@ class GUI {
                     console.log("Error:" + error.message);
                 });
 
-            }, {className: "hidden", read: true});
+            }, {read: true, className: "hidden", nameWidth: "150px"});
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {
+                        formFile = true;
+                        panel.components["Image/Video URL"].root.classList.add('hidden');
+                        panel.components["File"].root.classList.remove('hidden');
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        panel.components["File"].root.classList.add('hidden');
+                        panel.components["Image/Video URL"].root.classList.remove('hidden');
+                        panel.components["Image/Video URL"].root.classList.add('flex');
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL"});
+            panel.endLine();
 
             panel.addSelect("Choose a setting", ["Fill", "Adjust", "Expand", "Extend"], this.performs.backgroundSettings, (v) => {
                 this.performs.setBackgroundSettings(v);
@@ -514,25 +493,7 @@ class GUI {
         const dialog = new LX.Dialog("Properties", (panel) => {
 
             let formFile = true;
-            panel.addComboButtons(null, [
-                {
-                    value: "From File",
-                    callback: (v, e) => {
-                        formFile = true;
-                        panel.components["Logo URL"].root.classList.add('hidden');
-                        panel.components["File"].root.classList.remove('hidden');
-                    }
-                },
-                {
-                    value: "From URL",
-                    callback: (v, e) => {
-                        formFile = false;
-                        panel.components["File"].root.classList.add('hidden');
-                        panel.components["Logo URL"].root.classList.remove('hidden');
-                    }
-                }
-            ], {selected: formFile ? "From File" : "From URL", width: "100%"});
-
+            panel.sameLine(null, "justify-between");          
             const logoFile = panel.addFile("File", (v, e) => {
                 const files = panel.components["File"].root.children[1].files;
                 if(!files.length) {
@@ -554,7 +515,7 @@ class GUI {
 
                 }
                 else { LX.popup("Only accepts PNG, JPEG and JPG formats!"); }
-            }, {type: "url", read:true});
+            }, {type: "url"});
 
             let logoURL = panel.addText("Logo URL", "", (v, e) => {
                 if(!v) {
@@ -590,7 +551,28 @@ class GUI {
                     console.log("Error:" + error.message);
                 });
 
-            }, {read: true, className: "hidden"});
+            }, {read: true, className: "hidden", nameWidth: "150px"});
+
+            panel.addComboButtons(null, [
+                {
+                    value: "From File",
+                    callback: (v, e) => {
+                        formFile = true;
+                        panel.components["Logo URL"].root.classList.add('hidden');
+                        panel.components["File"].root.classList.remove('hidden');
+                    }
+                },
+                {
+                    value: "From URL",
+                    callback: (v, e) => {
+                        formFile = false;
+                        panel.components["File"].root.classList.add('hidden');
+                        panel.components["Logo URL"].root.classList.remove('hidden');
+                        panel.components["Logo URL"].root.classList.add('flex');
+                    }
+                }
+            ], {selected: formFile ? "From File" : "From URL"});
+            panel.endLine();
 
             panel.addNumber("Offset", this.performs.repeatOffset, (v) => {
                 this.performs.setPhotocallOffset(v);
@@ -599,7 +581,7 @@ class GUI {
             panel.addVector2("Repeatition", this.performs.repeatCount, (v) => {
                 this.performs.repeatCount = v;
             }, {min: 0, max: 20})
-        }, {className: "resizeable"});
+        }, {className: "resizeable", resize: true});
     }
 
     createAvatarsPanel() {
@@ -639,7 +621,7 @@ class GUI {
             if(selected) {
                 button = new LX.Button(null, "Edit Character", (e, v) => {
                     this.createEditAvatarDialog(v);
-                } ,{ icon: "UserRoundPen", className: "justify-center", width: "50px", buttonClass: ""} );
+                } ,{ icon: "UserRoundPen", className: "justify-center", width: "50px", buttonClass: "secondary"} );
             }
             const flexContainer = LX.makeContainer( ["auto", "auto"], "flex items-center", `<p>${ outerText }</p>`, item );
             if( selected ) {
@@ -671,43 +653,18 @@ class GUI {
             const isSelected = avatar == this.performs.currentCharacter.model.name;
             const container = _makeProjectOptionItem(this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL, avatar, avatar, isSelected);
            
-            characterContainer.appendChild( container );
+            if( isSelected ) {
+                characterContainer.prepend( container );
+            }
+            else {
+                characterContainer.appendChild( container );
+            }
 
             if ( isSelected ){
                 if ( container.scrollIntoViewIfNeeded ){
                     setTimeout(container.scrollIntoViewIfNeeded.bind(container), 1);
                 }
-                //this.characterPanel.selectedCard = container;
-                // const panel = new LX.Panel();
-
-                // let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
-                //     this.createEditAvatarDialog(v);
-                // } ,{ icon: "UserRoundPen", width: "40px"} ).root;
-                // container.append(ebtn);
             }
-
-            // const btn = p.addButton(null, avatar, (avatarName)=> {
-            //     this.performs.scriptApp.mood = "Neutral";
-            //     if(this.performs.scriptApp.ECAcontroller) {
-            //         this.performs.scriptApp.ECAcontroller.reset();
-            //     }
-            //     this.selectAvatar(avatarName);
-            // }, {
-            //     img: this.avatarOptions[avatar][3] ?? GUI.THUMBNAIL,
-            //     className: "centered flex flex-col items-center",
-            //     buttonClass: "roundedbtn",
-            //     title: avatar
-            // }).root;
-
-            // if(avatar == this.performs.currentCharacter.model.name) {
-            //     btn.children[0].classList.add("selected");
-            //     const panel = new LX.Panel();
-
-            //     let ebtn = panel.addButton( null, "Edit Avatar", (v) => {
-            //         this.createEditAvatarDialog(v);
-            //     } ,{ icon: "UserRoundPen", width: "40px"} ).root;
-            //     btn.append(ebtn);
-            // }
         }
     }
 
@@ -1474,11 +1431,12 @@ class GUI {
         }, { min: -2, max: 2, step: 0.01});
 
         const animations = Object.keys(this.performs.keyframeApp.loadedAnimations);
+        
+        this.keyframeGui.sameLine(null, "justify-between");
         this.keyframeGui.addSelect("Animation", animations, this.performs.keyframeApp.currentAnimation, (v) => {
             this.performs.changeAnimation(v);
-        });
-        this.keyframeGui.sameLine();
-
+        }, { width: "calc(100% - 130px)"});
+        
         const fileinput = this.keyframeGui.addFile("Animation File", (v, e) => {
             let files = panel.components["Animation File"].root.children[1].files;
             if(!files.length) {
@@ -1502,12 +1460,12 @@ class GUI {
         this.keyframeGui.addButton(null, "Upload animation", (v,e) => {
             fileinput.root.children[1].click();
 
-        }, { icon: "Upload", width: "30%", className:"no-padding"});
+        }, { icon: "Upload", width: "60px", className:"no-padding"});
 
         this.keyframeGui.addButton(null, null, (v,e) => {
             this.performs.changePlayState();
             this.changePlayButtons(this.performs.keyframeApp.playing );
-        }, { icon: "Play@solid", width: "70%", className:"no-padding"});
+        }, { icon: "Play@solid", width: "60px", className:"no-padding", buttonClass:"primary"});
         this.keyframeGui.endLine();
 
         if( animations.length > 1 ) {
@@ -1524,36 +1482,28 @@ class GUI {
             });
         }
 
-        this.keyframeGui.branch("Retargeting", { icon: "Tags"} );
+        this.keyframeGui.branch("Retargeting", { icon: "Skull@solid"} );
 
         this.keyframeGui.addToggle("Source embedded transforms", this.performs.keyframeApp.srcEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.srcEmbedWorldTransforms = v;
-            // window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
-
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
+        },{nameWidth: "auto", skipReset: true, label: "", className: "gap-1 success"})
 
         this.keyframeGui.addToggle("Target embedded transforms", this.performs.keyframeApp.trgEmbedWorldTransforms, (v) => {
             this.performs.keyframeApp.trgEmbedWorldTransforms = v;
-            // window.localStorage.setItem("srcEmbeddedTransforms", this.performs.keyframeApp.srcEmbedWorldTransforms);
-
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        }, {nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
+        }, {nameWidth: "auto", skipReset: true, label: "", className: "gap-1 success"})
 
         const poseModes = ["DEFAULT", "CURRENT", "TPOSE"];
         this.keyframeGui.addSelect("Source reference pose", poseModes, poseModes[this.performs.keyframeApp.srcPoseMode], (v) => {
             this.performs.keyframeApp.srcPoseMode = poseModes.indexOf(v);
-            // window.localStorage.setItem("srcReferencePose", this.performs.keyframeApp.srcPoseMode);
-
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        }, {nameWidth: "200px", skipReset: true});
+        }, {nameWidth: "200px", skipReset: true, className: ""});
 
         this.keyframeGui.addSelect("Character reference pose", poseModes, poseModes[this.performs.keyframeApp.trgPoseMode], (v) => {
             this.performs.keyframeApp.trgPoseMode = poseModes.indexOf(v);
-            // window.localStorage.setItem("trgReferencePose", this.performs.keyframeApp.trgPoseMode);
-
             this.performs.changeAnimation(this.performs.keyframeApp.currentAnimation, true);
-        }, {nameWidth: "200px", skipReset: true});
+        }, {nameWidth: "200px", skipReset: true, className: ""});
 
         if( this.performs.keyframeApp.trajectoriesHelper ) {
 
@@ -1566,7 +1516,7 @@ class GUI {
                 else {
                     keyframeApp.hideTrajectories();
                 }
-            },{nameWidth: "auto", skipReset: true, label: "", className: "contrast"})
+            },{nameWidth: "auto", skipReset: true, label: "", className: ""})
 
             if( this.performs.keyframeApp.currentAnimation ) {
                 this.keyframeGui.addRange("Window range (s)", [this.performs.keyframeApp.trajectoriesStart, this.performs.keyframeApp.trajectoriesEnd], (v) => {

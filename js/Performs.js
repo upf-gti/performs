@@ -348,6 +348,13 @@ class Performs {
                 this.currentCharacter.scale = new THREE.Vector3().fromArray(scale);
             }
 
+            if(settings.autoplay != undefined) {
+                this.autoplay = settings.autoplay;
+            }
+            else if(window.localStorage.getItem("autoplay") != undefined ){
+                this.autoplay = window.localStorage.getItem("autoplay");
+            }
+            
             if(settings.animations) {
                 if(typeof(settings.animations) == 'string') {
                     settings.animations = JSON.parse(settings.animations);
@@ -454,13 +461,7 @@ class Performs {
         else if(window.localStorage.getItem("trajectories") != undefined ){
             this.keyframeApp.trajectoriesActive = JSON.parse(window.localStorage.getItem("trajectories"));
         }
-       
-        if(settings.autoplay != undefined) {
-            this.autoplay = settings.autoplay;
-        }
-        else if(window.localStorage.getItem("autoplay") != undefined ){
-            this.autoplay = window.localStorage.getItem("autoplay");
-        }
+    
         
         if(settings.crossfade != undefined) {
             this.keyframeApp.useCrossFade = settings.crossfade;

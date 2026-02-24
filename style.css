@@ -14,9 +14,6 @@
 	font-size: larger;
 }
 
-.justItm_c{
-	justify-items: center;
-}
 .showScrollBar::-webkit-scrollbar{
 	display: block !important
 }
@@ -93,47 +90,6 @@
 		border-color: red;
 		border: 2px;
 	}
-}
-  
-.flex-vertical {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.left-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 20px;
-}
-
-.left-container i.button:hover span, .left-container i.big-button:hover span {
-    left: 0px;
-}
-
-.lexbutton.roundedbtn {
-	width: 100px !important;
-    height: 100px !important;
-    border-radius: 49px;
-    justify-content: center;
-    align-items: center;
-    border: 4px solid var(--secondary);
-	background-color: rgb(42, 42, 42)!important;
-	--button-color: rgb(42, 42, 42)!important;
-}
-.lexbutton.roundedbtn.selected {
-	border: 4px solid whitesmoke
-}
-.roundedbtn:hover{
-	border: 4px solid var(--accent-light);;
-}
-.roundedbtn img{
-	width: 120px;
-}
-.centered {
-	justify-content: center;
 }
 
 /* Overlay buttons*/
