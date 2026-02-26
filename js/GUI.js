@@ -759,7 +759,7 @@ class GUI {
         }, { icon: "RotateCcw"} );
         p.endLine("left");
 
-        p.addCheckbox("Enable capture", this.captureEnabled, (v) => {
+        p.addToggle("Enable capture", this.captureEnabled, (v) => {
             this.captureEnabled = v;
 
             if(this.captureEnabled) {
@@ -770,7 +770,7 @@ class GUI {
             }
         }, {
             skipReset: true,
-            className: "contrast",
+            className: "success",
             label: "",
             suboptions: (sp)=>{
                 sp.addText(null, "Select cameras to be recorded:", null, {disabled: true, inputClass:"nobg"});
@@ -778,19 +778,19 @@ class GUI {
                 sp.sameLine();
 
                 for( let i = 0; i < this.performs.cameras.length; ++i){
-                    sp.addCheckbox((i+1).toString(), this.performs.cameras[i].record, (value, event) => {
+                    sp.addToggle((i+1).toString(), this.performs.cameras[i].record, (value, event) => {
                         this.performs.cameras[i].record = value;
-                    },{className:"contrast", label: ""});
+                    },{className:"success", label: ""});
 
                 }
                 sp.endLine();
 
                 sp.addTitle("Automatic exportation")
-                sp.addCheckbox("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
+                sp.addToggle("Export as ZIP", this.performs.animationRecorder.exportZip, (v) => {
                     this.performs.animationRecorder.exportZip = v;
                 }, {
                     skipReset: true,
-                    className: "contrast",
+                    className: "success",
                     label: "",
                     title:"Pack all videos into a single ZIP or download each file individually"});
 
@@ -1550,7 +1550,8 @@ class GUI {
                 skipPreview: true,
                 layout: LX.AssetView.LAYOUT_LIST,
                 contextMenu: false,
-                allowMultipleSelection: true
+                allowMultipleSelection: true,
+                allowItemCheck: true
             });
             assetView.load( assetData, event => {
                 if(event.type == LX.AssetViewEvent.ASSET_CHECKED) {
@@ -1560,25 +1561,33 @@ class GUI {
                 }
             });
 
+            assetView.on("check", ( event ) => {
+                const item = event.items[0];
+                // const i = assetData.findIndex( a => a.id == item.id);
+                // assetData[i].record = item.metadata.selected; 
+                let animation = animations[item.id];
+                animation.record = item.metadata.selected;
+            })
+
             let panel = new LX.Panel({height: "calc(100% - 40px)"});
-            let selectAllCheckbox = panel.addCheckbox("Select All", true, (v, e) => {
+            let selectAllCheckbox = panel.addToggle("Select All", true, (v, e) => {
                 for (let asset in assetData) {
-                    assetData[asset].selected = v;
+                    assetData[asset].metadata.selected = v;
                     animations[assetData[asset].id].record = v;
                 }
                 assetView._refreshContent();
-            }, {label: "", className: "contrast"});
+            }, {label: "", className: "success"});
 
             selectAllCheckbox.onSetValue(false, false);
 
             panel.attach(assetView);
 
             p.attach(panel);
-            p.sameLine(2);
+            p.sameLine(2, "justify-end");
             p.addButton("", "Record", () => {
                 if (callback) callback();
                 dialog.close();
-            }, {buttonClass: "accept", width: "100px"});
+            }, {buttonClass: "primary", width: "100px"});
             p.addButton(null, "Cancel", () => { dialog.close();}, {width: "100px"})
         }, {size: ["40%", "60%"], resizable: true, draggable: true, scroll: false });
 
@@ -2261,7 +2270,6 @@ class GUI {
 
     showControls() {
         this.controlsActive = true;
-        // window.localStorage.setItem("controls", this.controlsActive);
 
         this.canvasArea.panels[0].root.classList.remove("hide");
 
@@ -2284,7 +2292,6 @@ class GUI {
 
     hideControls() {
         this.controlsActive = false;
-        // window.localStorage.setItem("controls", this.controlsActive);
 
         const controlsBtn = this.overlayButtonsMenu.buttons["Hide controls"];
         if( controlsBtn.options.icon == "EyeOff" ) {
@@ -2469,13 +2476,13 @@ class GUI {
                 const tabPanel = new LX.Panel({height:'auto'});
 
                 // make selectAll checkbox sepparate from the rest of attributes. A refresh of attributes will not change the selectAll checkbox
-                tabPanel.addCheckbox("Select All", false, (v, e) => {
+                tabPanel.addToggle("Select All", false, (v, e) => {
                     for(let key in attributes) {
                         attributes[key].state = v;
                         localStorage.setItem(key, attributes[key].value);
                     }
                     attrPanel.refresh();
-                },{nameWidth: "auto", className: "contrast", label:"", skipReset: true});
+                },{nameWidth: "auto", className: "success", label:"", skipReset: true});
                 tabPanel.addSeparator();
 
                 // attributes to show
@@ -2484,11 +2491,11 @@ class GUI {
                     for(let key in attributes) {
                         url.searchParams.delete(key);
                         attrPanel.sameLine();
-                        attrPanel.addCheckbox("", attributes[key].state, (v, e) => {
+                        attrPanel.addToggle("", attributes[key].state, (v, e) => {
                             localStorage.setItem(key, attributes[key].value);
                             attributes[key].state = v;
                             attrPanel.refresh();
-                        },{nameWidth: "auto", className: "contrast", label:key})
+                        },{nameWidth: "auto", className: "success", label:key})
                         attrPanel.addText(null, attributes[key].text, null, {disabled: true, inputClass: "nobg"});
                         attrPanel.endLine();
 

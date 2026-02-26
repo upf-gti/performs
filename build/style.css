@@ -14,9 +14,6 @@
 	font-size: larger;
 }
 
-.justItm_c{
-	justify-items: center;
-}
 .showScrollBar::-webkit-scrollbar{
 	display: block !important
 }
@@ -26,7 +23,7 @@
 	background-color: #111;
 	opacity: 1;
 	z-index: 1000;
-	font-size: var(--global-font-size);;
+	/* font-size: var(--global-font-size);; */
 }
 
 
@@ -58,12 +55,12 @@
 .floating-button {
 	/* border-radius: 80px !important;
     width: 23% !important;
-    background-color: var(--global-selected)!important;
+    background-color: var(--accent)!important;
 	justify-content: center; */
 
 	border-radius: 80px !important;
 	width: 30px !important;
-    background-color: var(--global-selected) !important;
+    background-color: var(--accent) !important;
     padding: var(--global-padding-sm) 0.1875rem !important;
     min-width: 0% !important;
 }
@@ -94,65 +91,26 @@
 		border: 2px;
 	}
 }
-  
-.flex-vertical {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-}
-
-.left-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    margin: 20px;
-}
-
-.left-container i.button:hover span, .left-container i.big-button:hover span {
-    left: 0px;
-}
-
-.lexbutton.roundedbtn {
-	width: 100px !important;
-    height: 100px !important;
-    border-radius: 49px;
-    justify-content: center;
-    align-items: center;
-    border: 4px solid var(--global-branch-darker);
-	background-color: rgb(42, 42, 42)!important;
-	--button-color: rgb(42, 42, 42)!important;
-}
-.lexbutton.roundedbtn.selected {
-	border: 4px solid whitesmoke
-}
-.roundedbtn:hover{
-	border: 4px solid var(--global-selected-light);;
-}
-.roundedbtn img{
-	width: 120px;
-}
-.centered {
-	justify-content: center;
-}
 
 /* Overlay buttons*/
 .lexoverlaybuttons {
-    width: auto !important;
+    /* width: auto !important;
     height: auto !important;
-    justify-content: start;
+    justify-content: start; */
     gap: 0px;
-    z-index: 95;
-    --button-color: var(--global-color-secondary);
+    /* z-index: 95;
+    --button-color: var(--accent);
     margin: 8px;
     padding: 0.25em;
-    border-radius: 12px;
+    border-radius: 12px; */
+	background: transparent;
+	border: none;
 }
 .lexoverlaybuttonscontainer .lexcomponent button:hover {
-	--button-color: #313132cf!important;
+	/* --button-color: #313132cf!important; */
 }
 .lexoverlaybuttonscontainer .lexcomponent button.selected {
-	--button-color: #313132cf!important;
+	/* --button-color: #313132cf!important; */
 }
 .lexoverlaybuttons .lexcomponent.larger button:hover svg {
 	width: 1.4rem!important;
@@ -211,7 +169,7 @@
 
 .lexoverlaybuttons .lexcomponent.relative button a {
     line-height: 19px;
-    font-size: var(--global-font-size);
+    /* font-size: var(--global-font-size); */
 }
 
 .lexoverlaybuttons .lexcomponent.relative.left {    
@@ -219,8 +177,8 @@
 }
 
 .lexbutton.selected {
-    --button-color: var(--global-selected);
-    outline: 1px solid var(--global-color-terciary);
+    --button-color: var(--primary);
+    /* outline: 1px solid var(--primary); */
     color: #DDD;
 }
 .lexoverlaybuttons .lexcomponent {
@@ -236,6 +194,58 @@
 	
 .lexbutton.accept:hover {
     background-color: #BB86FC;
+}
+
+@media (max-height: 300px) {
+	.lexoverlaybuttons .lexcomponent.larger button:hover svg {
+		width: 1.2rem!important;
+		height: 1.2rem!important;
+	}
+	.lexoverlaybuttons .lexcomponent button {
+		border-radius: 80px!important;
+		height: auto!important;
+		--button-color: #3131323f;
+	}
+
+	.lexoverlaybuttons .lexcomponent.larger button {
+
+		width: 37px!important;
+		height: 37px!important;	
+		max-height: 80px!important;
+		max-width: 80px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.larger button svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.no-padding{
+		padding: 5px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large {
+		margin: 0 10px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large button {
+		width: 35px!important;
+		height: 35px!important;
+		max-height: 80px!important;
+		max-width: 80px!important;
+	}
+
+	.lexoverlaybuttons .lexcomponent.large button svg {
+		width: 1.2rem;
+		height: 1.2rem;
+	}
+	.lexoverlaybuttons .lexcomponent.large button:hover svg {
+		width: 1.4rem;
+		height: 1.4rem;
+	}
+
+	.lexoverlaybuttons .lexcomponent.relative.left {    
+		margin-right: 50px;
+	}
 }
 
 /* GUIDE */ 
@@ -323,10 +333,6 @@
 	color: #BB86FC;
 }
 
-.iframe-text textarea{
-	color: var(--global-text-secondary)!important;
-}
-
 .close-button {
 	width: 24px;
 	height: 24px;
@@ -360,4 +366,8 @@
 
 .transparent {
 	background: transparent!important;
+}
+
+.hidden {
+	display: none!important;
 }

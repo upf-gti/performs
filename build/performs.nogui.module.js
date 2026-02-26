@@ -57,9 +57,9 @@ class AnimationRecorder {
                 const stream = this.renderers[i].domElement.captureStream(60);
                 const options = { mimeType: this.mimeType, videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
-            const mediaRecorder = new MediaRecorder(stream, options);
-            mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
-            mediaRecorder.onstop = () => this.handleStop(i);
+                const mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
+                mediaRecorder.onstop = () => this.handleStop(i);
 
                 this.mediaRecorders.push( mediaRecorder );
                 this.recordedChunks.push([]);
@@ -14626,7 +14626,8 @@ class Performs {
                 
                 avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
                 modelToLoad = [ avatar, options.config, new THREE.Quaternion(), null, filename];
-                defaultAvatar = filename;    
+                defaultAvatar = filename;
+                this.avatars[defaultAvatar] = modelToLoad;
             }
             else if( path.length == 1 && this.avatars[path[0]] ) {
                 defaultAvatar = path[0];

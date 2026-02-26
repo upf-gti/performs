@@ -797,7 +797,8 @@ class Performs {
                 
                 avatar += avatar.includes('models.readyplayer.me') ? '?pose=T&morphTargets=ARKit&lod=1' : '';
                 modelToLoad = [ avatar, options.config, new THREE.Quaternion(), null, filename];
-                defaultAvatar = filename;    
+                defaultAvatar = filename;
+                this.avatars[defaultAvatar] = modelToLoad;
             }
             else if( path.length == 1 && this.avatars[path[0]] ) {
                 defaultAvatar = path[0];
