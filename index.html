@@ -3,7 +3,7 @@
         <title>Performs</title>
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <link rel="icon" type="image/x-icon" href="./data/imgs/favicon.png">
-        <link rel="stylesheet" href="https://cdn.skypack.dev/lexgui@0.7.6/build/lexgui.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lexgui@8.3.0/build/lexgui.css">
         <link rel="stylesheet" href="./style.css">
 
         <script async src="./external/es-module-shims.js"></script>
@@ -13,8 +13,8 @@
 				"imports": {
 					"three": "./external/three/build/three.module.js",
                     "three/addons/": "./external/three/jsm/",
-                    "lexgui": "https://cdn.skypack.dev/lexgui@0.7.10/build/lexgui.module.js",
-                    "lexgui/extensions/": "https://cdn.skypack.dev/lexgui@0.7.10/build/extensions/"
+                    "lexgui": "https://cdn.jsdelivr.net/npm/lexgui@8.3.0/build/lexgui.module.js",
+                    "lexgui/extensions/": "https://cdn.jsdelivr.net/npm/lexgui@8.3.0/build/extensions/"
 				}
 			}
 		</script>
@@ -88,7 +88,7 @@
             </div>
         </div>
         <div id="bubble" class="bubble">Copied!</div>
-        <script type="module">
+        <script async type="module">
             import {Performs} from './build/performs.module.js';
             const performs = new Performs();
             performs.init();

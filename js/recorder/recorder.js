@@ -18,6 +18,7 @@ class AnimationRecorder {
         
         this.exportZip = true;
 
+        this.mimeType = MediaRecorder.isTypeSupported('video/webm;') ? 'video/webm;' : 'video/mp4';
         for (let i = 0; i < numCameras; i++) {
             // offscreen renderer for each camera
             const offscreenRenderer = new THREE.WebGLRenderer( {antialias: true} );
@@ -27,15 +28,20 @@ class AnimationRecorder {
             offscreenRenderer.toneMappingExposure = 1;
             this.renderers.push(offscreenRenderer);
 
-            const stream = this.renderers[i].domElement.captureStream(60);
-            const options = { mimeType: 'video/webm;', videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
+            if (this.renderers[i].domElement.captureStream) {
+                const stream = this.renderers[i].domElement.captureStream(60);
+                const options = { mimeType: this.mimeType, videoBitsPerSecond: 5 * 1024 * 1024 }; // 5 Mbps
 
-            const mediaRecorder = new MediaRecorder(stream, options);
-            mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
-            mediaRecorder.onstop = () => this.handleStop(i);
+                const mediaRecorder = new MediaRecorder(stream, options);
+                mediaRecorder.ondataavailable = (event) => this.handleDataAvailable(event, i);
+                mediaRecorder.onstop = () => this.handleStop(i);
 
-            this.mediaRecorders.push( mediaRecorder );
-            this.recordedChunks.push([]);
+                this.mediaRecorders.push( mediaRecorder );
+                this.recordedChunks.push([]);
+            }
+            else {
+                console.error("Animation Recorder Error: CaptureSteam not supported.");
+            }
         };
         this.app = app;
         window.addEventListener('resize', this._onWindowResize.bind(this));
@@ -158,7 +164,7 @@ class AnimationRecorder {
         }
 
         const animationName = this.currentAnimationName;
-        const blob = new Blob(this.recordedChunks[idx], {type: 'video/webm'});
+        const blob = new Blob(this.recordedChunks[idx], {type: this.mimeType});
         const camNumber = idx + 1;
         const name =  `${animationName} ${camNumber}.webm`;
 

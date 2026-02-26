@@ -2675,7 +2675,7 @@ class Lipsync {
     
         // Audio context
         if (!Lipsync.AContext)
-            Lipsync.AContext = new AudioContext();
+            Lipsync.AContext = new text();
         // Restart
         this.stopSample();
     
@@ -2823,9 +2823,14 @@ class Lipsync {
     init() {
     
         // Audio context
-        if (!Lipsync.AContext)
-            Lipsync.AContext = new AudioContext();
-        var context = this.context = Lipsync.AContext;
+        if ( !Lipsync.AContext ) {
+            if( !window.AudioContext ) {
+                return;
+            }
+            Lipsync.AContext = new AudioContext(); 
+        }
+        
+        const context = this.context = Lipsync.AContext;
         // Sound source
         this.sample = context.createBufferSource();
         // Gain Node
