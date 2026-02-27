@@ -14885,7 +14885,9 @@ class Performs {
         }
         this.loaderGLB.load( modelFilePath, async (glb) => {
             let model = glb.scene;
-            model.quaternion.premultiply( modelRotation );
+            if( modelRotation && modelRotation.constructor == THREE.Quaternion ) {
+                model.quaternion.premultiply( modelRotation );
+            }
             model.castShadow = true;
             let skeleton = null;
             const morphTargets = {};

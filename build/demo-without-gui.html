@@ -54,11 +54,19 @@
             const performs = new Performs();
 
             // Init Performs with configuration options (default animation and onReady function)
-            performs.init({color: "#4f4f9c", animations:[{name:"https://signon-lfs.gti.upf.edu/files/evalls/animics/clips/GSL-Omega.bvhe"}], onReady: () => {
+            performs.init({color: "#4f4f9c", animations:[{name:"https://animics-lfs.gti.upf.edu/files/evalls/animics/clips/GSL-Omega.bvhe"}], onReady: () => {
                 const div = document.getElementById("performs");
                 // Append the Performs' render dom element (canvas) to specified HTML element as a child node
                 performs.appendCanvasTo(div);
                 colorBtn.value = performs.getBackPlaneColor();
+
+                // Load another default avatar
+                const avatarName = "Nia"
+                const [path, configFile, rotation] = performs.avatars[avatarName];
+                performs.loadAvatar(path, configFile, rotation, avatarName, () => {
+
+                    performs.changeAvatar( avatarName );
+                })
             }});
             window.global = {app: performs};
 
