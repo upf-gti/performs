@@ -13051,8 +13051,8 @@ class KeyframeApp {
         this.mixer = this.loadedCharacters[avatarName].mixer;          
         this.onChangeAnimation(this.currentAnimation, true);
         this.changePlayState(this.playing);
-        const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3);
-        this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3);
+        const LToePos = this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].LToeName).getWorldPosition(new THREE.Vector3());
+        this.loadedCharacters[avatarName].skeleton.getBoneByName(this.loadedCharacters[avatarName].RToeName).getWorldPosition(new THREE.Vector3());
         let diff = this.loadedCharacters[avatarName].LToePos.y - LToePos.y; 
         
         this.loadedCharacters[avatarName].model.position.y = this.loadedCharacters[avatarName].position.y - this.loadedCharacters[avatarName].diffToGround + diff;
@@ -13121,8 +13121,8 @@ class KeyframeApp {
         this.mixer.update(0.1);
         this.mixer.update(0);
 
-        const LToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].LToeName).getWorldPosition(new THREE.Vector3);
-        this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].RToeName).getWorldPosition(new THREE.Vector3);
+        const LToePos = this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].LToeName).getWorldPosition(new THREE.Vector3());
+        this.loadedCharacters[this.currentCharacter].model.getObjectByName(this.loadedCharacters[this.currentCharacter].RToeName).getWorldPosition(new THREE.Vector3());
         let diff = this.loadedCharacters[this.currentCharacter].LToePos.y - LToePos.y; 
         
         this.loadedCharacters[this.currentCharacter].model.position.y = this.loadedCharacters[this.currentCharacter].position.y - this.loadedCharacters[this.currentCharacter].diffToGround + diff;
@@ -14649,7 +14649,7 @@ class Performs {
         if(options.rotation) {
             let rotation = options.rotation;
             rotation = rotation.split(',');
-            modelToLoad[2].fromArray(rotation);
+            modelToLoad[2] = new Quaternion().fromArray(rotation);
         }
         
         if( PERFORMS.GUI ) {
@@ -15066,7 +15066,7 @@ class Performs {
         character.LToeName = character.model.getObjectByName(map.nameMap.LFoot).children[0].name;
         character.RToeName = character.model.getObjectByName(map.nameMap.RFoot).children[0].name;
         const LtoePos = character.model.getObjectByName(map.nameMap.LFoot).children[0].getWorldPosition(new THREE.Vector3());
-        const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3);
+        const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3());
       
         // Cast a ray downwards from the left toe's position
         let dir = new THREE.Vector3(0, 1, 0);

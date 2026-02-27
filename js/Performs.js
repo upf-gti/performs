@@ -820,7 +820,7 @@ class Performs {
         if(options.rotation) {
             let rotation = options.rotation;
             rotation = rotation.split(',');
-            modelToLoad[2].fromArray(rotation);
+            modelToLoad[2] = new Quaternion().fromArray(rotation);
         }
         
         if( PERFORMS.GUI ) {
@@ -1240,7 +1240,7 @@ class Performs {
         character.LToeName = character.model.getObjectByName(map.nameMap.LFoot).children[0].name;
         character.RToeName = character.model.getObjectByName(map.nameMap.RFoot).children[0].name;
         const LtoePos = character.model.getObjectByName(map.nameMap.LFoot).children[0].getWorldPosition(new THREE.Vector3());
-        const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3);
+        const RtoePos = character.model.getObjectByName(map.nameMap.RFoot).children[0].getWorldPosition(new THREE.Vector3());
       
         // Cast a ray downwards from the left toe's position
         let dir = new THREE.Vector3(0, 1, 0);

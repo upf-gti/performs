@@ -1609,7 +1609,10 @@ class GUI {
             this.makeLoading("Loading avatar...");
             let modelFilePath = this.avatarOptions[avatarName][0];
             let configFilePath = this.avatarOptions[avatarName][1];
-            let modelRotation = (new THREE.Quaternion()).setFromAxisAngle( new THREE.Vector3(1,0,0), this.avatarOptions[avatarName][2] );
+            let modelRotation = this.avatarOptions[avatarName][2] ? this.avatarOptions[avatarName][2] : new THREE.Quaternion();
+            if(modelRotation.constructor == Array ) {
+                modelRotation = new THREE.Quaternion().fromArray(modelRotation);
+            }
             this.performs.loadAvatar(modelFilePath, configFilePath, modelRotation, avatarName, ()=>{
                 this.performs.changeAvatar(avatarName);
                 if( this.activePanelType == GUI.ACTIVEPANEL_AVATARS){
