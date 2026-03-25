@@ -1693,6 +1693,7 @@ class GUI {
                     filename = filename.pop();
                     let extension = path[path.length-1];
                     extension = extension.split("?")[0];
+                    
                     if (extension == "glb" || extension == "gltf") {
 
                         model = v;
@@ -2043,7 +2044,12 @@ class GUI {
         for(let i = 0; i < files.length; i++) {
 
             const file = files[i];
-            const extension = file.name.substr(file.name.lastIndexOf(".") + 1).toLowerCase();
+            let path = file.name;
+            let extension = path.substr(path.lastIndexOf(".") + 1).toLowerCase();
+            if(extension.includes("gz")) {
+                path = path.replace(".gz","");
+                extension = path.substr(path.lastIndexOf(".") + 1).toLowerCase();
+            }
             if(formats.indexOf(extension) < 0) {
                 alert(file.name +": Format not supported.\n\nFormats accepted:\n\t 'bml', 'sigml', 'bvh', 'bvhe', 'glb, 'gltf', 'json', 'fbx' (animations only)\n\t");
                 this.hideLoading();

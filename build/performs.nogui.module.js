@@ -9,6 +9,7 @@ import { FBXLoader } from 'three/addons/loaders/FBXLoader.js';
 import { LineGeometry } from 'three/addons/lines/LineGeometry.js';
 import { LineMaterial } from 'three/addons/lines/LineMaterial.js';
 import { Line2 } from 'three/addons/lines/Line2.js';
+import pako from 'https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.esm.mjs';
 
 /**
  * Main namespace
@@ -13240,7 +13241,14 @@ class KeyframeApp {
 
         for(let i = 0; i < files.length; i++) {
             const file = files[i];
-            const extension = file.name.substr(file.name.lastIndexOf(".") + 1);            if(extension == 'bvh' || extension == 'bvhe') {
+            let path = file.name;
+            let extension = path.substr(path.lastIndexOf(".") + 1);
+            const compressed = extension.includes("gz");
+            if( compressed ) {
+                path = path.replace(".gz", "");
+                extension = path.substr(path.lastIndexOf(".") + 1);
+            }
+            if(extension == 'bvh' || extension == 'bvhe') {
                 loader = this.BVHLoader;
                 type = 'bvh';
             }
@@ -13255,8 +13263,11 @@ class KeyframeApp {
             let filePromise = null;
             if(type == 'bvh') {
                
-                filePromise = new Promise(resolve => {
+                filePromise = new Promise(async resolve => {
                     const loadData = (dataFile) => {
+                        if( compressed ) {
+                            dataFile = pako.ungzip(new Uint8Array(dataFile), { to: 'string' });
+                        }
                         let data = this.BVHLoader.parseExtended(dataFile);
                         let name = file.name;
                         if(this.loadedAnimations[name]) {
@@ -13278,26 +13289,35 @@ class KeyframeApp {
                     let data = file.data ?? file;
                    
                     if(file.constructor.name == File.name || file.data && typeof(file.data) == 'object') {
-                        reader.readAsText(data);
+                        if(file.type == "application/x-gzip") {
+                            reader.readAsArrayBuffer(data);
+                        }
+                        else {
+                            reader.readAsText(data);
+                        }
                     }
                     else if(file.data && typeof(file.data) == 'string') {
                         loadData(file.data);
                     }
                     else {
-                        fetch(file.name || file)
-                        .then( (response) => {
+                        const response = await fetch(file.name || file);
+                        try {
                             if (response.ok) {
-                            response.text().then( (text) => {
-                                loadData(text);
-                            });
+                                let data = null;
+                                if( compressed ) {
+                                    data = await response.arrayBuffer();
+                                }
+                                else {
+                                    data = await response.text();
+                                }
+                                loadData(data);
                             } else {
                                 console.log("Not found");
                             }
-                        })
-                        .catch(function (error) {
+                        }
+                        catch( error ) {
                             console.log("Error:" + error.message);
-                        });        
-                    } 
+                        }                    } 
                     
                 });
             }
