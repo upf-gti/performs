@@ -111,6 +111,7 @@ class AnimationRecorder {
             }
             if (this.isRecording) { 
                 this.stopCapture();
+                this.remainingAnimations = 1;
             }
             else { this.startCapture("BML"); }
         }
