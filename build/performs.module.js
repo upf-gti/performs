@@ -15602,7 +15602,7 @@ class MagicLineGeometry extends LineGeometry {
 
 		}
 
-		const instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 8, 1 ); // rgba, rgba
+		const instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 4, 1 ); // rgba, rgba
 
 		this.setAttribute( 'instanceColorStart', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 4, 0 ) ); // rgba
 		this.setAttribute( 'instanceColorEnd', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 4, 4 ) ); // rgba
@@ -16509,9 +16509,9 @@ class KeyframeApp {
 }
 
 // Correct negative blenshapes shader of ThreeJS
-THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
-THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
-THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
+// THREE.ShaderChunk[ 'morphnormal_vertex' ] = "#ifdef USE_MORPHNORMALS\n	objectNormal *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n	    objectNormal += getMorph( gl_VertexID, i, 1, 2 ) * morphTargetInfluences[ i ];\n		}\n	#else\n		objectNormal += morphNormal0 * morphTargetInfluences[ 0 ];\n		objectNormal += morphNormal1 * morphTargetInfluences[ 1 ];\n		objectNormal += morphNormal2 * morphTargetInfluences[ 2 ];\n		objectNormal += morphNormal3 * morphTargetInfluences[ 3 ];\n	#endif\n#endif";
+// THREE.ShaderChunk[ 'morphtarget_pars_vertex' ] = "#ifdef USE_MORPHTARGETS\n	uniform float morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		uniform float morphTargetInfluences[ MORPHTARGETS_COUNT ];\n		uniform sampler2DArray morphTargetsTexture;\n		uniform vec2 morphTargetsTextureSize;\n		vec3 getMorph( const in int vertexIndex, const in int morphTargetIndex, const in int offset, const in int stride ) {\n			float texelIndex = float( vertexIndex * stride + offset );\n			float y = floor( texelIndex / morphTargetsTextureSize.x );\n			float x = texelIndex - y * morphTargetsTextureSize.x;\n			vec3 morphUV = vec3( ( x + 0.5 ) / morphTargetsTextureSize.x, y / morphTargetsTextureSize.y, morphTargetIndex );\n			return texture( morphTargetsTexture, morphUV ).xyz;\n		}\n	#else\n		#ifndef USE_MORPHNORMALS\n			uniform float morphTargetInfluences[ 8 ];\n		#else\n			uniform float morphTargetInfluences[ 4 ];\n		#endif\n	#endif\n#endif";
+// THREE.ShaderChunk[ 'morphtarget_vertex' ] = "#ifdef USE_MORPHTARGETS\n	transformed *= morphTargetBaseInfluence;\n	#ifdef MORPHTARGETS_TEXTURE\n		for ( int i = 0; i < MORPHTARGETS_COUNT; i ++ ) {\n			#ifndef USE_MORPHNORMALS\n				transformed += getMorph( gl_VertexID, i, 0, 1 ) * morphTargetInfluences[ i ];\n			#else\n				transformed += getMorph( gl_VertexID, i, 0, 2 ) * morphTargetInfluences[ i ];\n			#endif\n		}\n	#else\n		transformed += morphTarget0 * morphTargetInfluences[ 0 ];\n		transformed += morphTarget1 * morphTargetInfluences[ 1 ];\n		transformed += morphTarget2 * morphTargetInfluences[ 2 ];\n		transformed += morphTarget3 * morphTargetInfluences[ 3 ];\n		#ifndef USE_MORPHNORMALS\n			transformed += morphTarget4 * morphTargetInfluences[ 4 ];\n			transformed += morphTarget5 * morphTargetInfluences[ 5 ];\n			transformed += morphTarget6 * morphTargetInfluences[ 6 ];\n			transformed += morphTarget7 * morphTargetInfluences[ 7 ];\n		#endif\n	#endif\n#endif";
 
 class Performs {
     constructor() {
@@ -17558,75 +17558,102 @@ class Performs {
             const morphTargets = {};
 
             if(avatarName == "Witch") {
-                model.traverse( (object) => {
-                    if ( object.isMesh || object.isSkinnedMesh ) {
-                        if (object.skeleton){
-                            skeleton = object.skeleton; 
+                model.traverse( (o) => {
+                    if ( o.isMesh || o.isSkinnedMesh ) {
+                        if (o.skeleton){
+                            skeleton = o.skeleton; 
                         }                    
-                        if(!object.name.includes("Hat")) {
-                            object.material.side = THREE.FrontSide;
+                        if(!o.name.includes("Hat")) {
+                            o.material.side = THREE.FrontSide;
                         }
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        if (object.name == "Eyelashes") // eva
-                        object.castShadow = false;
-                        if(object.material.map) 
-                        object.material.map.anisotropy = 16;
-                        if(object.name == "Hair") {
-                            object.material.map = null;
-                            object.material.color.set(0x6D1881);
+                        o.frustumCulled = false;
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        if (o.name == "Eyelashes") // eva
+                        o.castShadow = false;
+                        if(o.material.map) 
+                        o.material.map.anisotropy = 16;
+                        if(o.name == "Hair") {
+                            o.material.map = null;
+                            o.material.color.set(0x6D1881);
                         }
-                        if(object.name.includes("Bottom")) {
-                            object.material.map = null;
-                            object.material.color.set(0x000000);
+                        if(o.name.includes("Bottom")) {
+                            o.material.map = null;
+                            o.material.color.set(0x000000);
                         }
-                        if(object.name.includes("Top")) {
-                            object.material.map = null;
-                            object.material.color.set(0x000000);
+                        if(o.name.includes("Top")) {
+                            o.material.map = null;
+                            o.material.color.set(0x000000);
                         }
-                        if(object.name.includes("Shoes")) {
-                            object.material.map = null;
-                            object.material.color.set(0x19A7A3);
+                        if(o.name.includes("Shoes")) {
+                            o.material.map = null;
+                            o.material.color.set(0x19A7A3);
                         }
-                        if(object.morphTargetDictionary) {
-                            morphTargets[object.name] = object.morphTargetDictionary;
+                        if(o.morphTargetDictionary) {
+                            morphTargets[o.name] = o.morphTargetDictionary;
+                            o.material.defines.MORPHTARGETS_TEXTURE = " ";
+                          
+                            const depthMat = new THREE.MeshDepthMaterial({
+                                depthPacking: THREE.RGBADepthPacking
+                            });
+                            if(!depthMat.defines) {
+                                depthMat.defines = {};
+                            }
+                            depthMat.defines.USE_MORPHTARGETS = '';
+                            depthMat.defines.MORPHTARGETS_TEXTURE = '';
+                            depthMat.defines.MORPHTARGETS_COUNT = o.morphTargetInfluences.length; 
+                            depthMat.defines.USE_SKINNING = '';
+                             
+                            o.customDepthMaterial = depthMat;
+                            o.customDepthMaterial.needsUpdate = true;
                         }
-                    } else if (object.isBone) {
-                        object.scale.set(1.0, 1.0, 1.0);
+                    } else if (o.isBone) {
+                        o.scale.set(1.0, 1.0, 1.0);
                     }
                 } );
             }
             else {
-                model.traverse( (object) => {
-                    if ( object.isMesh || object.isSkinnedMesh ) {
-                        if (object.skeleton){
-                            skeleton = object.skeleton; 
+                model.traverse( o => {
+                    if (o.isMesh || o.isSkinnedMesh) {
+                        o.castShadow = true;
+                        o.receiveShadow = true;
+                        o.frustumCulled = false;
+                        if ( o.skeleton ){ 
+                            skeleton = o.skeleton;
                         }
-                        object.material.side = THREE.FrontSide;
-                        object.frustumCulled = false;
-                        object.castShadow = true;
-                        object.receiveShadow = true;
-                        if (object.name == "Eyelashes") {
-                            object.castShadow = false;
+                        if (o.name == "Body") {
+                            o.name == "BodyMesh";
                         }
-                        if(object.material.map) {
-                            object.material.map.anisotropy = 16;
+                        if(o.morphTargetDictionary)
+                        {
+                            morphTargets[o.name] = o.morphTargetDictionary;
+                            o.material.defines.MORPHTARGETS_TEXTURE = " ";
+                          
+                            const depthMat = new THREE.MeshDepthMaterial({
+                                depthPacking: THREE.RGBADepthPacking
+                            });
+                            if(!depthMat.defines) {
+                                depthMat.defines = {};
+                            }
+                            depthMat.defines.USE_MORPHTARGETS = '';
+                            depthMat.defines.MORPHTARGETS_TEXTURE = '';
+                            depthMat.defines.MORPHTARGETS_COUNT = o.morphTargetInfluences.length; 
+                            depthMat.defines.USE_SKINNING = '';
+                             
+                            o.customDepthMaterial = depthMat;
+                            o.customDepthMaterial.needsUpdate = true;
                         }
-                        if(object.morphTargetDictionary) {
-                            morphTargets[object.name] = object.morphTargetDictionary;
+                        if(o.name == "Classic_short") {
+                            if( o.children.length > 1 ){ 
+                                o.children[1].renderOrder = 1; 
+                            }
                         }
-                    } else if (object.isBone) {
-                        object.scale.set(1.0, 1.0, 1.0);
+                        if(o.name.includes("Eyelashes")) {
+                            o.castShadow = false;
+                        }
+                        o.material.side = THREE.FrontSide;                    
                     }
-                });
-            }
-
-            if ( avatarName == "Kevin" ){
-                let hair = model.getObjectByName( "Classic_short" );
-                if( hair && hair.children.length > 1 ){ 
-                    hair.children[1].renderOrder = 1; 
-                }
+                } );
             }
                         
             model.name = avatarName;
