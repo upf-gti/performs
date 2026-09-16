@@ -1211,7 +1211,7 @@ class GUI {
                                             });
                                         return;
                                     }
-                                    this.bmlInputData.codeObj.setText( JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSpaces)) );
+                                    this.bmlInputData.codeObj.setText( JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSize)) );
                                 }
                             }
                         ];
@@ -1363,7 +1363,7 @@ class GUI {
                     LX.makeElement('div', 'p-2', htmlStr, p.root);
 
                     p.addSelect("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
-                        this.performs.scriptApp.selectedLanguage = value;
+                        this.performs.scriptApp.selectedLanguage = this.language = value;
                         p.refresh();
                     } );
 
@@ -14896,122 +14896,135 @@ class TrajectoriesHelper {
         this.trajectoryEnd = 100;
     }
         
-    computeTrajectories( animation ) {
-        let boneName = null;
+    computeTrajectories(animation, currentTime = 0) {
+        this.dispose(); 
+        
+        return new Promise((resolve, reject) => {
+            const mixer = this.mixer;
+            // Use the first track to determine time keyframes
+            const rootTrack = animation.mixerBodyAnimation.tracks[0];
+            this.trajectoryEnd = rootTrack.times.length;
 
-        this.dispose(); // remove any memory held by Threejs
+            // 1. Setup Phase: Map trajectories to their respective bones and roots
+            const trajectoryKeys = Object.keys(this.trajectories);
+            const trajectoryData = {};
 
-        for(let i = 0; i < animation.mixerBodyAnimation.tracks.length; i++) {
-            const track = animation.mixerBodyAnimation.tracks[i];
-            const trackName = track.name;
-            for(let trajectory in this.trajectories) {
-
-                if(trackName.includes(trajectory+".") || trackName.includes(trajectory.replace("4","EndSite")+".")) {
-                    boneName = trackName.replace(".quaternion", "");
-                    if(boneName) {
-                        this.trajectories[trajectory].name = boneName;
-                        const isHand = trajectory == "LeftHand" || trajectory == "RightHand";
-                        const root = isHand ? this.object : this.object.getObjectByName(boneName.replace("4","1").replace("EndSite","1"));
-                        // Add hand trajectories to the model object
-                        // or Add finger trajectories to the first joint of the finger
-
-                        root.add(this.trajectories[trajectory]);
+            for (let trajectory of trajectoryKeys) {
+                // Find the bone name from animation tracks if not already set
+                for (let track of animation.mixerBodyAnimation.tracks) {
+                    if (track.name.includes(trajectory + ".") || track.name.includes(trajectory.replace("4", "EndSite") + ".")) {
+                        this.trajectories[trajectory].name = track.name.replace(".quaternion", "");
                         break;
                     }
                 }
-            }
-        }
-        const mixer = this.mixer;//this.performs.currentCharacter.mixer;
-        const track = animation.mixerBodyAnimation.tracks[0];
-        this.trajectoryEnd = track.times.length;
 
-        const findFirstFingerJoint = (bone) => {
-            let name = bone.name.replace("mixamorig","").replaceAll("_","").replaceAll(":","");
-            while (bone && !name.includes("1")) {
-                bone = bone.parent;
-                name = bone.name.replace("mixamorig","").replaceAll("_","").replaceAll(":","");
-            }
-            return bone;
-        };
-
-        this.object.updateMatrixWorld(true);
-
-        for(let trajectory in this.trajectories) {
-            const boneName = this.trajectories[trajectory].name;
-            const positions = [];
-            const colors = [];
-            const bone = this.object.getObjectByName(boneName);
-            
-            const isHand = trajectory == "LeftHand" || trajectory == "RightHand";
-            const rootFinger = isHand ? null : findFirstFingerJoint(bone); // For fingers trajectories: Get fingertip position relative to the first joint of the finger
-
-            const pos = new THREE.Vector3();
-            const lastPos = new THREE.Vector3();
-            const mat4 = new THREE.Matrix4();
-
-            for(let t = 0; t < track.times.length; t++) {
-
-                mixer.setTime(track.times[t]);
-                bone.updateWorldMatrix( true, false );
-
-                if(!isHand) { // For fingers trajectories: Get fingertip position relative to the first joint of the finger
-                    if (!bone || !rootFinger) break; // continue;
-
-                    // matrix from root to tip
-                    mat4.copy( rootFinger.matrixWorld )
-                        .invert()
-                        .multiply( bone.matrixWorld );
-                    pos.setFromMatrixPosition(mat4);
-                }
-                else { // For hand trajectory : Get global position of the wrist
-                    pos.setFromMatrixPosition( bone.matrixWorld );
-                }
+                const boneName = this.trajectories[trajectory].name;
+                const bone = this.object.getObjectByName(boneName);
+                const isHand = trajectory === "LeftHand" || trajectory === "RightHand";
                 
-                positions.push(pos.x, pos.y, pos.z);
-                
-                // there will be, at most, track.times.length-1 arrows. Building arrows for t-1
-                if ( t > 0 ){
-                    const c = this.trajectories[trajectory].color || new THREE.Color(`hsl(${180*Math.sin( track.times[t]/Math.PI)}, 100%, 50%)`);
-                    colors.push(c .r, c .g, c .b, 0.8);
-                    colors.push(c .r, c .g, c .b, 0.8);
-                    // colors.push(c .r, c .g, c .b);
-                    
-                    const arrow = customArrow(pos.x, pos.y, pos.z, lastPos.x, lastPos.y, lastPos.z,  this.trajectories[trajectory].thickness*0.0002, c );
-                    if ( arrow ){
-                        arrow.name = t-1;
-                        arrow.layers.set(2); // to avoid intersections with arrows
-                        this.trajectories[trajectory].add(arrow);
+                let rootFinger = null;
+                if (!isHand && bone) {
+                    // Get the first joint of the finger as reference (root)
+                    let current = bone;
+                    let name = current.name.replace("mixamorig", "").replaceAll("_", "").replaceAll(":", "");
+                    while (current && !name.includes("1")) {
+                        current = current.parent;
+                        if (current) name = current.name.replace("mixamorig", "").replaceAll("_", "").replaceAll(":", "");
                     }
+                    rootFinger = current;
+
+                    // Add the trajectory object to the first joint (local space)
+                    if (rootFinger) rootFinger.add(this.trajectories[trajectory]);
+                } else if (isHand) {
+                    // Add hand trajectory to the model root (global space)
+                    this.object.add(this.trajectories[trajectory]);
                 }
 
-                lastPos.set(pos.x, pos.y, pos.z);
+                trajectoryData[trajectory] = {
+                    bone: bone,
+                    rootFinger: rootFinger,
+                    isHand: isHand,
+                    positions: [],
+                    colors: [],
+                    lastPos: new THREE.Vector3()
+                };
             }
-            // if( !this.trajectoryEnd ) {
-            //     this.computeTrajectories(animation);
-            //     return;
-            // }
-            // Create geometry
-            const geometry = new MagicLineGeometry();
-            geometry.setPositions(positions);
-            geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colors, 4 ) );
-            geometry.setColors(colors);
-            const material = new LineMaterial({
-                vertexColors: true,
-                dashed: false,
-                alphaToCoverage: true,
-                linewidth: this.trajectories[trajectory].thickness,
-                vertexShader: vertexShader,
-                fragmentShader: fragmentShader,
-                transparent: true,
-            });
-            material.resolution.set(window.innerWidth, window.innerHeight);
-            const line = new Line2(geometry, material);
-            line.name = "line";
-            line.layers.set(2); // to avoid intersections with line
-            this.trajectories[trajectory].add(line);
-            this.trajectories[trajectory].positions = positions;
-            this.trajectories[trajectory].colors = colors;
-        }
+
+            // 2. Processing Phase: Single loop through time
+            const mat4 = new THREE.Matrix4();
+            const pos = new THREE.Vector3();
+
+            for (let t = 0; t < rootTrack.times.length -1; t++) {
+                const time = rootTrack.times[t];
+                
+                // Update mixer and force a full skeleton matrix update
+                mixer.setTime(time);
+                this.object.updateWorldMatrix(true, true);
+
+                for (let trajectory of trajectoryKeys) {
+                    const data = trajectoryData[trajectory];
+                    if (!data.bone) continue;
+
+                    if (data.isHand) {
+                        // Global position for hands
+                        pos.setFromMatrixPosition(data.bone.matrixWorld);
+                    } else {
+                        // Local position relative to the first finger joint
+                        if (!data.rootFinger) continue;
+                        mat4.copy(data.rootFinger.matrixWorld).invert().multiply(data.bone.matrixWorld);
+                        pos.setFromMatrixPosition(mat4);
+                    }
+
+                    data.positions.push(pos.x, pos.y, pos.z);
+
+                    // there will be, at most, track.times.length-1 arrows. Building arrows for t-1
+                    if (t > 0) {
+                        const c = this.trajectories[trajectory].color || new THREE.Color(`hsl(${180 * Math.sin(time / Math.PI)}, 100%, 50%)`);
+                        data.colors.push(c .r, c .g, c .b, 0.8);
+                        data.colors.push(c .r, c .g, c .b, 0.8);
+                        // colors.push(c .r, c .g, c .b);
+                        
+                        const arrow = customArrow(pos.x, pos.y, pos.z, data.lastPos.x, data.lastPos.y, data.lastPos.z, this.trajectories[trajectory].thickness * 0.0002, c);
+                        if (arrow) {
+                            arrow.name = t - 1;
+                            arrow.layers.set(2);  // to avoid intersections with arrows
+                            this.trajectories[trajectory].add(arrow);
+                        }
+                    }
+                    
+                    data.lastPos.copy(pos);
+                }
+            }
+
+            // 3. Finalization Phase: Create geometries
+            for (let trajectory of trajectoryKeys) {
+                const data = trajectoryData[trajectory];
+                const geometry = new MagicLineGeometry();
+                geometry.setPositions(data.positions);
+                 geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( data.colors, 4 ) );
+                geometry.setColors(data.colors);
+                
+                const material = new LineMaterial({
+                    vertexColors: true,
+                    alphaToCoverage: true,
+                    linewidth: this.trajectories[trajectory].thickness,
+                    vertexShader: vertexShader,
+                    fragmentShader: fragmentShader,
+                    transparent: true
+                });
+                material.resolution.set(window.innerWidth, window.innerHeight);
+
+                const line = new Line2(geometry, material);
+                line.name = "line";
+                this.trajectories[trajectory].add(line);
+                this.trajectories[trajectory].positions = data.positions;
+                this.trajectories[trajectory].colors = data.colors;
+            }
+
+            mixer.setTime(currentTime);
+            this.object.updateWorldMatrix(true, true);
+            resolve();
+        });
     }
 
     updateTrajectories( startTime, endTime ) {
@@ -15067,16 +15080,29 @@ class TrajectoriesHelper {
             }
 
             line.geometry.setColors(colors);
+            line.needsUpdate = true;
         }
     }
 
-    show( ) {
+    show( trajectory ) {
+        if( trajectory ) {
+            if( this.trajectories[trajectory]) {
+                this.trajectories[trajectory].visible = true;
+            }
+            return;
+        }
         for( let trajectory in this.trajectories ) {
             this.trajectories[trajectory].visible = true;
         }
     }
 
-    hide( ) {
+    hide( trajectory ) {
+        if( trajectory ) {
+            if( this.trajectories[trajectory]) {
+                this.trajectories[trajectory].visible = false;
+            }
+            return;
+        }
         for( let trajectory in this.trajectories ) {
             this.trajectories[trajectory].visible = false;
         }
@@ -15241,7 +15267,7 @@ const fragmentShader =
 		void main() {
 
 			float alpha = opacity;
-			vec4 diffuseColor = vec4( vec3(1.0,1.0,1.0), alpha );
+			vec4 diffuseColor = vec4( diffuse, alpha );
 
 			#include <clipping_planes_fragment>
 
@@ -15319,7 +15345,7 @@ const fragmentShader =
 
 			#include <logdepthbuf_fragment>
 			#include <color_fragment>
-
+            // diffuseColor.rgb = vColor.rgb;
             #ifdef USE_COLOR_ALPHA
                 alpha = vColor.a;
                 //diffuseColor.rgb = vColor.rbg;
@@ -15603,7 +15629,7 @@ class MagicLineGeometry extends LineGeometry {
 
 		}
 
-		const instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 4, 1 ); // rgba, rgba
+		const instanceColorBuffer = new THREE.InstancedInterleavedBuffer( colors, 8, 1 ); // rgba, rgba
 
 		this.setAttribute( 'instanceColorStart', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 4, 0 ) ); // rgba
 		this.setAttribute( 'instanceColorEnd', new THREE.InterleavedBufferAttribute( instanceColorBuffer, 4, 4 ) ); // rgba

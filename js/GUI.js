@@ -1186,7 +1186,7 @@ class GUI {
                                             });
                                         return;
                                     }
-                                    this.bmlInputData.codeObj.setText( JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSpaces)) );
+                                    this.bmlInputData.codeObj.setText( JSON.stringify(obj, void 0, parseInt(this.bmlInputData.codeObj.tabSize)) );
                                 }
                             }
                         ];
@@ -1339,7 +1339,7 @@ class GUI {
                     LX.makeElement('div', 'p-2', htmlStr, p.root);
 
                     p.addSelect("Language", languages, this.performs.scriptApp.selectedLanguage, (value, event) => {
-                        this.performs.scriptApp.selectedLanguage = value;
+                        this.performs.scriptApp.selectedLanguage = this.language = value;
                         p.refresh();
                     } );
 
