@@ -884,7 +884,7 @@ class KeyframeApp {
         if( !this.trajectoriesHelper || !animation ) {
             return;
         }
-        this.trajectoriesHelper.computeTrajectories( animation );
+        this.trajectoriesHelper.computeTrajectories( animation.mixerBodyAnimation );
         this.trajectoriesComputationPending = false;
     }
 
