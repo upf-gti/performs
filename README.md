@@ -85,7 +85,7 @@ You can load the customization features through the GUI, by loading a JSON file 
 ### Examples
 The following sections provide examples of how to initialize the application without a GUI or configure it to initialize with a specific mode as the default. You can also check the demos: **[Demo with default GUI](./build/demo-with-gui.html)** or **[Demo with custom GUI](./build/demo-without-gui.html)**.
 
-### Keyframe animation
+## Keyframe animation
 This mode visualizes clip animations across different avatars. To ensure effective retargeting, certain options need to be adjusted for the _source_ animation and the _target_ avatar:
 - _Embedded transforms_: Retargeting only takes into account the transforms from the actual bone objects (local transforms). If set to true, external (parent) transforms are computed and embedded into the root joint (only once, on construction). Afterwards, parent transforms/matrices can be safely modified and will not affect in retargeting. Useful when it is easier to modify the container of the skeleton rather than the actual skeleton in order to align source and target poses.
     - `true` or `false`
